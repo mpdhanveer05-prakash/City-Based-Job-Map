@@ -18,7 +18,7 @@ The architecture plan supplies these **target** dates. They are proposals, not c
 
 | Phase | Name | Gate to leave the phase |
 | --- | --- | --- |
-| 1 | Repository setup and deployment feasibility | A skeleton runs on a Workers preview; the plan-tier evidence is recorded |
+| 1 | Repository setup and deployment feasibility | The static skeleton runs on the Cloudflare staging deployment within the Free limits (ADR-0006/0007) |
 | 2 | Map prototype and **performance validation gate** | The gate report is signed off (pass, or an explicitly approved fallback) |
 | 3 | Schema, RLS, migrations, sample data | RLS tests pass; seed data for both cities loads |
 | 4 | City selection and company explorer | Real API data appears on the map |
@@ -49,13 +49,13 @@ The architecture plan supplies these **target** dates. They are proposals, not c
 - **Steps:** 1) Add `@opennextjs/cloudflare` and wrangler in `code/`, plus the `preview` script carried over from P1-01. 2) Build, and record the bundle size (uncompressed and gzip). 3) Run `wrangler dev`, then deploy to a preview URL or `workers.dev` (needs authorization). 4) Measure SSR CPU time for a representative page against the Free plan's 10 ms CPU limit. 5) Confirm that no Node Middleware is used (not supported by the adapter as of 30 Sep 2026). 6) Decide whether any ISR is needed. If it isn't, no incremental cache store is required.
 - **Acceptance:** ADR-0003 is updated with measured numbers and a recommendation (Free vs Paid, R2 cache or none) and cites its sources.
 - **Verification:** A preview URL responds 200. Wrangler output is logged.
-- **Status:** Completed (30 Sep 2026). Preview Worker at https://company-map-preview.company-map.workers.dev (approved by the owner). The measurements and recommendation (Workers Paid for staging/production because of CPU time, no R2) are in ADR-0003.
+- **Status:** Completed (30 Sep 2026); **its hosting setup is superseded by ADR-0006 / P1-06**, and its measurements are the evidence for that decision. Preview Worker at https://company-map-preview.company-map.workers.dev (approved by the owner). The measurements and recommendation (Workers Paid for staging/production because of CPU time, no R2) are in ADR-0003.
 
 ### P1-03 Supabase project and CLI setup
-- **Objective:** Set up the local Supabase stack and link the `dev` project, with PostGIS and `pg_trgm` enabled.
+- **Objective:** Set up the local Supabase stack with PostGIS and `pg_trgm` enabled. Development is **local only**: Supabase Free allows 2 active projects, and those are staging and prod (ADR-0006). The cloud projects are created when staging needs data (P3/P4).
 - **Dependencies:** P1-01
 - **Files:** `supabase/config.toml`, `supabase/migrations/0000_extensions.sql`, `.env.example`
-- **Steps:** Run `supabase init`, then `supabase start`. Write the extensions migration. Document the environment variables.
+- **Steps:** Add the Supabase CLI as a dev dependency. Run `supabase init`, then `supabase start` (needs Docker Desktop running). Write the extensions migration. Document the environment variables.
 - **Acceptance:** `supabase db reset` applies cleanly. `select postgis_version()` works.
 - **Verification:** Command output in progress.md.
 - **Status:** Not started
@@ -71,10 +71,26 @@ The architecture plan supplies these **target** dates. They are proposals, not c
 ### P1-05 Basemap feasibility
 - **Objective:** Confirm the Geoapify vector style loads in MapLibre with attribution, and estimate credit use.
 - **Dependencies:** P1-01
-- **Files:** `map/basemap.ts`, `docs/decisions/0006-basemap.md`
+- **Files:** `map/basemap.ts`, `docs/decisions/0008-basemap.md`
 - **Steps:** Load the Geoapify style with the key from the environment (a public key restricted by referrer). Count tile requests per typical session. Compare that against the current free allowance, checked and cited on the day. Override the style's paint properties to the basemap palette in [docs/design-system.md §2](docs/design-system.md#2-map-colours) (Milky land, no green parks), and check that Geoapify's terms allow it.
 - **Acceptance:** The map renders with visible Geoapify and OpenStreetMap attribution and the design-system basemap colours. The ADR records the estimate, the style-customisation terms, and their sources.
 - **Status:** Not started
+
+### P1-06 Static export on Cloudflare (ADR-0006, ADR-0007)
+- **Objective:** Replace the OpenNext/Workers setup from P1-02 with a Next.js static export served as an assets-only Worker (Cloudflare's current Pages, Free), for staging now and production later.
+- **Dependencies:** P1-01, P1-04; ADR-0006 accepted
+- **Files:** `code/next.config.ts` (`output: "export"`), `code/scripts/check-static-limits.mjs`, `code/public/_headers`, `code/app/robots.ts`, `code/app/sitemap.ts`, `code/package.json` scripts, `code/playwright.config.ts`, `.github/workflows/ci.yml`, `.github/workflows/deploy-staging.yml`, CLAUDE.md (commands)
+- **Steps:**
+  1. Set `output: "export"`. Remove `@opennextjs/cloudflare` and `open-next.config.ts`. `wrangler.jsonc` becomes an assets-only Worker (`assets.directory: ./out`, `404-page`, `env.staging`).
+  2. Make `/dev/*` build-time gated again (no `connection()`).
+  3. Add the static-limits guard: fail above 18,000 files, any file ≥ 25 MiB, more than 2,000 static / 100 dynamic redirects, or more than 100 header rules.
+  4. Add `robots.ts` and `sitemap.ts`; staging (`SITE_ENV=staging`) is `noindex`.
+  5. Serve `out/` with `wrangler dev` for Playwright.
+  6. **With the owner's approval**, deploy `wrangler deploy --env staging` (Worker `company-map-staging`).
+  7. Add a staging deploy workflow (needs a Cloudflare API token with Workers Scripts: Edit as a GitHub secret).
+- **Acceptance:** Lint, typecheck, unit, build, and the limits guard pass. Playwright e2e + axe pass against `wrangler dev` and against the staging URL. Staging returns `noindex`. The file count and build time are recorded in progress.md.
+- **Verification:** Command output, plus the staging URL and CI run links, in progress.md.
+- **Status:** Completed (30 Sep 2026). Staging is live at https://company-map-staging.company-map.workers.dev: 19 e2e/axe tests passed against it. Pages was folded into Workers, so this follows ADR-0007. **Follow-up:** the deploy workflow runs once the owner adds the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets.
 
 ## Phase 2 — Map prototype and performance validation gate
 
@@ -182,29 +198,29 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 
 ## Phase 4 — City selection and company explorer
 
-- **P4-01 Public API: cities and points.** `GET /api/v1/cities`, `GET /api/v1/cities/{city}/points` with Zod validation and cache headers. Deps: P3-03. Verify: Vitest handler tests, and a contract test against local Supabase. Status: Not started
-- **P4-02 City selection page `/`.** Bengaluru and Chennai cards, each drawn as the city boundary filled with its real office points (design-system.md §5); other cities show Coming soon and aren't clickable. Deps: P4-01. Verify: Playwright AC01. Status: Not started
-- **P4-03 Explorer shell.** Full-screen map with an overlay toolbar (search, filters, view switch), wired to the Phase 2 layer and real points; `/bengaluru` redirects to `/bangalore`. Deps: P2-09 (passed or approved), P4-01. Verify: Playwright loads both cities. Status: Not started
+- **P4-01 Build-time city datasets (ADR-0006).** A `city_build_snapshot(city)` RPC (anon, RLS) is read once per city at build. It writes `data/{city}/{data_version}` files: company summaries, office points, and the search index (lazily loaded). A TypeScript mirror of `company_filter` lives in `lib/filters/`. Deps: P3-03. Verify: a parity test (TS filter vs SQL `company_filter`) over the filter matrix against local Supabase, and dataset size recorded. Status: Not started
+- **P4-02 City selection page `/`** (prerendered). Bengaluru and Chennai cards, each drawn as the city boundary filled with its real office points (design-system.md §5); other cities show Coming soon and aren't clickable. Deps: P4-01. Verify: Playwright AC01. Status: Not started
+- **P4-03 Explorer shell.** Full-screen map with an overlay toolbar (search, filters, view switch), wired to the Phase 2 layer and the city dataset; `/bengaluru` redirects to `/bangalore` through `_redirects`. Deps: P2-09 (passed or approved), P4-01. Verify: Playwright loads both cities. Status: Not started
 - **P4-04 URL state module.** One Zod schema for city, view, q, filters, company, and camera. Back and Forward restore state. Deps: P1-01. Verify: unit round-trip tests, Playwright AC07. Status: Not started
 
 ## Phase 5 — Search, filters, Grid and List views
 
-- **P5-01 Search box and suggest API** (job title, company, location, founder). Deps: P3-03, P4-04. Verify: Vitest and Playwright for each search type. Status: Not started
+- **P5-01 Search box and suggestions** (job title, company, location, founder), run in the browser over the city search index. Deps: P4-01, P4-04. Verify: Vitest and Playwright for each search type. Status: Not started
 - **P5-02 Company-type filter** (Startup/MNC/Product, multi-select, OR within the group). Deps: P3-03, D-02. Verify: a company tagged with two types appears once. Status: Not started
 - **P5-03 Startup-stage filter.** Disabled unless Startup is selected. Deselecting Startup clears the stages from the state and the URL. A URL that contains stages without Startup is normalised on load. Deps: P5-02. Verify: unit tests on the reducer, Playwright. Status: Not started
-- **P5-04 Grid and List views** (TanStack Virtual above the proposed 100 rows), sharing the map's query key and counts. Deps: P4-03. Verify: Playwright asserts identical company IDs and counts across Map, Grid, and List for a filter matrix. Status: Not started
+- **P5-04 Grid and List views** (TanStack Virtual above the proposed 100 rows), using the same dataset and TypeScript filter as the map. Deps: P4-03. Verify: Playwright asserts identical company IDs and counts across Map, Grid, and List for a filter matrix. Status: Not started
 - **P5-05 List–map sync and selection** (hovering a row highlights its marker; `?company=`). Deps: P5-04. Status: Not started
 
 ## Phase 6 — Company details and company jobs
 
-- **P6-01 Company API + `/companies/{slug}`** with Visit website (via `/go/site/{company}`) and View jobs; old slugs redirect. Deps: P3-03. Verify: Playwright AC05. Status: Not started
-- **P6-02 Jobs API + `/companies/{slug}/jobs`.** Each row is **title + Apply only**, with a freshness line and an empty state. Deps: P6-01. Verify: a Playwright check that the row DOM contains only those two elements. Status: Not started
-- **P6-03 `/go/job/{id}` redirect.** 302 to the stored URL unchanged; the click is logged with no personal data; https and domain checks. Deps: P6-02. Verify: unit and security tests. Status: Not started
+- **P6-01 `/companies/{slug}` prerendered** (`generateStaticParams` over the snapshot) with Visit website (a direct link + click beacon) and View jobs. Old slugs redirect through generated `_redirects`. Metadata: canonical, `Organization` JSON-LD, and a sitemap entry (ADR-0006). Deps: P4-01. Verify: Playwright AC05 and a sitemap/canonical check. Status: Not started
+- **P6-02 `/companies/{slug}/jobs` prerendered.** Each row is **title + Apply only**, with a freshness line (computed in the browser from `last_checked_at`) and an empty state. Deps: P6-01. Verify: a Playwright check that the row DOM contains only those two elements. Status: Not started
+- **P6-03 Direct outbound links + click beacon.** Apply and Visit website link to the stored URL unchanged, validated at build (`https`, domain check; a failing URL fails the build). `sendBeacon` goes to the `click` Edge Function, which increments a daily counter with no personal data. Deps: P6-02. Verify: build-validation unit tests, Edge Function tests, and a check that Apply still works with the beacon blocked. Status: Not started
 
 ## Phase 7 — Admin tools and data imports
 
-- **P7-01 Admin auth** (Supabase Auth, allowlist, no public sign-up, `/admin` excluded from public bundles). Deps: P3-02. Status: Not started
-- **P7-02 CRUD + publish for companies, offices, and jobs,** with an audit log. Deps: P7-01. Status: Not started
+- **P7-01 Admin auth** (Supabase Auth in the browser, allowlist, no public sign-up). `/admin` pages are client-rendered and have their own chunks. The admin JavaScript is public, so RLS and RPC checks are the only enforcement. Deps: P3-02. Status: Not started
+- **P7-02 CRUD + publish for companies, offices, and jobs,** with an audit log. **Publish now** calls the `request-rebuild` Edge Function (reviewer+, debounced to one build per 10 min) → GitHub `repository_dispatch` → deploy. Deps: P7-01. Status: Not started
 - **P7-03 CSV import with preview, validation, duplicate detection, and error summary.** Deps: P7-02. Status: Not started
 - **P7-04 Review queues** (geocode below building accuracy, suspect jobs, submissions). Deps: P7-02. Status: Not started
 
@@ -213,7 +229,8 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **P8-01 Python feed sync** (ATS feeds, JSON-LD) in GitHub Actions against staging. Deps: P3-01, D-04 (sources). Status: Not started
 - **P8-02 Link checker with a two-strike expiry.** Deps: P8-01. Status: Not started
 - **P8-03 Supabase Cron sweeps + missed-run detection** (heartbeat table + alert). Deps: P8-01. Status: Not started
-- **P8-04 Reports and suggestions forms** with Turnstile verified on the server and rate limits. Deps: P3-02. Status: Not started
+- **P8-05 Rebuild triggers.** The site rebuilds and deploys after each successful pipeline run, on `request-rebuild`, and nightly. Record the time from a data change to live. Deps: P1-06, P8-01. Status: Not started
+- **P8-04 Reports and suggestions forms** through the `submit-feedback` Edge Function: Turnstile `siteverify`, Zod, single-use token, and a rate limit keyed on a salted, daily-rotated hash (no raw IP). Deps: P3-02. Status: Not started
 
 ## Phase 9 — Accessibility, security, performance, release verification
 
@@ -241,4 +258,5 @@ Local shortlist (Dexie), recently viewed, compare, cluster previews, neighbourho
 | D-06 | Named reference devices, network profile, and the map gate owner | P2-09 | Product owner |
 | D-07 | Geocoding provider, error-reporting tool, analytics + privacy notice | P7-04, P9 | Tech lead |
 | D-08 | Product name and domain. **Brand colours confirmed 30 Sep 2026** (Milky + Mantis `#59C749`); Milky `#FFFDF1` confirmed the same day. The owner may revisit the combination after seeing it in the UI. Still open: designer sign-off on the derived tokens and font ([design-system.md](docs/design-system.md)) | P9-05 | Product owner |
-| D-09 | Workers Free vs Paid, and Supabase Free vs Pro for production. **P1-02 measured:** a server-rendered page uses 38 ms CPU at the median, against a 10 ms Free limit, so ADR-0003 recommends Workers Paid for staging and production. Supabase is still to be measured | Staging deploy, P9-05 | Tech lead + product owner (cost) |
+| D-09 | **Decided 30 Sep 2026 by the owner: no paid plans.** Staging and production are a Next.js static export on Cloudflare (Free; served as Workers static assets per [ADR-0007](docs/decisions/0007-workers-static-assets.md), since Pages is now part of Workers). Backend work runs in Supabase (Free; projects staging + prod). The explorer uses static per-city datasets, and Apply links go direct with a click beacon. See [ADR-0006](docs/decisions/0006-free-tier-static-hosting.md) (supersedes the ADR-0003 recommendation) | Resolved | Product owner |
+| D-10 | Company jobs layout: jobs listed on the company page (`View jobs` jumps to `#jobs`; about 9,650 files for 2 cities) **or** a separate `/companies/{slug}/jobs` page per company (about 17,650 files; no room for a third city under 20,000). See [ADR-0007](docs/decisions/0007-workers-static-assets.md) | P6-01, P6-02 | Product owner |

@@ -1,30 +1,19 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // P1-02 feasibility Worker. Staging and production Workers get their own names later.
-  "name": "company-map-preview",
-  // OpenNext requires these two paths unchanged.
-  "main": ".open-next/worker.js",
-  "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS"
-  },
-  // Newest date supported by the bundled workerd (1.20260926.1).
+  // Assets-only Worker serving the static export (ADR-0006, ADR-0007): no script,
+  // so requests are free, unlimited, and use no CPU. This is what Cloudflare now
+  // ships as Pages. Production = `company-map`; staging = `wrangler deploy --env staging`.
+  "name": "company-map",
   "compatibility_date": "2026-09-26",
-  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  // Used by OpenNext for internal requests (e.g. cache revalidation).
-  "services": [
-    {
-      "binding": "WORKER_SELF_REFERENCE",
-      "service": "company-map-preview"
-    }
-  ],
-  // Preview Worker only: serve /dev/* (tokens page, SSR probe). Never set on production.
-  "vars": {
-    "DEV_ROUTES": "on"
+  "assets": {
+    "directory": "./out",
+    // Missing paths get out/404.html with a real 404 status.
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
   },
-  // Workers Logs, used in P1-02 to read CPU time per request.
-  "observability": {
-    "enabled": true
+  "env": {
+    "staging": {
+      "name": "company-map-staging"
+    }
   }
-  // No R2 bucket and no Images binding: nothing uses ISR or next/image yet (ADR-0003).
 }

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 3100;
-// Set to test an already-running server instead, e.g. `wrangler dev` or a preview Worker URL.
+// Set to test an already-running server instead, e.g. `npm run preview` or the staging URL.
 const externalBaseURL = process.env.PLAYWRIGHT_BASE_URL;
 
 export default defineConfig({
@@ -20,11 +20,12 @@ export default defineConfig({
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
-  // By default, tests run against a production build, with the /dev pages enabled.
+  // By default: build the static export (with /dev pages) and serve out/ the way
+  // Cloudflare does (_headers, _redirects, 404.html) via `wrangler dev` (assets-only Worker).
   webServer: externalBaseURL
     ? undefined
     : {
-        command: `npm run build && npm run start -- --port ${PORT}`,
+        command: `npm run build && npx wrangler dev --port ${PORT}`,
         url: `http://localhost:${PORT}`,
         reuseExistingServer: !process.env.CI,
         timeout: 240_000,

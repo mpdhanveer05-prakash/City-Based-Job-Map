@@ -1,6 +1,6 @@
 # ADR-0003: Hosting plan tiers are not assumed
 
-- **Status:** Proposed. Measured in P1-02 (30 Sep 2026); the owner decides the production tier under D-09.
+- **Status:** Superseded by [ADR-0006](0006-free-tier-static-hosting.md). The measurements below are kept as its evidence; the Workers Paid recommendation was **not** adopted (the owner chose free tiers only).
 - **Date:** 2026-09-30
 - **Related:** P1-02, D-09, [ADR-0001](0001-stack.md)
 

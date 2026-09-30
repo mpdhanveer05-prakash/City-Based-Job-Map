@@ -1,6 +1,6 @@
 # ADR-0001: Approved application stack
 
-- **Status:** Accepted
+- **Status:** Accepted. The hosting (Workers via OpenNext) and Route Handlers are superseded by [ADR-0006](0006-free-tier-static-hosting.md)
 - **Date:** 2026-09-30
 
 ## Context

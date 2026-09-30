@@ -16,7 +16,7 @@ Map quality is a **release requirement**. Every colour on the map (the basemap, 
 
 ## 3. Worker protocol and staleness
 - Each request carries a `generation` (a monotonic integer bumped on every zoom-integer change, filter change, or data load). The client **drops any response whose generation is older than the latest one issued**. [Plan + Proposal]
-- Filter changes during a zoom: bump the generation, call `load()` with the new points, then request clusters for the current view. Any in-flight animation retargets toward the new result (see §4).
+- Filter changes during a zoom: bump the generation, run the shared TypeScript filter over the in-memory city dataset (ADR-0006), call `load()` with the resulting points, then request clusters for the current view. `data_version` is the build snapshot ID. Any in-flight animation retargets toward the new result (see §4).
 - The worker is transferable-friendly. Points are sent as a `Float64Array` plus an ID table. Responses are compact arrays, not GeoJSON objects. [Proposal]
 
 ## 4. Animation

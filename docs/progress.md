@@ -3,11 +3,42 @@
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
 ## Current state
-- **Current task:** none in progress. P1-03 (needs Docker Desktop running plus a Supabase `dev` project) and P1-05 (needs a Geoapify key) are next. P2-01 needs no inputs.
+- **Current task:** none in progress. Next: P1-03 (Docker Desktop running; local Supabase only, per ADR-0006) and P1-05 (Geoapify key). P2-01 needs no inputs. Open for the owner: **D-10** (company jobs layout), and the Cloudflare token secrets for the Deploy staging workflow.
 - **Next action:** P1-02 needs a Cloudflare account and authorization for a preview deploy. P1-03 needs the Supabase CLI and Docker, plus a Supabase `dev` project. See the P1-01 entry.
 - **Blockers:** none for code work. For product decisions, see the decision register (D-01…D-09).
 
 ## Log
+
+### 2026-09-30: P1-06 completed on Workers static assets (ADR-0007)
+- **Platform change found:** `wrangler pages project create` answered "Delegating to the latest version of Cloudflare Pages, now part of Cloudflare Workers" and failed, with nothing created. Legacy Pages needs `--force`. Cloudflare's Pages docs say "Start new projects with Workers". The owner chose **Workers static assets** (an assets-only Worker), recorded in [ADR-0007](decisions/0007-workers-static-assets.md).
+- **Changed:** `wrangler.jsonc` is now an assets-only Worker (`./out`, `404-page`, `env.staging` → `company-map-staging`). The scripts are `preview` = `wrangler dev`, `deploy:staging` = `wrangler deploy --env staging`. Playwright serves through `wrangler dev`. The deploy workflow uses `wrangler deploy --env staging`, and its token needs Workers Scripts: Edit. The basemap ADR is renumbered to 0008. A new decision **D-10** is in the register.
+- **Measured (probe build, removed afterwards):** a prerendered page is **5 files** plus 3–4 directories, so a company with separate company and jobs pages is 10 files. The corrected 2-city estimate is about 17,650 files with separate jobs pages, or about 9,650 with jobs on the company page. ADR-0006's "~8,200" is corrected in ADR-0007. Wrangler's "Read N files" includes directories; the upload counts files only.
+- **Staging deploy (owner approved):** https://company-map-staging.company-map.workers.dev, version `408ad6a9-a8d2-486a-acf9-58f2620796b2`. 39 files; Worker upload 0.31 KiB (no script).
+- **Verified in this session:**
+  - Live staging: `/` 200, `/dev/tokens` 200, `/robots.txt` = `Disallow: /`, `/sitemap.xml` 200, unknown path **404**, and `nosniff`, `DENY`, and referrer-policy headers present.
+  - `PLAYWRIGHT_BASE_URL=<staging> npx playwright test`: **19 passed, 1 skipped**. `npm run test:e2e` against local `wrangler dev`: 19 passed, 1 skipped.
+  - Lint, typecheck, and 44 unit tests pass. The production build is 33 files with no `/dev` output. All three workflow files parse.
+- **Not verified:** the Deploy staging workflow on GitHub (it needs the `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` secrets). Production isn't deployed (it needs explicit authorization later).
+
+### 2026-09-30: D-09 resolved (ADR-0006) and P1-06 started
+- **Decision:** the owner rejected paid plans and proposed Cloudflare Pages + Next.js static export for staging and production, with the backend moved to Supabase functions. They also chose **static per-city datasets** for the explorer and **direct Apply links + a click beacon**. Recorded in [ADR-0006](decisions/0006-free-tier-static-hosting.md), which supersedes the ADR-0003 recommendation and ADR-0001's hosting/Route Handler items. Free-tier limits were re-checked on the providers' pages today (the table is in ADR-0006).
+- **Docs revised:** CLAUDE.md (a new "Free tiers only" section, the filter convention, security, commands), plan.md (Phase 1 gate; P1-03 local-only Supabase; new P1-06; P4-01, P5-01, P5-04, P6-01…03, P7-01/02, P8-04; new P8-05; D-09 resolved; the basemap ADR renumbered to 0007), architecture.md (rewritten), security.md, data-model.md (`city_build_snapshot`, `link_click_daily`), data-pipeline.md, testing.md, map-spec.md §3, and the ADR index. The map specification is otherwise unchanged.
+- **P1-06 code (in `code/`):**
+  - `output: "export"`. Removed `@opennextjs/cloudflare`, the `esbuild` pin, `open-next.config.ts`, and the Worker config. `wrangler.jsonc` is now a Pages config (`pages_build_output_dir: ./out`).
+  - `/dev` pages use the `.dev.tsx` extension, registered only under `next dev` or `DEV_ROUTES=on`, so production output contains no `/dev` files at all. (A `notFound()` gate would have produced a 200 "soft 404" file mentioning "Design tokens".)
+  - `app/robots.ts` and `app/sitemap.ts`; `SITE_ENV=staging` gives `Disallow: /` and `noindex, nofollow`. `public/_headers` adds security headers.
+  - `scripts/check-static-limits.mts` runs as `postbuild`: file guard 18,000 of 20,000, 25 MiB per file, redirects 2,000 + 100, 100 header rules, and a secret-pattern scan of `out/`.
+  - Playwright serves `out/` with `wrangler pages dev`. A new `tests/e2e/static-hosting.spec.ts` covers the real 404 status, headers, immutable assets, and robots/sitemap.
+  - `.github/workflows/deploy-staging.yml` (manual + `repository_dispatch: rebuild`) builds for staging, deploys `--branch staging`, and smoke-tests if `STAGING_URL` is set.
+  - `prebuild`/`pretypecheck` clear `.next/dev`: stale dev-server route types would otherwise break the production type check, because dev and production have different route sets.
+- **Verified in this session (from `code/`):**
+  - Lint: pass. Typecheck: pass. `npm test`: **44 passed** (3 files).
+  - `npm run build` (production): pass. 33 files; largest 223.8 KiB; 0 redirects; 2 header rules; no `/dev` output; the text "Design tokens" is absent from `out/`.
+  - Staging build (`SITE_ENV=staging DEV_ROUTES=on`): 39 files. `/dev/tokens` is present, `robots.txt` is `Disallow: /`, and pages carry `<meta name="robots" content="noindex, nofollow">`.
+  - Build time: about 47 s on this laptop, skeleton only.
+  - `npm run test:e2e` against `wrangler pages dev out`: **19 passed, 1 skipped** (keyboard focus runs on desktop only).
+  - Both workflow YAML files parse.
+- **Not done yet (at the time of this entry):** the staging deploy and the workflow secrets. See the P1-06 completion entry above; Pages was replaced by Workers static assets (ADR-0007).
 
 ### 2026-09-30: P1-02 Workers deployment feasibility (Completed)
 - **Added in `code/`:** `@opennextjs/cloudflare` 1.20.7, `wrangler` 4.144.0 (dev), `wrangler.jsonc` (Worker `company-map-preview`, compat date 2026-09-26, `nodejs_compat`, Workers Logs on, `DEV_ROUTES=on` as a var on this Worker only), `open-next.config.ts` (`staticAssetsIncrementalCache`, no R2), `public/_headers` (immutable `/_next/static`), and the scripts `preview`, `deploy:preview`, and `cf-typegen`. `next.config.ts` calls `initOpenNextCloudflareForDev()`. `.open-next/` and `.wrangler/` are ignored by git, ESLint, and tsc. `playwright.config.ts` accepts `PLAYWRIGHT_BASE_URL`.

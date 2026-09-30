@@ -71,12 +71,14 @@ One search input matches: **job title** (`job.title_norm`, trigram + role family
 - [Proposal] `company_type_tag (type, company_id)` and `company (startup_stage) WHERE startup_stage IS NOT NULL`.
 
 ## Shared filter function
-`company_filter(city_slug, filters jsonb) RETURNS SETOF uuid` is the **only** place filter semantics live. `city_points`, `search_companies`, and `company_facets` all call it, which guarantees that Map, Grid, and List stay consistent. The functions are `STABLE` and `SECURITY INVOKER`, so RLS still applies.
+`company_filter(city_slug, filters jsonb) RETURNS SETOF uuid` is the **reference definition** of filter semantics. The functions are `STABLE` and `SECURITY INVOKER`, so RLS still applies.
+
+Since ADR-0006 the explorer runs in the browser over a static dataset. `city_build_snapshot(city_slug)` (anon, published rows only) returns everything the build needs in one call: company summaries, offices, types, stages, job titles, founders, `last_checked_at`, and slug redirects. `lib/filters/` holds the **single TypeScript mirror** of `company_filter`, used by Map, Grid, List, and all counts. A CI parity test runs both over the filter matrix and requires identical company-ID sets. Aggregated outbound clicks go to `link_click_daily(day, kind, target_id, count)`, incremented only by the `click` Edge Function, with no visitor data.
 
 ## Authorization rules
 | Role | company / office / founder | job | submission | admin tables |
 | --- | --- | --- | --- | --- |
-| `anon` | SELECT where `status='published'` | SELECT where `status IN ('active','suspect')` and the company is published | none directly (INSERT only through the Route Handler after Turnstile) | none |
+| `anon` | SELECT where `status='published'` | SELECT where `status IN ('active','suspect')` and the company is published | none directly (INSERT only through the `submit-feedback` Edge Function after Turnstile) | none |
 | `authenticated`, not in `admin_user` | same as anon | same as anon | none | none |
 | admin `editor` | full CRUD, cannot delete published records | CRUD | read | none |
 | admin `reviewer` | editor + publish | + publish | resolve | read audit_log |

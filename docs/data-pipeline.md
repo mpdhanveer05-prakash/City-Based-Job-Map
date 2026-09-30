@@ -32,7 +32,7 @@ Fetch (identifying user agent, respects `robots.txt`, ≤ 1 request/s per host) 
 | Office location | every 90 days and on address change |
 | Visitor report | immediate (Edge Function) |
 
-The UI shows "Jobs checked N ago" from the oldest `last_checked_at` on the page, or "Not yet verified". Dates are never invented.
+The UI shows "Jobs checked N ago" from the oldest `last_checked_at` on the page, or "Not yet verified". The page embeds the absolute timestamp and the browser computes "N ago", so it stays correct between builds. Dates are never invented.
 
 ## Missed-run detection [Proposal]
 - Every scheduled job writes a heartbeat row (`job_run(name, started_at, finished_at, status)`).
@@ -43,3 +43,4 @@ The UI shows "Jobs checked N ago" from the oldest `last_checked_at` on the page,
 ## Where it runs
 - Python scripts in `scripts/`, run by GitHub Actions `schedule` + `workflow_dispatch`. They use a least-privilege Postgres role from GitHub secrets.
 - Supabase Cron for SQL-only tasks. An Edge Function for report-triggered re-checks.
+- **After each successful run, the pipeline triggers the site build and deploy** (ADR-0006, P8-05). The static site shows data as of the last build, plus a nightly rebuild.

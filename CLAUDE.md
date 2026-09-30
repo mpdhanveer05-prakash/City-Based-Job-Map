@@ -30,7 +30,7 @@ This is a map-first company discovery portal. Visitors find companies by where t
 - Cities: **Bengaluru (`/bangalore`) and Chennai (`/chennai`)**. The architecture plan proposed launching Bengaluru alone and adding Chennai in R2. That conflict is recorded in ADR-0002 and is still open for the launch-date question.
 - **No public login.** Supabase Auth is used only by allowlisted administrators.
 
-**User journey:** city selection → company explorer → company details → company jobs → external application (the employer's site, through the `/go/job/{id}` redirect).
+**User journey:** city selection → company explorer → company details → company jobs → external application (a direct link to the employer's site; a beacon counts the click, [ADR-0006](docs/decisions/0006-free-tier-static-hosting.md)).
 
 **Explorer**
 - A full-screen map with an overlay toolbar that holds search, filters, and the Map/Grid/List switch.
@@ -53,9 +53,16 @@ Map quality is a release requirement. Follow [docs/map-spec.md](docs/map-spec.md
 
 ## Approved stack
 
-Next.js App Router · React · TypeScript · Tailwind CSS · shadcn/ui · MapLibre GL JS · Supercluster (the only company-point clustering engine; MapLibre's built-in clustering stays off) · Web Worker + Comlink · custom WebGL layer · Geoapify basemap (Protomaps PMTiles on R2 later) · TanStack Query · URL filter state · TanStack Virtual · Dexie.js (later) · Route Handlers + selected Supabase Edge Functions · Supabase Postgres + PostGIS + `pg_trgm` + full-text search · Supabase CLI migrations · Supabase Auth (admins only) · Supabase Storage · Python in GitHub Actions · Supabase Cron · Cloudflare Turnstile (verified on the server) · Cloudflare Workers via `@opennextjs/cloudflare` · Vitest · Playwright · axe-core · GitHub Actions CI.
+Next.js App Router · React · TypeScript · Tailwind CSS · shadcn/ui · MapLibre GL JS · Supercluster (the only company-point clustering engine; MapLibre's built-in clustering stays off) · Web Worker + Comlink · custom WebGL layer · Geoapify basemap (Protomaps PMTiles on R2 later) · TanStack Query · URL filter state · TanStack Virtual · Dexie.js (later) · Supabase Postgres functions (RPC) + Edge Functions for everything server-side · Supabase Postgres + PostGIS + `pg_trgm` + full-text search · Supabase CLI migrations · Supabase Auth (admins only) · Supabase Storage · Python in GitHub Actions · Supabase Cron · Cloudflare Turnstile (verified in an Edge Function) · Next.js static export (`output: "export"`) served as **Cloudflare Workers static assets** (an assets-only Worker, Free; Cloudflare's successor to Pages, [ADR-0007](docs/decisions/0007-workers-static-assets.md)), deployed with `wrangler deploy` · Vitest · Playwright · axe-core · GitHub Actions CI.
 
-**Don't add** FastAPI, Celery, Redis, AWS, Kubernetes, or any other service unless an ADR documents a concrete requirement for it. Don't assume Workers Paid, an R2 cache, or Supabase Pro is mandatory. See [ADR-0003](docs/decisions/0003-hosting-plan-tiers.md) for the evidence.
+**Don't add** FastAPI, Celery, Redis, AWS, Kubernetes, or any other service unless an ADR documents a concrete requirement for it.
+
+### Free tiers only ([ADR-0006](docs/decisions/0006-free-tier-static-hosting.md), owner decision, 30 Sep 2026)
+- **No paid plans.** Anything that would need one (Workers Paid, Supabase Pro, a paid add-on) must be raised with the owner first.
+- **Nothing renders on a server at request time.** Every public page is prerendered at build. The Next.js code must not use request-reading Route Handlers, Server Actions, `proxy`, cookies, ISR, `next.config` redirects/rewrites/headers, or default-loader image optimisation (all unsupported by static export). Redirects go in `_redirects`, headers in `public/_headers`.
+- **The Next.js app holds no secrets.** Server-side work (Turnstile, feedback, click counting, rebuild requests) runs in Supabase Edge Functions. Reads and admin writes go through RLS-protected tables and RPCs.
+- Keep the build within the Workers static assets Free limits: 20,000 files, 25 MiB per file, 2,000 static + 100 dynamic redirects, 100 header rules. `postbuild` enforces this. Each prerendered page costs **5 files**, so budget routes with that in mind (ADR-0007).
+- Supabase Free allows 2 active projects: **staging** and **prod**. Development uses the local stack only.
 
 ## Repository structure
 
@@ -63,11 +70,11 @@ All application code lives in **`code/`** (created in P1-01, 30 Sep 2026). The p
 
 ```
 code/
-  app/               Next.js routes: (public)/, admin/, api/v1/, go/, dev/ (design + prototype pages)
+  app/               Next.js routes, all prerendered: (public)/, admin/ (client-rendered), dev/ (design + prototype pages)
   components/        ui/ (shadcn), explorer/, company/, admin/
   lib/               design/ (tokens, contrast), filters/ (URL state + schema), api/, supabase/ (server|browser clients)
   map/               layer/ (WebGL), worker/ (Supercluster + Comlink), animation/, hit-test/, atlas/
-  supabase/          migrations/, seed/, functions/, tests/ (SQL/RLS tests), created in P1-03
+  supabase/          migrations/, seed/, functions/ (Edge Functions: submit-feedback, click, request-rebuild), tests/ (SQL/RLS tests), created in P1-03
   scripts/           Python pipeline (imports, feed sync, link checks)
   tests/             unit/ (Vitest), e2e/ (Playwright), a11y/ (axe)
 docs/                specs, ADRs, progress
@@ -77,9 +84,9 @@ docs/                specs, ADRs, progress
 
 ## Conventions
 
-- TypeScript `strict`. No `any` unless there's a comment justifying it. Validate every external input with Zod at the Route Handler boundary.
+- TypeScript `strict`. No `any` unless there's a comment justifying it. Validate every external input with Zod inside the Edge Function that receives it. Postgres functions check their own arguments.
 - Filter state lives in the URL, parsed by one schema in `lib/filters/`. Components never read `searchParams` directly.
-- Search, filter, and count logic lives in Postgres functions. The map points, the Grid/List results, and the facets all call the same SQL filter.
+- Filter semantics are defined in Postgres (`company_filter`) and mirrored **once** in TypeScript (`lib/filters/`). The build uses SQL to write each city's static dataset. The browser runs the TypeScript filter over that dataset for Map, Grid, List, and every count. A CI parity test proves both give identical company IDs over the filter matrix. Never filter anywhere else.
 - Schema changes go only through new files in `supabase/migrations/`. Never edit an applied migration.
 - Use kebab-case file names and PascalCase component names. Keep map rendering code free of React.
 - Keep commits small and scoped to one plan task ID (for example `P2-03: …`).
@@ -94,18 +101,19 @@ Run these from `code/`. Requires Node.js 24 or later. The first four rows were *
 | Dev server | `npm run dev` (http://localhost:3000; `/dev/tokens` shows the palette) | Verified |
 | Lint / types / build | `npm run lint`, `npm run typecheck`, `npm run build` | Verified |
 | Unit tests | `npm test` (Vitest) | Verified |
-| E2E + a11y | `npm run test:e2e` (Playwright + axe; builds and serves on port 3100 with `DEV_ROUTES=on`) | Verified |
-| Workers preview (local) | `npm run preview` (OpenNext build + `wrangler dev` on :8787). Test it with `PLAYWRIGHT_BASE_URL=http://localhost:8787 npx playwright test` | Verified (P1-02) |
-| Preview deploy | `npm run deploy:preview` (Worker `company-map-preview`, https://company-map-preview.company-map.workers.dev). **Only with the owner's approval for that deploy**; needs `npx wrangler login` | Verified (P1-02) |
+| Build | `npm run build` writes the static export to `out/`. `postbuild` fails it on a static-assets Free limit or a secret-looking string. For staging, set `SITE_ENV=staging DEV_ROUTES=on` | Verified (P1-06) |
+| E2E + a11y | `npm run test:e2e` (Playwright + axe; builds with `DEV_ROUTES=on`, serves `out/` via `wrangler dev` on :3100). For a running site, set `PLAYWRIGHT_BASE_URL` | Verified (P1-06) |
+| Local preview | `npm run preview` (serves the existing `out/` as the assets-only Worker on :8788, with `_headers`/`_redirects`/404) | Verified (P1-06) |
+| Staging deploy | Build with `SITE_ENV=staging DEV_ROUTES=on NEXT_PUBLIC_SITE_URL=https://company-map-staging.company-map.workers.dev`, then `npm run deploy:staging` (`wrangler deploy --env staging`), or use the **Deploy staging** workflow. **Only with the owner's approval** | Verified (P1-06) |
 | Local DB | `supabase start`, `supabase db reset`, `supabase test db` | Planned, added in P1-03 |
 
 ## Security (see [docs/security.md](docs/security.md))
 
 - **Never commit credentials.** Only `.env.example`, containing placeholders, goes in git.
-- **Never expose the Supabase service-role/secret key to the browser.** Nothing prefixed `NEXT_PUBLIC_` may be privileged. Server-only modules import `server-only`.
+- **Never expose the Supabase service-role/secret key to the browser.** Nothing prefixed `NEXT_PUBLIC_` may be privileged. The static site has no server, so privileged keys exist only as Supabase function secrets and GitHub secrets. The `/admin` JavaScript is public; RLS is the only access control.
 - Enable RLS on every table in `public`, and test it with the anon and authenticated roles.
-- Verify Turnstile on the server before any feedback insert.
-- Apply URLs must be `https` and must pass the domain check. Open them with `rel="noopener noreferrer"`.
+- Verify Turnstile in the `submit-feedback` Edge Function before any feedback insert.
+- Apply and website URLs must be `https` and pass the domain check **at build time** (a failing URL fails the build). Open them with `rel="noopener noreferrer"`.
 
 ## Testing, accessibility, and done
 
@@ -116,6 +124,6 @@ Run these from `code/`. Requires Node.js 24 or later. The first four rows were *
 ## Hard rules
 
 - Don't change the approved scope, stack, or cities silently. Propose the change in an ADR and ask.
-- Don't deploy anything publicly (a production Worker, a public DNS record, a public Supabase project) without explicit authorization. Preview deploys only when the task says so.
+- Don't deploy anything publicly (the production `company-map` Worker, a public DNS record, a public Supabase project) without explicit authorization. Staging/preview deploys only when the task says so and the owner has approved it.
 - Don't invent data: no fake verification dates, logos, founders, or jobs presented as real. Synthetic data must be labelled synthetic.
 - Treat target dates as proposals, not commitments.

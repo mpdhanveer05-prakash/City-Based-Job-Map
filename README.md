@@ -13,7 +13,7 @@ A map-first company discovery portal for Bengaluru and Chennai. Visitors browse 
 - [docs/](docs/): architecture, map spec, data model, testing, security, data pipeline, ADRs, progress
 
 ## Stack
-Next.js (App Router) · TypeScript · Tailwind + shadcn/ui · MapLibre + Supercluster (Web Worker, Comlink) · Supabase (Postgres/PostGIS, Auth, Storage, Cron, Edge Functions) · Cloudflare Workers via OpenNext · Python on GitHub Actions · Vitest, Playwright, axe-core.
+Next.js (App Router) · TypeScript · Tailwind + shadcn/ui · MapLibre + Supercluster (Web Worker, Comlink) · Supabase (Postgres/PostGIS, Auth, Storage, Cron, Edge Functions) · Next.js static export on Cloudflare Workers static assets (free tiers only, [ADR-0006](docs/decisions/0006-free-tier-static-hosting.md), [ADR-0007](docs/decisions/0007-workers-static-assets.md)) · Python on GitHub Actions · Vitest, Playwright, axe-core.
 
 ## Setup
 ```bash

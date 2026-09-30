@@ -7,7 +7,8 @@
 | --- | --- | --- |
 | Unit | Vitest | URL-state schema, filter reducer (clearing incompatible filters), worker lineage, animator interpolation, atlas packing, hit-test tie-breaks, design-token contrast pairs ([design-system.md §1](design-system.md#contrast-wcag-22-computed-30-sep-2026)) |
 | Database | pgTAP via `supabase test db` | RLS for every role and table, the city-boundary trigger, shared-filter consistency across points, list, and facets |
-| Route Handlers | Vitest against local Supabase | Zod validation, cache headers, Turnstile rejection, `/go` URL safety |
+| Edge Functions | Deno tests against local Supabase (`supabase functions serve`) | Zod validation, Turnstile rejection, rate limit, `click` counter, `request-rebuild` role check |
+| Build output | `scripts/check-static-limits.mts` (runs as `postbuild`) + unit tests | Workers static assets Free limits (≤ 18,000 files as the guard, < 25 MiB per file, ≤ 2,000 static / 100 dynamic redirects, ≤ 100 header rules); outbound URL validation; no secret-looking strings in `out/` |
 | E2E journeys | Playwright | AC01–AC10 (IDs from the BRD, whose text isn't in the repo), for both cities |
 | Accessibility | @axe-core/playwright + manual pass | Zero serious or critical axe violations (the `color-contrast` rule stays enabled); keyboard-only journey; screen-reader smoke test (NVDA + TalkBack) |
 | Map gate | Playwright + real devices | [map-spec.md §10](map-spec.md#10-validation-gate-reproducible) |
@@ -15,6 +16,7 @@
 
 ## Required consistency tests (confirmed brief)
 - Map, Grid, and List return identical company ID sets and counts for a filter matrix that includes overlapping types (Startup+Product), Startup+stage, and search by each of the four kinds.
+- **Filter parity (ADR-0006):** the TypeScript filter in `lib/filters/` and SQL `company_filter` return identical company-ID sets for the same matrix, against local Supabase.
 - Deselecting Startup clears the stages. A URL with a stage but no Startup is normalised.
 - A job row's DOM contains only the title and Apply.
 

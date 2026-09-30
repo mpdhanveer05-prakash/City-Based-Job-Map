@@ -1,2 +1,11 @@
+# Static asset headers (ADR-0006/0007). Up to 100 rules; CI checks the count.
+# A full Content-Security-Policy is added in P9-02 (the export's inline scripts need hashes).
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
 /_next/static/*
-  Cache-Control: public,max-age=31536000,immutable
+  Cache-Control: public, max-age=31536000, immutable

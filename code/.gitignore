@@ -47,7 +47,6 @@ next-env.d.ts
 /blob-report/
 /playwright/.cache/
 
-# cloudflare / opennext
-/.open-next/
+# cloudflare (wrangler pages dev state)
 /.wrangler/
 .dev.vars*
