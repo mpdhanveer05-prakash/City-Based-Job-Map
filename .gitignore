@@ -1,0 +1,40 @@
+# deps / build
+node_modules/
+.next/
+.open-next/
+out/
+build/
+dist/
+.wrangler/
+*.tsbuildinfo
+next-env.d.ts
+
+# env & secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+
+# supabase local
+supabase/.branches/
+supabase/.temp/
+
+# tests
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
