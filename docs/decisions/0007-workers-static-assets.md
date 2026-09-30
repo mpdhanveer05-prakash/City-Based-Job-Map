@@ -36,7 +36,7 @@ Creating the Pages project for ADR-0006 failed. Wrangler 4.144.0 answered `wrang
 | Separate `/companies/{slug}` + `/companies/{slug}/jobs` | about 16,000 + ~1,600 logos + ~40 ≈ **17,650**. Fits under 20,000 but trips the 18,000 guard with little growth |
 | Jobs listed on the company page (`View jobs` jumps to `#jobs`) | about 8,000 + ~1,600 + ~40 ≈ **9,650** |
 
-This is open decision **D-10**, due before P6-01.
+**D-10, decided 30 Sep 2026 by the owner:** use **Option A** (separate jobs pages) now. **Option B** is kept ready as plan task P6-04. `postbuild` warns above **15,000** files (the switch signal) and fails above 18,000.
 
 **Staging validation (30 Sep 2026):**
 - Deployed version `408ad6a9-a8d2-486a-acf9-58f2620796b2`: 39 files, largest 223.8 KiB, Worker upload 0.31 KiB.

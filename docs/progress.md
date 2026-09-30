@@ -3,11 +3,17 @@
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
 ## Current state
-- **Current task:** none in progress. Next: P1-03 (Docker Desktop running; local Supabase only, per ADR-0006) and P1-05 (Geoapify key). P2-01 needs no inputs. Open for the owner: **D-10** (company jobs layout), and the Cloudflare token secrets for the Deploy staging workflow.
+- **Current task:** P1-03 Supabase local setup (In progress). Then P1-05 (the Geoapify key is in `code/.env.local`) and P2-01.
 - **Next action:** P1-02 needs a Cloudflare account and authorization for a preview deploy. P1-03 needs the Supabase CLI and Docker, plus a Supabase `dev` project. See the P1-01 entry.
 - **Blockers:** none for code work. For product decisions, see the decision register (D-01…D-09).
 
 ## Log
+
+### 2026-09-30: D-10 decided (Option A, with Option B on standby)
+- **Decision (owner):** separate `/companies/{slug}/jobs` pages now (about 10 files per company). Option B (jobs as a `#jobs` section of the company page, about 5 files per company) is kept ready as plan task **P6-04**, used only when triggered.
+- **Early warning:** `scripts/check-static-limits.mts` now warns (without failing) above **15,000** files, pointing to P6-04. It still fails above 18,000. `checkOutput` accepts custom limits for testing.
+- **Verified:** `npm test`: **45 passed** (a new warn-vs-fail test). Lint and `tsc --noEmit` clean.
+- **Deploy staging workflow verified (run by the owner, 2026-09-30 18:04 UTC, commit `687cd3e`):** with the repository secrets `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit) and `CLOUDFLARE_ACCOUNT_ID` added, the workflow ran `npm ci` (0 vulnerabilities), built (39 files), deployed `company-map-staging` version `ebbd8ae8-3e28-4cdc-9dee-4cccaf88fb8d`, and the post-deploy smoke test passed **10/10** (desktop project) against the live URL. The owner also supplied a Geoapify key (stored only in the git-ignored `code/.env.local`; a style request returned HTTP 200) and started Docker Desktop (server 29.4.0).
 
 ### 2026-09-30: P1-06 completed on Workers static assets (ADR-0007)
 - **Platform change found:** `wrangler pages project create` answered "Delegating to the latest version of Cloudflare Pages, now part of Cloudflare Workers" and failed, with nothing created. Legacy Pages needs `--force`. Cloudflare's Pages docs say "Start new projects with Workers". The owner chose **Workers static assets** (an assets-only Worker), recorded in [ADR-0007](decisions/0007-workers-static-assets.md).

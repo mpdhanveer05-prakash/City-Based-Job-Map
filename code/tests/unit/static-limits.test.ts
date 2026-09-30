@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  LIMITS,
   checkOutput,
   countHeaderRules,
   countRedirects,
@@ -54,6 +55,15 @@ describe("checkOutput", () => {
   it("flags secret-looking strings in the output", () => {
     const report = checkOutput(makeOut({ "app.js": 'const k = "service_role";' }));
     expect(report.problems.join()).toMatch(/secret pattern/);
+  });
+
+  it("warns (without failing) past the D-10 level, and fails past the guard", () => {
+    const out = makeOut({ "a.html": "a", "b.html": "b", "c.html": "c" });
+    const warn = checkOutput(out, { ...LIMITS, fileWarn: 2, fileGuard: 5 });
+    expect(warn.problems).toEqual([]);
+    expect(warn.warnings.join()).toMatch(/Option B/);
+    const fail = checkOutput(out, { ...LIMITS, fileWarn: 1, fileGuard: 2 });
+    expect(fail.problems.join()).toMatch(/3 files \(guard 2/);
   });
 
   it("flags too many static redirects", () => {

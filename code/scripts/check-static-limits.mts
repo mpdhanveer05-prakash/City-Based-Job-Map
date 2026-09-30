@@ -9,12 +9,17 @@ import { pathToFileURL } from "node:url";
 // .../static-assets/redirects, .../static-assets/headers).
 export const LIMITS = {
   files: 20_000,
+  // D-10: jobs have their own page (Option A, 10 files per company). Past this
+  // count, plan the switch to Option B (jobs on the company page, 5 files each).
+  fileWarn: 15_000,
   fileGuard: 18_000, // fail early, leaving headroom for growth
   fileBytes: 25 * 1024 * 1024,
   staticRedirects: 2_000,
   dynamicRedirects: 100,
   headerRules: 100,
 } as const;
+
+export type Limits = { readonly [K in keyof typeof LIMITS]: number };
 
 const SECRET_PATTERNS: readonly RegExp[] = [
   /service_role/i,
@@ -59,17 +64,19 @@ export type Report = {
   redirects: RedirectCounts;
   headerRules: number;
   problems: string[];
+  warnings: string[];
 };
 
-export function checkOutput(outDir: string): Report {
+export function checkOutput(outDir: string, limits: Limits = LIMITS): Report {
   const files = walk(outDir);
   const problems: string[] = [];
+  const warnings: string[] = [];
   let largest = { file: "", bytes: 0 };
 
   for (const file of files) {
     const { size } = statSync(file);
     if (size > largest.bytes) largest = { file: path.relative(outDir, file), bytes: size };
-    if (size >= LIMITS.fileBytes) {
+    if (size >= limits.fileBytes) {
       problems.push(`${path.relative(outDir, file)} is ${size} bytes (limit 25 MiB)`);
     }
     if (/\.(html|js|txt|json|xml|css|map)$/.test(file)) {
@@ -81,8 +88,13 @@ export function checkOutput(outDir: string): Report {
       }
     }
   }
-  if (files.length > LIMITS.fileGuard) {
-    problems.push(`${files.length} files (guard ${LIMITS.fileGuard}, limit ${LIMITS.files})`);
+  if (files.length > limits.fileGuard) {
+    problems.push(`${files.length} files (guard ${limits.fileGuard}, limit ${limits.files})`);
+  } else if (files.length > limits.fileWarn) {
+    warnings.push(
+      `${files.length} files is past the D-10 warning level (${limits.fileWarn}). ` +
+        "Plan Option B (jobs on the company page, P6-04) before adding more companies or cities.",
+    );
   }
 
   const read = (name: string) => {
@@ -93,18 +105,18 @@ export function checkOutput(outDir: string): Report {
     }
   };
   const redirects = countRedirects(read("_redirects"));
-  if (redirects.static > LIMITS.staticRedirects) {
-    problems.push(`${redirects.static} static redirects (limit ${LIMITS.staticRedirects})`);
+  if (redirects.static > limits.staticRedirects) {
+    problems.push(`${redirects.static} static redirects (limit ${limits.staticRedirects})`);
   }
-  if (redirects.dynamic > LIMITS.dynamicRedirects) {
-    problems.push(`${redirects.dynamic} dynamic redirects (limit ${LIMITS.dynamicRedirects})`);
+  if (redirects.dynamic > limits.dynamicRedirects) {
+    problems.push(`${redirects.dynamic} dynamic redirects (limit ${limits.dynamicRedirects})`);
   }
   const headerRules = countHeaderRules(read("_headers"));
-  if (headerRules > LIMITS.headerRules) {
-    problems.push(`${headerRules} header rules (limit ${LIMITS.headerRules})`);
+  if (headerRules > limits.headerRules) {
+    problems.push(`${headerRules} header rules (limit ${limits.headerRules})`);
   }
 
-  return { files: files.length, largest, redirects, headerRules, problems };
+  return { files: files.length, largest, redirects, headerRules, problems, warnings };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -115,6 +127,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       `(${(report.largest.bytes / 1024).toFixed(1)} KiB), redirects ${report.redirects.static} static + ` +
       `${report.redirects.dynamic} dynamic, ${report.headerRules} header rules`,
   );
+  for (const warning of report.warnings) console.warn(`Warning: ${warning}`);
   if (report.problems.length > 0) {
     console.error(`Static output check failed:\n- ${report.problems.join("\n- ")}`);
     process.exit(1);

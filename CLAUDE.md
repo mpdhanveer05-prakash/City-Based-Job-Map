@@ -61,7 +61,7 @@ Next.js App Router · React · TypeScript · Tailwind CSS · shadcn/ui · MapLib
 - **No paid plans.** Anything that would need one (Workers Paid, Supabase Pro, a paid add-on) must be raised with the owner first.
 - **Nothing renders on a server at request time.** Every public page is prerendered at build. The Next.js code must not use request-reading Route Handlers, Server Actions, `proxy`, cookies, ISR, `next.config` redirects/rewrites/headers, or default-loader image optimisation (all unsupported by static export). Redirects go in `_redirects`, headers in `public/_headers`.
 - **The Next.js app holds no secrets.** Server-side work (Turnstile, feedback, click counting, rebuild requests) runs in Supabase Edge Functions. Reads and admin writes go through RLS-protected tables and RPCs.
-- Keep the build within the Workers static assets Free limits: 20,000 files, 25 MiB per file, 2,000 static + 100 dynamic redirects, 100 header rules. `postbuild` enforces this. Each prerendered page costs **5 files**, so budget routes with that in mind (ADR-0007).
+- Keep the build within the Workers static assets Free limits: 20,000 files, 25 MiB per file, 2,000 static + 100 dynamic redirects, 100 header rules. `postbuild` enforces this. Each prerendered page costs **5 files**, so budget routes with that in mind (ADR-0007). Company jobs have their own page (D-10 Option A). If the build warns above 15,000 files, switch to Option B (P6-04).
 - Supabase Free allows 2 active projects: **staging** and **prod**. Development uses the local stack only.
 
 ## Repository structure
@@ -104,7 +104,7 @@ Run these from `code/`. Requires Node.js 24 or later. The first four rows were *
 | Build | `npm run build` writes the static export to `out/`. `postbuild` fails it on a static-assets Free limit or a secret-looking string. For staging, set `SITE_ENV=staging DEV_ROUTES=on` | Verified (P1-06) |
 | E2E + a11y | `npm run test:e2e` (Playwright + axe; builds with `DEV_ROUTES=on`, serves `out/` via `wrangler dev` on :3100). For a running site, set `PLAYWRIGHT_BASE_URL` | Verified (P1-06) |
 | Local preview | `npm run preview` (serves the existing `out/` as the assets-only Worker on :8788, with `_headers`/`_redirects`/404) | Verified (P1-06) |
-| Staging deploy | Build with `SITE_ENV=staging DEV_ROUTES=on NEXT_PUBLIC_SITE_URL=https://company-map-staging.company-map.workers.dev`, then `npm run deploy:staging` (`wrangler deploy --env staging`), or use the **Deploy staging** workflow. **Only with the owner's approval** | Verified (P1-06) |
+| Staging deploy | Build with `SITE_ENV=staging DEV_ROUTES=on NEXT_PUBLIC_SITE_URL=https://company-map-staging.company-map.workers.dev`, then `npm run deploy:staging` (`wrangler deploy --env staging`), or use the **Deploy staging** workflow (Actions → Deploy staging → Run workflow; secrets are set). **Only with the owner's approval** | Verified (P1-06; workflow verified 30 Sep 2026) |
 | Local DB | `supabase start`, `supabase db reset`, `supabase test db` | Planned, added in P1-03 |
 
 ## Security (see [docs/security.md](docs/security.md))
