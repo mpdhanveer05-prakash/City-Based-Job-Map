@@ -66,7 +66,7 @@ The architecture plan supplies these **target** dates. They are proposals, not c
 - **Files:** `.github/workflows/ci.yml`, `.github/dependabot.yml`
 - **Acceptance:** The workflow passes on a test PR. No secrets are needed for the PR job.
 - **Verification:** Link to the CI run.
-- **Status:** In progress. The workflow and Dependabot config are written and checked locally; the run on the test PR is still needed (see progress.md).
+- **Status:** Completed (30 Sep 2026). [CI run 36716151218](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/36716151218) passed on `main` (commit `bf62bdd`). It ran on the push to `main` rather than on a test PR: no PR was opened, the owner asked for a direct merge, and the push run executes the same jobs. The pull-request trigger itself gets exercised by the next PR.
 
 ### P1-05 Basemap feasibility
 - **Objective:** Confirm the Geoapify vector style loads in MapLibre with attribution, and estimate credit use.

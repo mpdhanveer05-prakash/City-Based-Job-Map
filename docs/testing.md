@@ -30,8 +30,8 @@ Lint, typecheck, Vitest, pgTAP (local Supabase in CI), dependency audit, secret 
 | `secret-scan` | gitleaks 8.30.1 (checksum-verified) over the full git history |
 
 - Actions are pinned to commit SHAs. Dependabot (`.github/dependabot.yml`) bumps them weekly, along with the npm dependencies in `code/`: minor and patch grouped into one PR, majors separate.
-- **Not yet in CI:** pgTAP (arrives with P1-03). GitHub's dependency-review action needs GitHub Advanced Security on a private repository, so `npm audit` stands in for it.
-- The repository is private, so runs use the account's Actions minutes (2,000 a month on GitHub Free). One run takes roughly 3 jobs × 2–5 minutes.
+- **Not yet in CI:** pgTAP (arrives with P1-03). `npm audit` covers dependencies.
+- The repository became public on 30 Sep 2026, so standard GitHub-hosted runners are free. The first run took 1.7 job-minutes in total (checks 0.6, e2e 1.0, secret scan 0.1). GitHub's dependency-review action is now available on the public repository and could be added in a later PR.
 
 ## Release checklist
 - [ ] All CI checks green on the release commit
