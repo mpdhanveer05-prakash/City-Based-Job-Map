@@ -1,0 +1,184 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/*
+ * Design tokens: the single source for every colour in the app, including the
+ * WebGL map layer (map/theme.ts reads these custom properties).
+ * Spec and contrast table: ../docs/design-system.md. Changing the palette means
+ * changing values here only; tests/unit/design-tokens.test.ts re-checks contrast.
+ */
+
+/* No dark mode at launch. Nothing sets a .dark class, so shadcn's dark: classes
+   never apply (Tailwind's default dark: would follow the OS setting instead). */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* brand (confirmed 30 Sep 2026) */
+  --milky: #fffdf1;
+  --mantis: #59c749;
+
+  /* derived */
+  --ink: #1f3a1a;
+  --mantis-deep: #2f7a24;
+  --mantis-wash: #e1f3d3;
+  --milky-shade: #f4f0da;
+  --moss: #5a6655;
+  --field: #7f8874;
+  --rule: #e2ddc6;
+  --danger: #b3261e;
+
+  /* map only: letter-fallback swatches and basemap overrides (design-system.md §2) */
+  --swatch-sand: #f2e2b3;
+  --swatch-sky: #d6e4f0;
+  --swatch-rose: #f0d5ce;
+  --swatch-lilac: #e2daee;
+  --swatch-stone: #e6e1d3;
+  --map-park: #ece9d6;
+  --map-water: #d6e4f0;
+  --map-road: #ffffff;
+
+  /* shadcn/ui roles */
+  --background: var(--milky);
+  --foreground: var(--ink);
+  --card: var(--milky);
+  --card-foreground: var(--ink);
+  --popover: var(--milky);
+  --popover-foreground: var(--ink);
+  --primary: var(--mantis);
+  --primary-foreground: var(--ink); /* never white: 2.17:1 */
+  --secondary: var(--milky-shade);
+  --secondary-foreground: var(--ink);
+  --muted: var(--milky-shade);
+  --muted-foreground: var(--moss);
+  --accent: var(--mantis-wash);
+  --accent-foreground: var(--ink);
+  --destructive: var(--danger);
+  --border: var(--rule);
+  --input: var(--field);
+  --ring: var(--ink);
+  --link: var(--mantis-deep);
+  --radius: 4px;
+
+  --sidebar: var(--milky-shade);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--mantis);
+  --sidebar-primary-foreground: var(--ink);
+  --sidebar-accent: var(--mantis-wash);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--rule);
+  --sidebar-ring: var(--ink);
+}
+
+/* Only the palette above exists: Tailwind's default hues are removed so a stray
+   `bg-red-500` produces nothing instead of an off-brand colour. */
+@theme {
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000; /* scrims only */
+
+  /* Type scale (design-system.md §3) */
+  --text-*: initial;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.625rem;
+  --text-xl: 1.3125rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 3.25rem;
+  --text-7xl: 4.5rem;
+  --text-7xl--line-height: 4.5rem;
+}
+
+@theme inline {
+  --color-milky: var(--milky);
+  --color-mantis: var(--mantis);
+  --color-ink: var(--ink);
+  --color-mantis-deep: var(--mantis-deep);
+  --color-mantis-wash: var(--mantis-wash);
+  --color-milky-shade: var(--milky-shade);
+  --color-moss: var(--moss);
+  --color-field: var(--field);
+  --color-rule: var(--rule);
+  --color-danger: var(--danger);
+  --color-link: var(--link);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-overpass), system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+
+  /* Round means a company (rounded-full); every other shape is 4 px. */
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
+  --radius-3xl: var(--radius);
+  --radius-4xl: var(--radius);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  a {
+    color: var(--link);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

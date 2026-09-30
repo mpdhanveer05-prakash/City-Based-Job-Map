@@ -13,7 +13,7 @@
 - The pipeline uses a dedicated Postgres role with only the grants it needs, never the service role inside browser code.
 
 ## Secrets
-- Never commit credentials. `.env*` is git-ignored except for `.env.example`.
+- Never commit credentials. `.env*` is git-ignored except for `code/.env.example`.
 - Browser-safe values: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or its publishable-key equivalent), `NEXT_PUBLIC_GEOAPIFY_KEY` (restricted by referrer), and `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
 - Server-only values: `SUPABASE_SERVICE_ROLE_KEY`, `TURNSTILE_SECRET_KEY`, `PIPELINE_DATABASE_URL`, and Cloudflare API tokens. These live in Cloudflare Worker secrets and GitHub encrypted secrets. Modules that read them import `server-only`.
 - CI runs a secret scan (for example gitleaks; the tool choice is open).

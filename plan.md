@@ -40,13 +40,13 @@ The architecture plan supplies these **target** dates. They are proposals, not c
 - **Steps:** 1) Use `create-next-app` with the latest Next.js version that `@opennextjs/cloudflare` supports (check its docs on the day). 2) Add Tailwind and initialise shadcn/ui. 3) Add Vitest, Playwright, and @axe-core/playwright. 4) Add the scripts `dev`, `build`, `lint`, `typecheck`, `test`, `test:e2e`, `preview`. 5) Create the directory layout from CLAUDE.md. 6) Apply the Milky/Mantis tokens from [docs/design-system.md §8](docs/design-system.md#8-implementation) to the shadcn variables, remove the `.dark` block, and load Overpass through `next/font/google` (check its `tnum` support).
 - **Acceptance:** Every script runs locally. CLAUDE.md's Commands table is marked verified, with the date. The design-token contrast test passes, and the default shadcn button renders Mantis with Ink text.
 - **Verification:** Run `npm run lint && npm run typecheck && npm test && npm run build` and paste the output into progress.md.
-- **Status:** Not started
+- **Status:** Completed (30 Sep 2026). The app is in `code/`, as the owner asked. The `preview` script moves to P1-02, because it needs OpenNext and wrangler. See progress.md.
 
 ### P1-02 Workers deployment feasibility
 - **Objective:** Prove that the skeleton builds with OpenNext and runs on a Cloudflare Workers **preview** (not public production).
 - **Dependencies:** P1-01
 - **Files:** `wrangler.jsonc`, `open-next.config.ts`, `docs/decisions/0003-hosting-plan-tiers.md`
-- **Steps:** 1) Add `@opennextjs/cloudflare` and wrangler. 2) Build, and record the bundle size (uncompressed and gzip). 3) Run `wrangler dev`, then deploy to a preview URL or `workers.dev` (needs authorization). 4) Measure SSR CPU time for a representative page against the Free plan's 10 ms CPU limit. 5) Confirm that no Node Middleware is used (not supported by the adapter as of 30 Sep 2026). 6) Decide whether any ISR is needed. If it isn't, no incremental cache store is required.
+- **Steps:** 1) Add `@opennextjs/cloudflare` and wrangler in `code/`, plus the `preview` script carried over from P1-01. 2) Build, and record the bundle size (uncompressed and gzip). 3) Run `wrangler dev`, then deploy to a preview URL or `workers.dev` (needs authorization). 4) Measure SSR CPU time for a representative page against the Free plan's 10 ms CPU limit. 5) Confirm that no Node Middleware is used (not supported by the adapter as of 30 Sep 2026). 6) Decide whether any ISR is needed. If it isn't, no incremental cache store is required.
 - **Acceptance:** ADR-0003 is updated with measured numbers and a recommendation (Free vs Paid, R2 cache or none) and cites its sources.
 - **Verification:** A preview URL responds 200. Wrangler output is logged.
 - **Status:** Not started

@@ -93,7 +93,7 @@ The scale is the classic typographic scale (Bringhurst):
 | 12 / 16 | 400 | Map attribution and legal text only |
 
 - Everything is sentence case. No all-caps labels, no letter-spaced eyebrows above headings, and no single highlighted word in a headline.
-- Counts in lists and filters use tabular figures if Overpass provides `tnum` (P1-01 checks this). The cluster digit atlas uses fixed-width cells either way.
+- Overpass has a `tnum` feature, but its default digits are proportional (checked with fontTools in P1-01). Every count in lists, filters, and tables uses `tabular-nums`. The cluster digit atlas uses fixed-width cells.
 - Cluster numerals are rasterised from Overpass 800 into the digit atlas (map-spec §5).
 
 ## 4. Shape, space, and elevation [Proposal]
@@ -201,7 +201,7 @@ Product designer                    [ Apply ]
 
 ## 8. Implementation
 
-P1-01 puts the tokens in `app/globals.css` and maps them onto the shadcn/ui variable names. Tailwind reads them through `@theme inline`. [Proposal]
+The tokens are in `code/app/globals.css` (done in P1-01) and mapped onto the shadcn/ui variable names. Tailwind reads them through `@theme inline`. The block below is the core of that file.
 
 ```css
 :root {
@@ -241,8 +241,11 @@ P1-01 puts the tokens in `app/globals.css` and maps them onto the shadcn/ui vari
 }
 ```
 
+- Tailwind's default colour palette and type scale are reset in `@theme`, so `bg-red-500` or `text-3xl` produce nothing. Only the tokens and the §3 scale exist.
+- Links are always underlined: Mantis Deep against Ink body text is only 2.34:1, so colour alone can't mark a link.
 - The shadcn `.dark` block is removed. **There is no dark mode at launch** [Proposal]: Milky is the brand ground. A dark theme would need its own contrast table and an ADR.
-- `tests/unit/design-tokens.test.ts` parses `app/globals.css` and asserts every pair in the contrast table above, so a token change that breaks contrast fails CI.
+- `code/tests/unit/design-tokens.test.ts` parses `app/globals.css` and asserts every pair in the contrast table above (the list is in `code/lib/design/tokens.ts`), so a token change that breaks contrast fails CI.
+- `/dev/tokens` renders the palette, buttons, chips, marker previews, type scale, and live contrast table for review. It runs under `npm run dev`, and in a production build only with `DEV_ROUTES=on`.
 - axe's `color-contrast` rule stays on in the Playwright accessibility suite.
 - `map/theme.ts` converts the CSS variables to the linear RGBA values the shaders need (§2).
 
@@ -261,4 +264,3 @@ The first-draft instinct for each of these was a generic default. Here is what c
 - Review the palette in the running UI; the owner may change it (see the note at the top). Owner: product owner.
 - The derived tokens, the font, and the map-colour rules need the product designer's sign-off (plan.md, Sprints 0–4).
 - Geoapify terms for overriding style paint properties: unverified, checked in P1-05.
-- Overpass `tnum` support: unverified, checked in P1-01.

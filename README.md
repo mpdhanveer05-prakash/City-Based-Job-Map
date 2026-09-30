@@ -2,7 +2,7 @@
 
 A map-first company discovery portal for Bengaluru and Chennai. Visitors browse companies by office location, filter by type, startup stage and more, see live employer-sourced jobs, and apply on the employer's site. There is no public login.
 
-> **Status:** planning. No application code yet. Start with [plan.md](plan.md).
+> **Status:** Phase 1. The app skeleton is in [code/](code/). Start with [plan.md](plan.md).
 
 ## Documents
 - [CLAUDE.md](CLAUDE.md): working rules for Claude Code and contributors
@@ -15,11 +15,13 @@ A map-first company discovery portal for Bengaluru and Chennai. Visitors browse 
 ## Stack
 Next.js (App Router) · TypeScript · Tailwind + shadcn/ui · MapLibre + Supercluster (Web Worker, Comlink) · Supabase (Postgres/PostGIS, Auth, Storage, Cron, Edge Functions) · Cloudflare Workers via OpenNext · Python on GitHub Actions · Vitest, Playwright, axe-core.
 
-## Setup (planned, unverified until task P1-01)
+## Setup
 ```bash
+cd code
 cp .env.example .env.local   # fill in values; never commit them
 npm ci
+npx playwright install chromium
 supabase start && supabase db reset
 npm run dev
 ```
-Prerequisites: Node.js LTS, the Supabase CLI, Docker (for local Supabase), and Python 3.12+ for `scripts/`.
+The npm steps were verified in P1-01. The Supabase steps arrive in P1-03. Prerequisites: Node.js 24+, the Supabase CLI, Docker (for local Supabase), and Python 3.12+ for `scripts/`.
