@@ -21,6 +21,18 @@
 ## CI (on pull requests)
 Lint, typecheck, Vitest, pgTAP (local Supabase in CI), dependency audit, secret scan, and Playwright against a local build. Preview-Worker journeys are added after P1-02.
 
+**Current workflow** (`.github/workflows/ci.yml`, added in P1-04). It runs on pull requests to `main`, on pushes to `main`, and on demand. It uses a read-only token and needs no secrets.
+
+| Job | Steps |
+| --- | --- |
+| `checks` | `npm ci`, lint, typecheck, Vitest, build, then `npm audit --audit-level=high` (fails on high or critical) |
+| `e2e` | Chromium install, then `npm run test:e2e` (Playwright + axe, desktop and Pixel 7). The HTML report is uploaded on failure |
+| `secret-scan` | gitleaks 8.30.1 (checksum-verified) over the full git history |
+
+- Actions are pinned to commit SHAs. Dependabot (`.github/dependabot.yml`) bumps them weekly, along with the npm dependencies in `code/`: minor and patch grouped into one PR, majors separate.
+- **Not yet in CI:** pgTAP (arrives with P1-03). GitHub's dependency-review action needs GitHub Advanced Security on a private repository, so `npm audit` stands in for it.
+- The repository is private, so runs use the account's Actions minutes (2,000 a month on GitHub Free). One run takes roughly 3 jobs × 2–5 minutes.
+
 ## Release checklist
 - [ ] All CI checks green on the release commit
 - [ ] Map gate re-run on the reference devices with each city's real data

@@ -66,7 +66,7 @@ The architecture plan supplies these **target** dates. They are proposals, not c
 - **Files:** `.github/workflows/ci.yml`, `.github/dependabot.yml`
 - **Acceptance:** The workflow passes on a test PR. No secrets are needed for the PR job.
 - **Verification:** Link to the CI run.
-- **Status:** Not started
+- **Status:** In progress. The workflow and Dependabot config are written and checked locally; the run on the test PR is still needed (see progress.md).
 
 ### P1-05 Basemap feasibility
 - **Objective:** Confirm the Geoapify vector style loads in MapLibre with attribution, and estimate credit use.

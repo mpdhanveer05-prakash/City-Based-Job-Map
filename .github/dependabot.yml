@@ -1,0 +1,29 @@
+version: 2
+updates:
+  # App dependencies. Minor and patch bumps arrive as one grouped PR a week;
+  # majors (e.g. Next.js 17) come separately so each can be checked against OpenNext support.
+  - package-ecosystem: npm
+    directory: /code
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: deps
+
+  # Pinned action SHAs in .github/workflows.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Kolkata
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci

@@ -3,11 +3,19 @@
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
 ## Current state
-- **Current task:** P1-02 Workers deployment feasibility (Not started). P1-03, P1-04, and P1-05 are also unblocked.
+- **Current task:** P1-04 CI skeleton (In progress: waiting for the test-PR run). P1-02, P1-03, and P1-05 are unblocked but need owner inputs.
 - **Next action:** P1-02 needs a Cloudflare account and authorization for a preview deploy. P1-03 needs the Supabase CLI and Docker, plus a Supabase `dev` project. See the P1-01 entry.
 - **Blockers:** none for code work. For product decisions, see the decision register (D-01…D-09).
 
 ## Log
+
+### 2026-09-30: P1-04 CI skeleton (In progress)
+- **Created:** `.github/workflows/ci.yml` (jobs `checks`, `e2e`, `secret-scan`; see [testing.md](testing.md#ci-on-pull-requests)) and `.github/dependabot.yml` (npm in `code/`, plus GitHub Actions, weekly on Mondays IST). Playwright now also writes an HTML report in CI, which is uploaded when a test fails.
+- **Pinned versions (resolved 30 Sep 2026 with `git ls-remote`):** actions/checkout v7.0.1 `3d3c42e`, actions/setup-node v7.0.0 `8207627`, actions/upload-artifact v7.0.1 `043fb46`. gitleaks 8.30.1, with the linux_x64 SHA-256 taken from the release checksums file.
+- **Verified locally:** both YAML files parse (Python `yaml.safe_load`). `npm audit --audit-level=high`: 0 vulnerabilities. Lint and typecheck: pass. gitleaks 8.30.1 (the Windows build, checksum verified) over the full history: 4 commits, **no leaks found**.
+- **Not verified:** the workflow has not run on GitHub yet. Acceptance needs a passing run on a test PR.
+- **Decided:** the repository is private (the unauthenticated API returns 404), so GitHub's dependency-review action isn't used (it needs Advanced Security) and `npm audit` covers dependencies. pgTAP joins CI with P1-03.
+- **Next action:** push the `p1-04-ci` branch, open a PR to `main`, and record the run link here.
 
 ### 2026-09-30: P1-01 Scaffold the repository (Completed)
 - **Where:** all application code is in `code/`, as the owner asked. Docs stay at the root. `.env.example` moved to `code/.env.example`.
