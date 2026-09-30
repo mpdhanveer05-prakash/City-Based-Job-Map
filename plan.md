@@ -49,7 +49,7 @@ The architecture plan supplies these **target** dates. They are proposals, not c
 - **Steps:** 1) Add `@opennextjs/cloudflare` and wrangler in `code/`, plus the `preview` script carried over from P1-01. 2) Build, and record the bundle size (uncompressed and gzip). 3) Run `wrangler dev`, then deploy to a preview URL or `workers.dev` (needs authorization). 4) Measure SSR CPU time for a representative page against the Free plan's 10 ms CPU limit. 5) Confirm that no Node Middleware is used (not supported by the adapter as of 30 Sep 2026). 6) Decide whether any ISR is needed. If it isn't, no incremental cache store is required.
 - **Acceptance:** ADR-0003 is updated with measured numbers and a recommendation (Free vs Paid, R2 cache or none) and cites its sources.
 - **Verification:** A preview URL responds 200. Wrangler output is logged.
-- **Status:** Not started
+- **Status:** Completed (30 Sep 2026). Preview Worker at https://company-map-preview.company-map.workers.dev (approved by the owner). The measurements and recommendation (Workers Paid for staging/production because of CPU time, no R2) are in ADR-0003.
 
 ### P1-03 Supabase project and CLI setup
 - **Objective:** Set up the local Supabase stack and link the `dev` project, with PostGIS and `pg_trgm` enabled.
@@ -241,4 +241,4 @@ Local shortlist (Dexie), recently viewed, compare, cluster previews, neighbourho
 | D-06 | Named reference devices, network profile, and the map gate owner | P2-09 | Product owner |
 | D-07 | Geocoding provider, error-reporting tool, analytics + privacy notice | P7-04, P9 | Tech lead |
 | D-08 | Product name and domain. **Brand colours confirmed 30 Sep 2026** (Milky + Mantis `#59C749`); Milky `#FFFDF1` confirmed the same day. The owner may revisit the combination after seeing it in the UI. Still open: designer sign-off on the derived tokens and font ([design-system.md](docs/design-system.md)) | P9-05 | Product owner |
-| D-09 | Workers Free vs Paid, and Supabase Free vs Pro for production (after P1-02 measurements) | P9-05 | Tech lead |
+| D-09 | Workers Free vs Paid, and Supabase Free vs Pro for production. **P1-02 measured:** a server-rendered page uses 38 ms CPU at the median, against a 10 ms Free limit, so ADR-0003 recommends Workers Paid for staging and production. Supabase is still to be measured | Staging deploy, P9-05 | Tech lead + product owner (cost) |

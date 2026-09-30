@@ -27,6 +27,8 @@ Lint, typecheck, Vitest, pgTAP (local Supabase in CI), dependency audit, secret 
 | --- | --- |
 | `checks` | `npm ci`, lint, typecheck, Vitest, build, then `npm audit --audit-level=high` (fails on high or critical) |
 | `e2e` | Chromium install, then `npm run test:e2e` (Playwright + axe, desktop and Pixel 7). The HTML report is uploaded on failure |
+
+To run the same Playwright suite against a server that's already running (`wrangler dev`, or a preview Worker URL), set `PLAYWRIGHT_BASE_URL`; the built-in `next start` server is then skipped.
 | `secret-scan` | gitleaks 8.30.1 (checksum-verified) over the full git history |
 
 - Actions are pinned to commit SHAs. Dependabot (`.github/dependabot.yml`) bumps them weekly, along with the npm dependencies in `code/`: minor and patch grouped into one PR, majors separate.

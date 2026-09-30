@@ -95,7 +95,8 @@ Run these from `code/`. Requires Node.js 24 or later. The first four rows were *
 | Lint / types / build | `npm run lint`, `npm run typecheck`, `npm run build` | Verified |
 | Unit tests | `npm test` (Vitest) | Verified |
 | E2E + a11y | `npm run test:e2e` (Playwright + axe; builds and serves on port 3100 with `DEV_ROUTES=on`) | Verified |
-| Workers preview | `npm run preview` (OpenNext build + `wrangler dev`) | Planned, added in P1-02 |
+| Workers preview (local) | `npm run preview` (OpenNext build + `wrangler dev` on :8787). Test it with `PLAYWRIGHT_BASE_URL=http://localhost:8787 npx playwright test` | Verified (P1-02) |
+| Preview deploy | `npm run deploy:preview` (Worker `company-map-preview`, https://company-map-preview.company-map.workers.dev). **Only with the owner's approval for that deploy**; needs `npx wrangler login` | Verified (P1-02) |
 | Local DB | `supabase start`, `supabase db reset`, `supabase test db` | Planned, added in P1-03 |
 
 ## Security (see [docs/security.md](docs/security.md))

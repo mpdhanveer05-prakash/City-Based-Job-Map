@@ -3,11 +3,27 @@
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
 ## Current state
-- **Current task:** none in progress. P1-02, P1-03, and P1-05 are next; each needs owner inputs (see the P1-01 entry). P2-01 needs none.
+- **Current task:** none in progress. P1-03 (needs Docker Desktop running plus a Supabase `dev` project) and P1-05 (needs a Geoapify key) are next. P2-01 needs no inputs.
 - **Next action:** P1-02 needs a Cloudflare account and authorization for a preview deploy. P1-03 needs the Supabase CLI and Docker, plus a Supabase `dev` project. See the P1-01 entry.
 - **Blockers:** none for code work. For product decisions, see the decision register (D-01…D-09).
 
 ## Log
+
+### 2026-09-30: P1-02 Workers deployment feasibility (Completed)
+- **Added in `code/`:** `@opennextjs/cloudflare` 1.20.7, `wrangler` 4.144.0 (dev), `wrangler.jsonc` (Worker `company-map-preview`, compat date 2026-09-26, `nodejs_compat`, Workers Logs on, `DEV_ROUTES=on` as a var on this Worker only), `open-next.config.ts` (`staticAssetsIncrementalCache`, no R2), `public/_headers` (immutable `/_next/static`), and the scripts `preview`, `deploy:preview`, and `cf-typegen`. `next.config.ts` calls `initOpenNextCloudflareForDev()`. `.open-next/` and `.wrangler/` are ignored by git, ESLint, and tsc. `playwright.config.ts` accepts `PLAYWRIGHT_BASE_URL`.
+- **`/dev/*` now renders per request** (`await connection()` in the layout), so `DEV_ROUTES` is read at runtime. `/dev/tokens` serves as the server-rendering CPU probe.
+- **Dependency fix:** `@opennextjs/cloudflare` imports `esbuild` without declaring it. It relies on hoisting, which failed because wrangler and `@opennextjs/aws` use different versions. `esbuild@0.28.1` was added as a dev dependency: it's the version wrangler uses, and it satisfies Vite 8's peer range (0.25.4 conflicted with Vite). `@opennextjs/aws` keeps its own nested 0.25.4.
+- **Deploy (approved by the owner in this session):** https://company-map-preview.company-map.workers.dev, version `10af08d4-e2b0-44f6-a2a4-5b1650783ca2`. Wrangler also **registered the account's workers.dev subdomain `company-map`** during the first deploy; it can be changed in the Cloudflare dashboard. The TLS certificate for the new subdomain became valid about 90 s after the deploy.
+- **Measured (full table in [ADR-0003](decisions/0003-hosting-plan-tiers.md#measurements-p1-02-30-sep-2026)):** bundle 4,945.58 KiB / 1,036.29 KiB gzip; startup 22 ms. CPU p50: `/` 5 ms, `/dev/tokens` 38 ms (p95 259 ms), 404 11 ms. 63 requests, all `ok`.
+- **Verified in this session:**
+  - Lint, typecheck, 39 unit tests, and `next build`: pass.
+  - `npm run test:e2e` (next start): 11 passed, 1 skipped.
+  - The same suite against `wrangler dev` (workerd): 11 passed, 1 skipped.
+  - A production `next start` without `DEV_ROUTES`: `/dev/tokens` returns 404.
+  - Deployed URLs: `/` 200, `/dev/tokens` 200, 404 for unknown paths.
+  - No `middleware`/`proxy` file, no ISR, and no edge runtime in the code.
+- **Notes:** OpenNext warns it is "not fully compatible with Windows" and recommends WSL. The Windows build worked, but ADR-0003 recommends building staging and production from Linux CI. This machine's DNS resolves the new hostname through the office domain, so it was tested with `curl --resolve` against Cloudflare's IP.
+- **Decision for the owner (D-09):** Workers Paid for staging and production (because of CPU time, not script size); the preview stays on Free.
 
 ### 2026-09-30: P1-04 completed
 - **CI run:** [36716151218](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/36716151218) on `main`, commit `bf62bdd`, **success**. The jobs `checks` (0.6 min), `e2e` (1.0 min), and `secret-scan` (0.1 min) all passed. The report upload was skipped, as expected (it runs only on failure).
