@@ -9,6 +9,7 @@ A map-first company discovery portal for Bengaluru and Chennai. Visitors browse 
 - [plan.md](plan.md): phased tasks and the open decisions
 - [Architecture & Implementation Plan](Company%20Map%20—%20Architecture%20&%20Implementation%20Plan.md): the source architecture document
 - BRD: **not in the repository yet**
+- [docs/design-system.md](docs/design-system.md): brand colours (Milky + Mantis), type, layout, and map colours
 - [docs/](docs/): architecture, map spec, data model, testing, security, data pipeline, ADRs, progress
 
 ## Stack

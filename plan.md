@@ -36,9 +36,9 @@ The architecture plan supplies these **target** dates. They are proposals, not c
 ### P1-01 Scaffold the repository
 - **Objective:** Create a Next.js App Router + TypeScript + Tailwind + shadcn/ui skeleton with verified scripts.
 - **Dependencies:** none
-- **Files:** `package.json`, `tsconfig.json`, `app/`, `components/ui/`, `eslint` config, `vitest.config.ts`, `playwright.config.ts`, CLAUDE.md (commands section)
-- **Steps:** 1) Use `create-next-app` with the latest Next.js version that `@opennextjs/cloudflare` supports (check its docs on the day). 2) Add Tailwind and initialise shadcn/ui. 3) Add Vitest, Playwright, and @axe-core/playwright. 4) Add the scripts `dev`, `build`, `lint`, `typecheck`, `test`, `test:e2e`, `preview`. 5) Create the directory layout from CLAUDE.md.
-- **Acceptance:** Every script runs locally. CLAUDE.md's Commands table is marked verified, with the date.
+- **Files:** `package.json`, `tsconfig.json`, `app/`, `app/globals.css` (design tokens), `components/ui/`, `eslint` config, `vitest.config.ts`, `playwright.config.ts`, `tests/unit/design-tokens.test.ts`, CLAUDE.md (commands section)
+- **Steps:** 1) Use `create-next-app` with the latest Next.js version that `@opennextjs/cloudflare` supports (check its docs on the day). 2) Add Tailwind and initialise shadcn/ui. 3) Add Vitest, Playwright, and @axe-core/playwright. 4) Add the scripts `dev`, `build`, `lint`, `typecheck`, `test`, `test:e2e`, `preview`. 5) Create the directory layout from CLAUDE.md. 6) Apply the Milky/Mantis tokens from [docs/design-system.md §8](docs/design-system.md#8-implementation) to the shadcn variables, remove the `.dark` block, and load Overpass through `next/font/google` (check its `tnum` support).
+- **Acceptance:** Every script runs locally. CLAUDE.md's Commands table is marked verified, with the date. The design-token contrast test passes, and the default shadcn button renders Mantis with Ink text.
 - **Verification:** Run `npm run lint && npm run typecheck && npm test && npm run build` and paste the output into progress.md.
 - **Status:** Not started
 
@@ -72,8 +72,8 @@ The architecture plan supplies these **target** dates. They are proposals, not c
 - **Objective:** Confirm the Geoapify vector style loads in MapLibre with attribution, and estimate credit use.
 - **Dependencies:** P1-01
 - **Files:** `map/basemap.ts`, `docs/decisions/0006-basemap.md`
-- **Steps:** Load the Geoapify style with the key from the environment (a public key restricted by referrer). Count tile requests per typical session. Compare that against the current free allowance, checked and cited on the day.
-- **Acceptance:** The map renders with visible Geoapify and OpenStreetMap attribution. The ADR records the estimate and its source.
+- **Steps:** Load the Geoapify style with the key from the environment (a public key restricted by referrer). Count tile requests per typical session. Compare that against the current free allowance, checked and cited on the day. Override the style's paint properties to the basemap palette in [docs/design-system.md §2](docs/design-system.md#2-map-colours) (Milky land, no green parks), and check that Geoapify's terms allow it.
+- **Acceptance:** The map renders with visible Geoapify and OpenStreetMap attribution and the design-system basemap colours. The ADR records the estimate, the style-customisation terms, and their sources.
 - **Status:** Not started
 
 ## Phase 2 — Map prototype and performance validation gate
@@ -101,7 +101,7 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Objective:** Draw clusters and logos as instanced quads in one pass in a MapLibre custom layer.
 - **Dependencies:** P2-02
 - **Files:** `map/layer/company-layer.ts`, `map/layer/shaders/*`
-- **Acceptance:** Renders 60 clusters and 400 logos correctly, with viewport culling (+20% margin).
+- **Acceptance:** Renders 60 clusters and 400 logos correctly, with viewport culling (+20% margin). Marker, cluster, stack, and selection colours come from `map/theme.ts` (read from the CSS tokens), as specified in [docs/design-system.md §2](docs/design-system.md#2-map-colours).
 - **Verification:** Playwright screenshot of the prototype route. Manual check on the reference desktop.
 - **Status:** Not started
 
@@ -109,7 +109,7 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Objective:** Build multi-page texture atlases at 64 and 128 px (chosen by DPR), with LRU eviction, a GPU memory budget, letter fallbacks, and missing-image handling.
 - **Dependencies:** P2-03
 - **Files:** `map/atlas/*`
-- **Acceptance:** Adds a second atlas page when the first is full. Stays within a configurable memory budget (proposal: 64 MB of textures on mobile). Failed or slow images show letter fallbacks without blocking the render.
+- **Acceptance:** Adds a second atlas page when the first is full. Stays within a configurable memory budget (proposal: 64 MB of textures on mobile). Failed or slow images show letter fallbacks without blocking the render, using the five non-green swatches in design-system.md §2.
 - **Verification:** Unit tests for packing and eviction. A throttled-network manual check.
 - **Status:** Not started
 
@@ -183,7 +183,7 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 ## Phase 4 — City selection and company explorer
 
 - **P4-01 Public API: cities and points.** `GET /api/v1/cities`, `GET /api/v1/cities/{city}/points` with Zod validation and cache headers. Deps: P3-03. Verify: Vitest handler tests, and a contract test against local Supabase. Status: Not started
-- **P4-02 City selection page `/`.** Bengaluru and Chennai cards; other cities show Coming soon and aren't clickable. Deps: P4-01. Verify: Playwright AC01. Status: Not started
+- **P4-02 City selection page `/`.** Bengaluru and Chennai cards, each drawn as the city boundary filled with its real office points (design-system.md §5); other cities show Coming soon and aren't clickable. Deps: P4-01. Verify: Playwright AC01. Status: Not started
 - **P4-03 Explorer shell.** Full-screen map with an overlay toolbar (search, filters, view switch), wired to the Phase 2 layer and real points; `/bengaluru` redirects to `/bangalore`. Deps: P2-09 (passed or approved), P4-01. Verify: Playwright loads both cities. Status: Not started
 - **P4-04 URL state module.** One Zod schema for city, view, q, filters, company, and camera. Back and Forward restore state. Deps: P1-01. Verify: unit round-trip tests, Playwright AC07. Status: Not started
 
@@ -240,5 +240,5 @@ Local shortlist (Dexie), recently viewed, compare, cluster previews, neighbourho
 | D-05 | Is "Public"/"Acquired" a *startup stage* (as the brief lists it) or a separate company status? | P5-03 | Product owner |
 | D-06 | Named reference devices, network profile, and the map gate owner | P2-09 | Product owner |
 | D-07 | Geocoding provider, error-reporting tool, analytics + privacy notice | P7-04, P9 | Tech lead |
-| D-08 | Product name, domain, and branding | P9-05 | Product owner |
+| D-08 | Product name and domain. **Brand colours confirmed 30 Sep 2026** (Milky + Mantis `#59C749`); Milky `#FFFDF1` confirmed the same day. The owner may revisit the combination after seeing it in the UI. Still open: designer sign-off on the derived tokens and font ([design-system.md](docs/design-system.md)) | P9-05 | Product owner |
 | D-09 | Workers Free vs Paid, and Supabase Free vs Pro for production (after P1-02 measurements) | P9-05 | Tech lead |

@@ -5,11 +5,11 @@
 ## Layers
 | Layer | Tool | Scope |
 | --- | --- | --- |
-| Unit | Vitest | URL-state schema, filter reducer (clearing incompatible filters), worker lineage, animator interpolation, atlas packing, hit-test tie-breaks |
+| Unit | Vitest | URL-state schema, filter reducer (clearing incompatible filters), worker lineage, animator interpolation, atlas packing, hit-test tie-breaks, design-token contrast pairs ([design-system.md §1](design-system.md#contrast-wcag-22-computed-30-sep-2026)) |
 | Database | pgTAP via `supabase test db` | RLS for every role and table, the city-boundary trigger, shared-filter consistency across points, list, and facets |
 | Route Handlers | Vitest against local Supabase | Zod validation, cache headers, Turnstile rejection, `/go` URL safety |
 | E2E journeys | Playwright | AC01–AC10 (IDs from the BRD, whose text isn't in the repo), for both cities |
-| Accessibility | @axe-core/playwright + manual pass | Zero serious or critical axe violations; keyboard-only journey; screen-reader smoke test (NVDA + TalkBack) |
+| Accessibility | @axe-core/playwright + manual pass | Zero serious or critical axe violations (the `color-contrast` rule stays enabled); keyboard-only journey; screen-reader smoke test (NVDA + TalkBack) |
 | Map gate | Playwright + real devices | [map-spec.md §10](map-spec.md#10-validation-gate-reproducible) |
 | Pipeline | pytest | Parsers, dedup, two-strike expiry, retry/backoff |
 

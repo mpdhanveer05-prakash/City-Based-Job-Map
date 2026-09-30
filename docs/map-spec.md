@@ -1,6 +1,6 @@
 # Map Specification
 
-Map quality is a **release requirement**. Items are tagged **[Confirmed]** when they come from the project owner's brief, **[Plan]** when they come from the architecture plan, and **[Proposal]** when they're suggested here and still need agreement.
+Map quality is a **release requirement**. Every colour on the map (the basemap, clusters, logo rings, stacks, selection, focus, and fallbacks) follows [design-system.md §2](design-system.md#2-map-colours). Items are tagged **[Confirmed]** when they come from the project owner's brief, **[Plan]** when they come from the architecture plan, and **[Proposal]** when they're suggested here and still need agreement.
 
 ## 1. Stack [Confirmed]
 - MapLibre GL JS renders the basemap and hosts a **custom WebGL layer** (`CustomLayerInterface`, WebGL2 with a WebGL1 check) that draws every cluster bubble and logo.
@@ -9,7 +9,7 @@ Map quality is a **release requirement**. Items are tagged **[Confirmed]** when 
 - No DOM markers for clusters or logos. The popup/selection card is the only map-anchored DOM element.
 
 ## 2. Identity and lineage
-- **Office points** have a stable key `o:<office_id>`, and each carries its `company_id`. A company with several offices has several points. Counts shown to users are **unique companies** ("38 companies · 41 offices"). [Plan]
+- **Office points** have a stable key `o:<office_id>`, and each carries its `company_id`. A company with several offices has several points. Counts shown to users are **unique companies** ("38 companies in 41 offices"). [Plan]
 - **Cluster keys** must stay stable for a given dataset and zoom. Supercluster's numeric `cluster_id` is deterministic for the same input, so key = `c:<data_version>:<filter_hash>:<cluster_id>`. [Proposal]
 - For each response, the worker returns `parentKey(z-1)` and `childKeys(z+1)` for the visible items, using `getParentId`-style arithmetic or `getChildren`. This lineage drives the split and merge animations. [Plan]
 - Rebuilding the index after a filter change creates a new `filter_hash` namespace. Matching an old cluster to a new one is **not** attempted: old items fade out and new items fade in from their positions (a cross-fade). [Proposal]
@@ -32,9 +32,9 @@ Map quality is a **release requirement**. Items are tagged **[Confirmed]** when 
 - Logos are fetched once, decoded with `createImageBitmap`, and packed into **2048×2048 atlas pages** at 64 px (DPR < 1.5) or 128 px (DPR ≥ 1.5). A page holds 256 logos at 128 px, or 1,024 at 64 px. [Plan]
 - **Multiple pages** are used when one is full. The draw call is batched per page. [Proposal]
 - GPU budget [Proposal]: at most 4 pages on mobile (about 64 MB RGBA) and 8 on desktop. Beyond the budget, least-recently-used logos are evicted and redrawn with letter fallbacks until they're reloaded.
-- **Letter fallback:** the company's initial on a colour derived from a hash of its name, drawn on an OffscreenCanvas into the same atlas. Used when a logo is missing, fails, or is still loading. [Plan]
+- **Letter fallback:** the company's initial on a colour derived from a hash of its name, drawn on an OffscreenCanvas into the same atlas. Used when a logo is missing, fails, or is still loading. [Plan] The hash picks one of the five non-green swatches in design-system.md §2, with an Ink initial, so a fallback never looks like a Mantis cluster. [Proposal]
 - Slow networks: render the fallback immediately and swap in the logo when it arrives (an opacity blend). Never block a frame on an image.
-- Cluster counts are drawn from a digit atlas in the same pass. [Plan]
+- Cluster counts are drawn from a digit atlas in the same pass. [Plan] The digits are Overpass 800 in Ink on the Mantis disc (5.77:1). [Proposal]
 
 ## 6. Hit testing and touch
 - Hit test against **current animated screen positions**. The plan's "KDBush rebuilt when the view settles" would be wrong during animation. Instead [Proposal]: while animating, scan the visible items linearly (at most a few hundred); when settled, use the KDBush index.
@@ -48,7 +48,7 @@ Map quality is a **release requirement**. Items are tagged **[Confirmed]** when 
 
 ## 8. Popup, selection, and accessibility
 - Clicking or tapping a logo opens a popup showing logo, name, type(s), neighbourhood, location accuracy, open-job count, and **View company** [Confirmed]. Placement rules follow the plan (desktop tries four positions; mobile uses a bottom sheet).
-- Selection lives in `?company=<slug>`. The selected marker is drawn at 1.25× with a 3 px ring. If a cluster swallows the selected marker, the cluster inherits the ring. [Plan]
+- Selection lives in `?company=<slug>`. The selected marker is drawn at 1.25× with a 3 px ring. If a cluster swallows the selected marker, the cluster inherits the ring. [Plan] The ring is Mantis Deep `#2F7A24`. Keyboard focus is a separate 2 px Ink ring offset by 3 px, so selection and focus can show together. [Proposal]
 - **Keyboard:** a visually hidden, focusable list mirrors the drawn markers. Arrow keys move focus, and the layer draws a visible focus ring. Enter opens the popup. [Plan]
 - **Accessible List view** is always available and synchronized with the map (the same result set and the same selection). It is the primary non-visual route. [Confirmed]
 

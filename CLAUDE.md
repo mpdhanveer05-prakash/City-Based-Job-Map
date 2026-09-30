@@ -5,7 +5,7 @@ Primary instruction file for Claude Code. Keep it short; details live in the lin
 ## Before you start any work
 
 1. Read [plan.md](plan.md) and [docs/progress.md](docs/progress.md). Work on the task marked **In progress**, or the first **Not started** task whose dependencies are **Completed**.
-2. Read the docs the task links to (map work → [docs/map-spec.md](docs/map-spec.md), database → [docs/data-model.md](docs/data-model.md), etc.).
+2. Read the docs the task links to (map work → [docs/map-spec.md](docs/map-spec.md), any UI, styling, or copy → [docs/design-system.md](docs/design-system.md), database → [docs/data-model.md](docs/data-model.md), etc.).
 3. Check [docs/decisions/](docs/decisions/) for accepted decisions and the open-decision register.
 
 ## After each completed task
@@ -43,6 +43,13 @@ This is a map-first company discovery portal. Visitors find companies by where t
 - Each company job row contains **only the job title and Apply**.
 
 Map quality is a release requirement. Follow [docs/map-spec.md](docs/map-spec.md). If the prototype fails its gate, **don't silently replace the animated layer with ordinary markers**. Record the failure, set out the fallback trade-offs, and ask.
+
+## Design (see [docs/design-system.md](docs/design-system.md))
+
+- **Brand colours [Confirmed, 30 Sep 2026]:** **Milky `#FFFDF1`** and **Mantis `#59C749`**, used across the entire application (public pages, map, admin). The owner may change the combination once it's seen in the running UI, so keep every colour behind the tokens and a palette swap stays a token-only change.
+- **Mantis on Milky is 2.12:1.** Never use Mantis for text, icons, or thin lines on Milky. Mantis is a fill, and text on Mantis is always Ink `#1F3A1A`, never white. Use Mantis Deep `#2F7A24` when green has to be read.
+- Use only the tokens in `app/globals.css`. No raw hex values in components or shaders, and no other accent hues or gradients. The map layer reads the same CSS variables.
+- The basemap carries no green, so Mantis always means companies. One family, Overpass. Sentence case, no all-caps labels. Round shapes mean a company; everything else has a 4 px radius.
 
 ## Approved stack
 
