@@ -13,7 +13,8 @@ export default defineConfig({
   workers: process.env.CI ? 2 : 3,
   timeout: 60_000,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  // One retry in CI: each retry of a slow map test costs minutes, and a test that needs two is flaky.
+  retries: process.env.CI ? 1 : 0,
   // In CI: annotations on the PR, plus an HTML report uploaded when a test fails.
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
@@ -22,7 +23,14 @@ export default defineConfig({
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile", use: { ...devices["Pixel 7"] } },
+    {
+      name: "mobile",
+      use: { ...devices["Pixel 7"] },
+      // The map specs repeat on the phone profile (2.6x DPR, 128 px logo cells) and are the slowest tests by far.
+      // A 2-core CI runner drawing software WebGL cannot fit them in its time limit, so CI runs them on desktop
+      // only. Run the whole suite locally before pushing: the phone profile found real bugs (P2-04 eviction).
+      testIgnore: process.env.CI ? /(map-layer|logo-atlas|animation)\.spec\.ts/ : undefined,
+    },
   ],
   // By default: build the static export (with /dev pages) and serve out/ the way
   // Cloudflare does (_headers, _redirects, 404.html) via `wrangler dev` (assets-only Worker).

@@ -3,12 +3,15 @@ import { expect, test, type Page } from "@playwright/test";
 // P2-03. The marker layer needs WebGL2 but no Geoapify key: with no key the page draws on a blank Milky
 // background. With a key the basemap sits underneath; nothing below depends on it.
 
+// Software WebGL is slow on a laptop and slower on a CI runner.
+test.describe.configure({ timeout: 120_000 });
+
 async function openLayer(page: Page) {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/dev/map-layer");
   const map = page.getByTestId("map-layer");
-  await expect(map).toHaveAttribute("data-status", "ready", { timeout: 45_000 });
+  await expect(map).toHaveAttribute("data-status", "ready", { timeout: 90_000 });
   await expect(map).toHaveAttribute("data-drawn", /\d+/);
   return errors;
 }

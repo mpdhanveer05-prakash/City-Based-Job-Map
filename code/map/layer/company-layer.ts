@@ -150,6 +150,8 @@ export class CompanyLayer implements CustomLayerInterface {
   private map: MapLibreMap | null = null;
   private gpu: Gpu | null = null;
   private lastView: View | null = null;
+  private lastSampleTime = Number.NaN;
+  private framesAtSameTime = 0;
 
   constructor(options: CompanyLayerOptions) {
     const { theme } = options;
@@ -272,8 +274,15 @@ export class CompanyLayer implements CustomLayerInterface {
     atlas?.flushUploads(gl);
     const scene = this.scene;
     // Where every marker is right now: the animator moves, grows, and fades them between updates.
-    const animating = this.animator.sample(this.now(), this.dynamic, this.scene.sourceIndex);
+    const time = this.now();
+    const animating = this.animator.sample(time, this.dynamic, this.scene.sourceIndex);
     this.stats.animating = animating;
+    // A frame can only differ from the last one if the clock moved. A held test clock does not move, so it
+    // must not keep the render loop spinning (each software-GL frame is slow enough to starve the page).
+    // One repeat is allowed, because the real clock is coarse and two frames can share a timestamp.
+    this.framesAtSameTime = time === this.lastSampleTime ? this.framesAtSameTime + 1 : 0;
+    this.lastSampleTime = time;
+    const clockMoved = this.framesAtSameTime < 2;
     const { drawn, culled } = this.packer.pack(scene, view, {
       dynamic: this.dynamic,
       // Only drawn markers get here, so only visible companies ask for their logo.
@@ -289,7 +298,7 @@ export class CompanyLayer implements CustomLayerInterface {
     this.stats.drawn = drawn;
     this.stats.culled = culled;
     // Ask for the next frame even if nothing is visible yet: a fade-in starts at opacity 0.
-    if (animating) map.triggerRepaint();
+    if (animating && clockMoved) map.triggerRepaint();
     if (drawn === 0) return;
 
     const gpu = this.gpu;

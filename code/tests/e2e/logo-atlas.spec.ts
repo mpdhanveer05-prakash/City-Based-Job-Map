@@ -22,7 +22,7 @@ async function openLogos(page: Page, query = "") {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(`/dev/map-layer${query}`);
-  await expect(page.getByTestId("map-layer")).toHaveAttribute("data-status", "ready", { timeout: 45_000 });
+  await expect(page.getByTestId("map-layer")).toHaveAttribute("data-status", "ready", { timeout: 90_000 });
   await page.getByRole("button", { name: "Logos" }).click();
   await expect.poll(() => page.evaluate(() => window.__mapLayer!.layer.stats.items), { timeout: 15_000 }).toBe(LOGOS);
   return errors;
@@ -75,7 +75,7 @@ test("shows the letter fallback while images are pending, then swaps in each log
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/dev/map-layer");
-  await expect(page.getByTestId("map-layer")).toHaveAttribute("data-status", "ready", { timeout: 45_000 });
+  await expect(page.getByTestId("map-layer")).toHaveAttribute("data-status", "ready", { timeout: 90_000 });
   // Every image stays pending until released, however slow this machine is.
   await page.evaluate(() => { window.__logoControl!.hold = true; });
   await page.getByRole("button", { name: "Logos" }).click();

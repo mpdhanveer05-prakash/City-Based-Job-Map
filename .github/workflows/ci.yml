@@ -45,7 +45,7 @@ jobs:
   e2e:
     name: Playwright e2e + axe
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: code

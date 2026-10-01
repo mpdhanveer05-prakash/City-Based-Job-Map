@@ -51,11 +51,11 @@ npm run lint
 npm run typecheck
 npm test            # Vitest; expect all tests to pass
 npm run build       # static export into out/, 36 files
-npm run test:e2e    # builds with DEV_ROUTES=on and runs Playwright (about 2 to 4 minutes)
+npm run test:e2e    # builds with DEV_ROUTES=on and runs Playwright: about 9 minutes with a Geoapify key, all projects
 npm run dev         # http://localhost:3000, and /dev/map-layer, /dev/tokens, /dev/basemap
 ```
 
-To run the browser tests the way CI does (no key), set `NEXT_PUBLIC_GEOAPIFY_KEY=` empty for that command.
+To run the browser tests the way CI does (no key, 2 workers, 1 retry, map specs on desktop only), use `CI=true NEXT_PUBLIC_GEOAPIFY_KEY= npm run test:e2e` (PowerShell: set `$env:CI='true'; $env:NEXT_PUBLIC_GEOAPIFY_KEY=''` first). It takes about 2 minutes here. Run both before pushing.
 
 Database (only when working on Phase 3): start Docker Desktop, then `npx supabase db start`, `npx supabase db reset`, `npx supabase test db`.
 

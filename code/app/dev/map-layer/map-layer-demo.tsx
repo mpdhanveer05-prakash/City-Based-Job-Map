@@ -66,14 +66,20 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
 
     (async () => {
       const basemapTheme = readBasemapTheme();
-      const created = await createBasemap({
+      const basemapOptions = {
         container: container.current!,
-        apiKey,
         theme: basemapTheme,
         center: BENGALURU,
         zoom: 12,
         signal: abort.signal,
         lockNorthUp: true,
+      };
+      // This page checks the marker layer, not the basemap: if the basemap cannot be reached, draw the markers on
+      // the blank Milky background instead of leaving the page dead (the basemap has its own page and tests).
+      const created = await createBasemap({ ...basemapOptions, apiKey }).catch((error: unknown) => {
+        if (abort.signal.aborted || !apiKey) throw error;
+        setMessage("The basemap could not be loaded, so the markers are drawn on a blank background.");
+        return createBasemap({ ...basemapOptions, apiKey: "" });
       });
       if (abort.signal.aborted) {
         created.remove();

@@ -77,18 +77,49 @@ function lineColour(id: string, theme: BasemapTheme): string {
   return theme.road;
 }
 
+/** Waits before the 2nd and 3rd attempt at the style: a dropped connection or a busy server often clears at once. */
+const STYLE_RETRY_DELAYS_MS = [300, 900];
+
+class StyleRequestError extends Error {
+  constructor(
+    message: string,
+    readonly retryable: boolean,
+  ) {
+    super(message);
+  }
+}
+
+const sleep = (ms: number, signal?: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) return reject(signal.reason);
+    const timer = setTimeout(resolve, ms);
+    signal?.addEventListener("abort", () => (clearTimeout(timer), reject(signal.reason)), { once: true });
+  });
+
 export async function loadBasemapStyle(
   apiKey: string,
   theme: BasemapTheme,
-  options: { styleId?: string; signal?: AbortSignal; fetchImpl?: typeof fetch } = {},
+  options: { styleId?: string; signal?: AbortSignal; fetchImpl?: typeof fetch; retryDelaysMs?: number[] } = {},
 ): Promise<StyleSpecification> {
   const doFetch = options.fetchImpl ?? fetch;
-  const response = await doFetch(basemapStyleUrl(apiKey, options.styleId), { signal: options.signal });
-  if (!response.ok) {
-    // Never echo the URL: it carries the key.
-    throw new Error(`Basemap style request failed with HTTP ${response.status}`);
+  const delays = options.retryDelaysMs ?? STYLE_RETRY_DELAYS_MS;
+  let failure: unknown;
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
+      const response = await doFetch(basemapStyleUrl(apiKey, options.styleId), { signal: options.signal });
+      if (response.ok) return applyBasemapTheme((await response.json()) as StyleSpecification, theme);
+      // Never echo the URL: it carries the key. A bad key or style (4xx) will not get better by asking again;
+      // "too many requests" and server errors might.
+      const retryable = response.status === 429 || response.status >= 500;
+      failure = new StyleRequestError(`Basemap style request failed with HTTP ${response.status}`, retryable);
+    } catch (error) {
+      if (options.signal?.aborted) throw error;
+      failure = error instanceof StyleRequestError ? error : new StyleRequestError("Basemap style request failed (network error)", true);
+    }
+    if (!(failure as StyleRequestError).retryable || attempt === delays.length) break;
+    await sleep(delays[attempt], options.signal);
   }
-  return applyBasemapTheme((await response.json()) as StyleSpecification, theme);
+  throw failure;
 }
 
 export type RequestKind = "style" | "tilejson" | "tile" | "glyphs" | "sprite" | "other";

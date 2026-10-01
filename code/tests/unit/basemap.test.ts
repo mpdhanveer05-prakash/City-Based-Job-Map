@@ -130,6 +130,43 @@ describe("loading and counting", () => {
     expect((error as Error).message).not.toContain("secret-key");
   });
 
+  it("retries a dropped connection and a busy server, then succeeds", async () => {
+    const outcomes: Array<() => Response> = [
+      () => { throw new TypeError("Failed to fetch"); },
+      () => new Response("slow down", { status: 429 }),
+      () => new Response(JSON.stringify(style)),
+    ];
+    let calls = 0;
+    const fetchImpl = (async () => outcomes[calls++]()) as typeof fetch;
+    const loaded = await loadBasemapStyle("k", theme, { fetchImpl, retryDelaysMs: [0, 0] });
+    expect(calls).toBe(3);
+    expect(JSON.stringify(loaded)).not.toContain(ORIGINAL_GREEN);
+  });
+
+  it("gives up after the retries, without echoing the URL", async () => {
+    let calls = 0;
+    const fetchImpl = (async () => { calls++; throw new TypeError("Failed to fetch https://x/?apiKey=secret-key"); }) as typeof fetch;
+    const error = (await loadBasemapStyle("secret-key", theme, { fetchImpl, retryDelaysMs: [0, 0] }).catch((e: Error) => e)) as Error;
+    expect(calls).toBe(3);
+    expect(error.message).toBe("Basemap style request failed (network error)");
+    expect(error.message).not.toContain("secret-key");
+  });
+
+  it("does not retry a bad key or a missing style", async () => {
+    for (const status of [400, 401, 403, 404]) {
+      let calls = 0;
+      const fetchImpl = (async () => { calls++; return new Response("no", { status }); }) as typeof fetch;
+      await expect(loadBasemapStyle("k", theme, { fetchImpl, retryDelaysMs: [0, 0] })).rejects.toThrow(`HTTP ${status}`);
+      expect(calls, `HTTP ${status}`).toBe(1);
+    }
+  });
+
+  it("stops at once when cancelled", async () => {
+    const controller = new AbortController();
+    const fetchImpl = (async () => { controller.abort(); throw new DOMException("aborted", "AbortError"); }) as typeof fetch;
+    await expect(loadBasemapStyle("k", theme, { fetchImpl, signal: controller.signal, retryDelaysMs: [0, 0] })).rejects.toBeDefined();
+  });
+
   it("counts requests by kind and tiles separately", () => {
     const { stats, transformRequest } = createRequestCounter();
     for (const type of ["Style", "Source", "Tile", "Tile", "Glyphs", "SpriteJSON", "SpriteImage", "Image"]) {
