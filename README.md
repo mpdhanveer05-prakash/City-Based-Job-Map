@@ -21,7 +21,7 @@ cd code
 cp .env.example .env.local   # fill in values; never commit them
 npm ci
 npx playwright install chromium
-supabase start && supabase db reset
+npx supabase db start && npx supabase db reset
 npm run dev
 ```
-The npm steps were verified in P1-01. The Supabase steps arrive in P1-03. Prerequisites: Node.js 24+, the Supabase CLI, Docker (for local Supabase), and Python 3.12+ for `scripts/`.
+The npm steps were verified in P1-01, and the Supabase steps in P1-03 (`npx supabase db start`, `db reset`, and `test db`). Prerequisites: Node.js 24+, the Supabase CLI, Docker (for local Supabase), and Python 3.12+ for `scripts/`.

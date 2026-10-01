@@ -3,11 +3,22 @@
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
 ## Current state
-- **Current task:** P1-03 Supabase local setup (In progress). Then P1-05 (the Geoapify key is in `code/.env.local`) and P2-01.
-- **Next action:** P1-02 needs a Cloudflare account and authorization for a preview deploy. P1-03 needs the Supabase CLI and Docker, plus a Supabase `dev` project. See the P1-01 entry.
-- **Blockers:** none for code work. For product decisions, see the decision register (D-01…D-09).
+- **Current task:** none in progress. Phase 1 has one task left, P1-05 (basemap feasibility; the Geoapify key is in `code/.env.local`). P2-01 (synthetic dataset generator) has no unmet dependencies.
+- **Next action:** commit P1-03 and push, so the CI `database` job runs on GitHub. Then start P1-05 or P2-01.
+- **Blockers:** none for code work. For product decisions, see the decision register (D-01…D-10).
 
 ## Log
+
+### 2026-10-01: P1-03 Supabase local setup (Completed)
+- **Added in `code/`:** the `supabase` CLI 2.118.0 as a dev dependency; `supabase/config.toml`; migration `20260930181053_extensions.sql` (PostGIS and `pg_trgm`, in the `extensions` schema); pgTAP test `supabase/tests/database/00_extensions.test.sql` (4 assertions). `.github/workflows/ci.yml` has a new `database` job (`supabase db start`, then `supabase test db`, with Postgres only, no API, Auth, or Studio).
+- **Verified in this session (from `code/`, Docker server 29.4.0):**
+  - `npx supabase db start`: started, and applied `20260930181053_extensions.sql`.
+  - `npx supabase test db`: `00_extensions.test.sql .. ok`, 4 tests, **Result: PASS**.
+  - `select extensions.postgis_version()` in the local database: `3.3 USE_GEOS=1 USE_PROJ=1 USE_STATS=1`.
+  - `npx supabase db reset`: applied cleanly. `supabase test db` passed again after the reset.
+  - `npm run lint`: pass. `npm run typecheck`: pass. `npm test`: **45 passed** (3 files).
+- **Not verified:** the new CI `database` job on GitHub (it runs once this is pushed). `supabase start` (the full stack with API, Auth, and Studio) was not run: only the database is needed until P3, and CI uses `db start` too. `.env.example` already documents the Supabase variables, and I haven't tested them against the full stack.
+- **Notes:** `supabase db reset` warns that `supabase/seed.sql` is missing. That is expected until P3-04. The CLI reports v2.119.0 is available; the pin stays at 2.118.0 and Dependabot will propose the bump.
 
 ### 2026-09-30: D-10 decided (Option A, with Option B on standby)
 - **Decision (owner):** separate `/companies/{slug}/jobs` pages now (about 10 files per company). Option B (jobs as a `#jobs` section of the company page, about 5 files per company) is kept ready as plan task **P6-04**, used only when triggered.

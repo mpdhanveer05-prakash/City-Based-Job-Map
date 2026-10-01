@@ -105,7 +105,7 @@ Run these from `code/`. Requires Node.js 24 or later. The first four rows were *
 | E2E + a11y | `npm run test:e2e` (Playwright + axe; builds with `DEV_ROUTES=on`, serves `out/` via `wrangler dev` on :3100). For a running site, set `PLAYWRIGHT_BASE_URL` | Verified (P1-06) |
 | Local preview | `npm run preview` (serves the existing `out/` as the assets-only Worker on :8788, with `_headers`/`_redirects`/404) | Verified (P1-06) |
 | Staging deploy | Build with `SITE_ENV=staging DEV_ROUTES=on NEXT_PUBLIC_SITE_URL=https://company-map-staging.company-map.workers.dev`, then `npm run deploy:staging` (`wrangler deploy --env staging`), or use the **Deploy staging** workflow (Actions → Deploy staging → Run workflow; secrets are set). **Only with the owner's approval** | Verified (P1-06; workflow verified 30 Sep 2026) |
-| Local DB | `supabase start`, `supabase db reset`, `supabase test db` | Planned, added in P1-03 |
+| Local DB | `npx supabase db start` (Postgres only, as in CI) or `npx supabase start` (full stack), then `npx supabase db reset` and `npx supabase test db`. Needs Docker running | `db start`, `db reset`, and `test db` verified (P1-03, 1 Oct 2026); full `start` not run |
 
 ## Security (see [docs/security.md](docs/security.md))
 

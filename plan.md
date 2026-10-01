@@ -58,7 +58,7 @@ The architecture plan supplies these **target** dates. They are proposals, not c
 - **Steps:** Add the Supabase CLI as a dev dependency. Run `supabase init`, then `supabase start` (needs Docker Desktop running). Write the extensions migration. Document the environment variables.
 - **Acceptance:** `supabase db reset` applies cleanly. `select postgis_version()` works.
 - **Verification:** Command output in progress.md.
-- **Status:** Not started
+- **Status:** Completed (1 Oct 2026). `supabase db reset` applies cleanly, `postgis_version()` returns 3.3, and the 4 pgTAP assertions pass. The new CI `database` job hasn't run on GitHub yet. See progress.md.
 
 ### P1-04 CI skeleton
 - **Objective:** Add a GitHub Actions workflow that runs lint, typecheck, unit tests, and a dependency audit on pull requests.
