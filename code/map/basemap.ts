@@ -138,21 +138,35 @@ export function loadMapLibre(): Promise<MapLibreModule> {
   return import(/* turbopackIgnore: true */ /* webpackIgnore: true */ url) as Promise<MapLibreModule>;
 }
 
+/** A style with only a background: no network, no tiles, no labels. For tests and local work without a key. */
+export function blankStyle(theme: BasemapTheme): StyleSpecification {
+  return {
+    version: 8,
+    sources: {},
+    layers: [{ id: "background", type: "background", paint: { "background-color": theme.land } }],
+  };
+}
+
 export interface BasemapOptions {
   container: HTMLElement;
+  /** Empty means no basemap: the map draws the blank Milky style and makes no Geoapify request. */
   apiKey: string;
   theme: BasemapTheme;
   center: [number, number];
   zoom: number;
   signal?: AbortSignal;
   transformRequest?: (url: string, resourceType?: string) => { url: string };
+  /** Turns rotation and tilt off. The company marker layer projects for a north-up, top-down camera only. */
+  lockNorthUp?: boolean;
 }
 
 /** Creates the map with the themed Geoapify style and the attribution always expanded. */
 export async function createBasemap(options: BasemapOptions): Promise<MapLibreMap> {
   const [maplibre, style] = await Promise.all([
     loadMapLibre(),
-    loadBasemapStyle(options.apiKey, options.theme, { signal: options.signal }),
+    options.apiKey
+      ? loadBasemapStyle(options.apiKey, options.theme, { signal: options.signal })
+      : Promise.resolve(blankStyle(options.theme)),
   ]);
   const map = new maplibre.Map({
     container: options.container,
@@ -161,7 +175,9 @@ export async function createBasemap(options: BasemapOptions): Promise<MapLibreMa
     zoom: options.zoom,
     attributionControl: false,
     transformRequest: options.transformRequest,
+    ...(options.lockNorthUp ? { dragRotate: false, pitchWithRotate: false, maxPitch: 0, bearing: 0, pitch: 0 } : {}),
   });
+  if (options.lockNorthUp) map.touchZoomRotate.disableRotation();
   // Geoapify's free plan requires "Powered by Geoapify", plus OpenStreetMap and OpenMapTiles credits.
   // The TileJSON carries all three; compact: false keeps the text visible instead of behind a button.
   map.addControl(new maplibre.AttributionControl({ compact: false }));

@@ -119,7 +119,7 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Files:** `map/layer/company-layer.ts`, `map/layer/shaders/*`
 - **Acceptance:** Renders 60 clusters and 400 logos correctly, with viewport culling (+20% margin). Marker, cluster, stack, and selection colours come from `map/theme.ts` (read from the CSS tokens), as specified in [docs/design-system.md §2](docs/design-system.md#2-map-colours).
 - **Verification:** Playwright screenshot of the prototype route. Manual check on the reference desktop.
-- **Status:** Not started
+- **Status:** Completed (1 Oct 2026), except the manual check on the reference desktop (D-06 hasn't named the devices). `/dev/map-layer` draws 60 clusters, 400 logos, and 3 stacks in one instanced draw call, with the +20% culling margin and colours from `map/theme.ts`. Letter-fallback initials stand in for logos until P2-04. The explorer camera is north-up: see [ADR-0009](docs/decisions/0009-marker-layer-projection.md), which needs the owner's agreement. See progress.md.
 
 ### P2-04 Logo atlas manager
 - **Objective:** Build multi-page texture atlases at 64 and 128 px (chosen by DPR), with LRU eviction, a GPU memory budget, letter fallbacks, and missing-image handling.

@@ -74,6 +74,8 @@ The map is where the brand does most of its work. These rules extend [map-spec.m
 | Keyboard focus on a marker | A 2 px Ink ring, offset 3 px. It stays distinct from selection, so both can show at once |
 | Letter fallback | The Ink initial on one of five muted swatches chosen by a hash of the name: Sand `#F2E2B3`, Sky `#D6E4F0`, Rose `#F0D5CE`, Lilac `#E2DAEE`, Stone `#E6E1D3` (Ink reaches 9:1 or better on each). **No greens**, so a fallback can't be mistaken for a cluster. It keeps the 2 px Moss ring |
 
+**As built (P2-03) [Proposal]:** cluster diameter is `36 + 28 × min(1, ln(count) / ln(1000))` px, so it reaches 64 px at 1,000 companies. The label is the unique-company count. The stack badge is an Ink disc of half the logo radius at the top right, with a 1.5 px Milky outline and Milky numerals. The selection ring sits directly outside the marker; the focus ring is offset 3 px outside whichever ring is outermost.
+
 The WebGL layer reads these values once at init from the CSS custom properties (`getComputedStyle(document.documentElement)`) in `map/theme.ts`, so the colours are defined once. Map code stays free of React.
 
 ## 3. Typography [Proposal]

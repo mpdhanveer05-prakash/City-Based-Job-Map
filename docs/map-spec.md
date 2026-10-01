@@ -7,6 +7,7 @@ Map quality is a **release requirement**. Every colour on the map (the basemap, 
 - **Supercluster is the only clustering engine.** MapLibre source clustering stays off for company points.
 - Supercluster runs in a **Web Worker** that talks to the main thread through **Comlink**.
 - No DOM markers for clusters or logos. The popup/selection card is the only map-anchored DOM element.
+- **As built (P2-03):** the layer projects on the CPU and assumes a north-up, top-down camera. See [ADR-0009](decisions/0009-marker-layer-projection.md). [Proposal: rotation and tilt are off in the explorer]
 
 ## 2. Identity and lineage
 - **Office points** have a stable key `o:<office_id>`, and each carries its `company_id`. A company with several offices has several points. Counts shown to users are **unique companies** ("38 companies in 41 offices"). [Plan]
@@ -36,6 +37,7 @@ Map quality is a **release requirement**. Every colour on the map (the basemap, 
 - **Letter fallback:** the company's initial on a colour derived from a hash of its name, drawn on an OffscreenCanvas into the same atlas. Used when a logo is missing, fails, or is still loading. [Plan] The hash picks one of the five non-green swatches in design-system.md §2, with an Ink initial, so a fallback never looks like a Mantis cluster. [Proposal]
 - Slow networks: render the fallback immediately and swap in the logo when it arrives (an opacity blend). Never block a frame on an image.
 - Cluster counts are drawn from a digit atlas in the same pass. [Plan] The digits are Overpass 800 in Ink on the Mantis disc (5.77:1). [Proposal]
+  - **As built (P2-03):** one glyph sheet holds digits, `k . +`, and A–Z (for fallback initials), rasterised from Overpass 800 as an alpha mask and tinted in the shader. Digits take the widest digit's advance (Overpass has no default tabular digits). A cluster label is the **unique-company count**, at most four glyphs: `7`, `999`, `1.2k`, `12k`, `99k+`. A stack badge reads `2`…`99`, then `99+`.
 
 ## 6. Hit testing and touch
 - Hit test against **current animated screen positions**. The plan's "KDBush rebuilt when the view settles" would be wrong during animation. Instead [Proposal]: while animating, scan the visible items linearly (at most a few hundred); when settled, use the KDBush index.
@@ -55,6 +57,7 @@ Map quality is a **release requirement**. Every colour on the map (the basemap, 
 
 ## 9. Failure modes and cleanup
 - **WebGL unavailable or context lost:** show a notice and switch to List view. On `webglcontextrestored`, rebuild the atlases and buffers. [Proposal]
+  - **As built (P2-03):** MapLibre removes custom layers on context loss and does not restore them, so `attachCompanyLayer` re-adds the layer on `webglcontextrestored`; the layer keeps its items and rebuilds its GL objects. The "show a notice and switch to List view" part is not built yet (the explorer shell does it).
 - Tile failure: a retry banner with a link to List view. Data failure: retry in place. [Plan]
 - **Cleanup** on unmount or city change: `worker.terminate()`, release the Comlink proxy, delete the GL textures, buffers, and programs, remove every map and DOM listener, and cancel the rAF loop. [Confirmed]
 
