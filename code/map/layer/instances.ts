@@ -78,6 +78,8 @@ export type PreparedScene = {
   my: Float64Array;
   /** `STATIC_FLOATS` per item: radius, kind, flags, opacity, fill rgb, cells ×4, xs ×4, em, badge em. */
   statics: Float32Array;
+  /** Index in the caller's item array of each scene item: the scene is drawn in z order, not input order. */
+  sourceIndex: Int32Array;
   /** -1 when the item has no company. */
   companyIds: Int32Array;
   /** The logo to load, or null. Always null for clusters. */
@@ -101,11 +103,13 @@ export function prepareScene(items: readonly LayerItem[], palette: ScenePalette,
     mx: new Float64Array(n),
     my: new Float64Array(n),
     statics: new Float32Array(n * STATIC_FLOATS),
+    sourceIndex: new Int32Array(n),
     companyIds: new Int32Array(n).fill(-1),
     logoUrls: new Array(n).fill(null),
   };
 
-  sorted.forEach(({ item }, i) => {
+  sorted.forEach(({ item, i: sourceIndex }, i) => {
+    scene.sourceIndex[i] = sourceIndex;
     scene.keys[i] = item.key;
     scene.kinds[i] = item.kind;
     scene.mx[i] = lngToMercatorX(item.lng);
@@ -152,6 +156,21 @@ export function prepareScene(items: readonly LayerItem[], palette: ScenePalette,
 
 export type FrameStats = { drawn: number; culled: number };
 
+/** Per-frame state from the animator, by scene index. It replaces the scene's fixed position, size, and opacity. */
+export type DynamicState = {
+  /** Mercator x and y. */
+  x: Float64Array;
+  y: Float64Array;
+  /** Multiplies the radius. */
+  scale: Float32Array;
+  /** Multiplies the item's opacity. */
+  opacity: Float32Array;
+};
+
+/** An item this faint or this small is not drawn at all. */
+const MIN_OPACITY = 0.003;
+const MIN_SCALE = 0.01;
+
 /** Per-frame projection, culling, and packing into one reusable buffer. */
 export class FramePacker {
   data = new Float32Array(0);
@@ -160,6 +179,8 @@ export class FramePacker {
   /** Screen position (CSS px) of each packed instance. */
   x = new Float32Array(0);
   y = new Float32Array(0);
+  /** Drawn radius (px) of each packed instance, after animation. */
+  r = new Float32Array(0);
 
   private ensure(capacity: number): void {
     if (this.indices.length >= capacity) return;
@@ -168,6 +189,7 @@ export class FramePacker {
     this.indices = new Int32Array(grown);
     this.x = new Float32Array(grown);
     this.y = new Float32Array(grown);
+    this.r = new Float32Array(grown);
   }
 
   /**
@@ -177,22 +199,28 @@ export class FramePacker {
   pack(
     scene: PreparedScene,
     view: View,
-    options: { margin?: number; logoFor?: (sceneIndex: number) => LogoRef | null } = {},
+    options: { margin?: number; logoFor?: (sceneIndex: number) => LogoRef | null; dynamic?: DynamicState } = {},
   ): FrameStats {
     const margin = options.margin ?? CULL_MARGIN;
+    const dynamic = options.dynamic;
     this.ensure(scene.count);
     let drawn = 0;
     for (let i = 0; i < scene.count; i++) {
       const s = i * STATIC_FLOATS;
-      const radius = scene.statics[s];
-      const x = screenX(view, scene.mx[i]);
-      const y = screenY(view, scene.my[i]);
+      const scale = dynamic ? dynamic.scale[i] : 1;
+      const fade = dynamic ? dynamic.opacity[i] : 1;
+      if (fade < MIN_OPACITY || scale < MIN_SCALE) continue; // invisible: faded out, or not grown yet
+      const radius = scene.statics[s] * scale;
+      const x = screenX(view, dynamic ? dynamic.x[i] : scene.mx[i]);
+      const y = screenY(view, dynamic ? dynamic.y[i] : scene.my[i]);
       // Rings and the badge reach past the disc, so cull on the padded extent.
       if (!intersectsViewport(x, y, radius + QUAD_PADDING, view, margin)) continue;
       const o = drawn * FLOATS_PER_INSTANCE;
       this.data[o] = x;
       this.data[o + 1] = y;
       for (let k = 0; k < STATIC_FLOATS; k++) this.data[o + 2 + k] = scene.statics[s + k];
+      this.data[o + 2] = radius; // static float 0 is the radius, 3 the opacity
+      this.data[o + 5] = scene.statics[s + 3] * fade;
       const logo = options.logoFor ? options.logoFor(i) : null;
       const l = o + 2 + STATIC_FLOATS;
       this.data[l] = logo ? logo.page : -1;
@@ -202,6 +230,7 @@ export class FramePacker {
       this.indices[drawn] = i;
       this.x[drawn] = x;
       this.y[drawn] = y;
+      this.r[drawn] = radius;
       drawn++;
     }
     return { drawn, culled: scene.count - drawn };

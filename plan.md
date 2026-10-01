@@ -135,7 +135,7 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Files:** `map/animation/*`
 - **Acceptance:** Split 280 ms ease-out and merge 220 ms ease-in (proposals). Zooming again mid-transition retargets from the *current* interpolated state and never jumps back to a start state. A filter change mid-zoom cancels cleanly. No duplicate keys are ever drawn.
 - **Verification:** Unit tests on the interpolator with a fake clock. Playwright script that runs 20 rapid zoom cycles and asserts that the set of drawn keys has no duplicates (exposed via a debug hook).
-- **Status:** Not started
+- **Status:** In progress (1 Oct 2026). Built and unit-tested (28 tests, mutation-checked); the layer is driven by it; the live scenario on `/dev/map-layer` splits and merges 119 markers on a zoom. Browser tests for the split and merge modes, 20 rapid zoom cycles with no duplicate key in any frame, a filter change mid-zoom, and reduced motion passed on an earlier build. **Not yet verified:** the held-clock easing test (`tests/e2e/animation.spec.ts`, "children grow out of their parent…"), because the last runs hit a stale or unstarted server. See progress.md for the exact next steps.
 
 ### P2-06 Hit testing, touch, overlap, and co-location
 - **Objective:** Hit test against current animated positions, with 44 px touch targets, a deterministic overlap order, and stack/spider for identical coordinates.

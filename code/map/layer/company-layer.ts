@@ -5,11 +5,12 @@
 // layer does not use MapLibre's matrices. A map with bearing or pitch draws nothing and sets
 // stats.unsupportedCamera; the explorer turns rotation and tilt off.
 import type { CustomLayerInterface, Map as MapLibreMap } from "maplibre-gl";
+import { Animator, type AnimOutput, type AnimStats } from "../animation/animator.ts";
 import type { GlyphSheet } from "../atlas/glyph-sheet.ts";
 import { MAX_LOGO_PAGES, type LogoAtlas } from "../atlas/logo-atlas.ts";
 import { parseCssColor, type MarkerTheme, type Rgb } from "../theme.ts";
-import { viewFor, type View } from "./geometry.ts";
-import { FLOATS_PER_INSTANCE, FramePacker, STATIC_FLOATS, prepareScene, type LayerItem, type MarkerKind, type PreparedScene, type ScenePalette } from "./instances.ts";
+import { latToMercatorY, lngToMercatorX, viewFor, type View } from "./geometry.ts";
+import { FLOATS_PER_INSTANCE, FramePacker, prepareScene, type LayerItem, type MarkerKind, type PreparedScene, type ScenePalette } from "./instances.ts";
 import { MARKER_FRAGMENT, MARKER_VERTEX } from "./shaders/marker.ts";
 
 export type CompanyLayerOptions = {
@@ -17,7 +18,22 @@ export type CompanyLayerOptions = {
   glyphs: GlyphSheet;
   /** Without one, every logo shows its letter fallback. The layer drives it and disposes it when removed. */
   logoAtlas?: LogoAtlas;
+  /** The clock for animation, in ms. Default `performance.now`. Tests inject one to hold a transition still. */
+  now?: () => number;
   id?: string;
+};
+
+/** One item of a zoom or filter update, with the lineage the worker returned. */
+export type LayerTarget = { item: LayerItem; parentKey: string; childKeys: readonly string[] };
+
+export type LayerUpdate = {
+  targets: readonly LayerTarget[];
+  /** The integer zoom level of the response. */
+  level: number;
+  /** `dataVersion:filterHash`: a different one replaces the scene with a cross-fade. */
+  namespace: string;
+  /** The worker response's generation. An older update than one already applied is ignored. */
+  generation: number;
 };
 
 export type DrawnItem = { key: string; kind: MarkerKind; x: number; y: number; radius: number };
@@ -31,6 +47,8 @@ export type LayerStats = {
   frames: number;
   unsupportedCamera: boolean;
   contextRestores: number;
+  /** True while any marker is still moving, growing, or fading. */
+  animating: boolean;
 };
 
 type Gpu = {
@@ -116,14 +134,19 @@ export class CompanyLayer implements CustomLayerInterface {
     frames: 0,
     unsupportedCamera: false,
     contextRestores: 0,
+    animating: false,
   };
 
   private readonly glyphs: GlyphSheet;
   private readonly logoAtlas: LogoAtlas | null;
+  private readonly now: () => number;
   private readonly colours: Record<"clusterFill" | "clusterHalo" | "text" | "logoRing" | "logoFill" | "badge" | "badgeText" | "selection" | "focus", Rgb>;
   private readonly palette: ScenePalette;
   private readonly packer = new FramePacker();
+  private readonly animator = new Animator<LayerItem>();
   private scene: PreparedScene;
+  /** The animator's state for each scene item, refilled every frame. */
+  private dynamic: AnimOutput = { x: new Float64Array(0), y: new Float64Array(0), scale: new Float32Array(0), opacity: new Float32Array(0) };
   private map: MapLibreMap | null = null;
   private gpu: Gpu | null = null;
   private lastView: View | null = null;
@@ -133,6 +156,7 @@ export class CompanyLayer implements CustomLayerInterface {
     this.id = options.id ?? "company-markers";
     this.glyphs = options.glyphs;
     this.logoAtlas = options.logoAtlas ?? null;
+    this.now = options.now ?? (() => performance.now());
     this.colours = {
       clusterFill: parseCssColor(theme.clusterFill),
       clusterHalo: parseCssColor(theme.clusterHalo),
@@ -148,10 +172,48 @@ export class CompanyLayer implements CustomLayerInterface {
     this.scene = prepareScene([], this.palette, this.glyphs.metrics);
   }
 
-  /** Replaces everything on the map. Keys must be unique. */
+  /** Replaces everything on the map at once, with no animation. Keys must be unique. */
   setItems(items: readonly LayerItem[]): void {
-    this.scene = prepareScene(items, this.palette, this.glyphs.metrics);
-    this.stats.items = this.scene.count;
+    this.animator.reset({
+      generation: Number.NEGATIVE_INFINITY, // a later setTargets, whatever its generation, is newer than this
+      level: 0,
+      namespace: "",
+      targets: items.map((item) => ({ item, ...this.place(item), parentKey: item.key, childKeys: [item.key] })),
+    });
+    this.rebuild();
+  }
+
+  /**
+   * Moves the map to a new set of items with split, merge, or cross-fade animation, from the markers' current
+   * positions (map-spec §4). Returns false, and changes nothing, if a newer generation was already applied.
+   */
+  setTargets(update: LayerUpdate): boolean {
+    const applied = this.animator.update({
+      generation: update.generation,
+      level: update.level,
+      namespace: update.namespace,
+      targets: update.targets.map((t) => ({ item: t.item, ...this.place(t.item), parentKey: t.parentKey, childKeys: t.childKeys })),
+      now: this.now(),
+    });
+    if (applied) this.rebuild();
+    return applied;
+  }
+
+  /** What the last update did: mode, how many markers moved, and whether it cross-faded to stay smooth. */
+  get animation(): Readonly<AnimStats> {
+    return this.animator.stats;
+  }
+
+  private place(item: LayerItem): { mx: number; my: number } {
+    return { mx: lngToMercatorX(item.lng), my: latToMercatorY(item.lat) };
+  }
+
+  /** Builds the drawable scene from everything on the animator's render list, including markers fading out. */
+  private rebuild(): void {
+    this.scene = prepareScene(this.animator.items, this.palette, this.glyphs.metrics);
+    const n = this.scene.count;
+    this.dynamic = { x: new Float64Array(n), y: new Float64Array(n), scale: new Float32Array(n), opacity: new Float32Array(n) };
+    this.stats.items = n;
     this.map?.triggerRepaint();
   }
 
@@ -165,7 +227,7 @@ export class CompanyLayer implements CustomLayerInterface {
         kind: this.scene.kinds[i],
         x: this.packer.x[k],
         y: this.packer.y[k],
-        radius: this.scene.statics[i * STATIC_FLOATS],
+        radius: this.packer.r[k],
       });
     }
     return out;
@@ -209,7 +271,11 @@ export class CompanyLayer implements CustomLayerInterface {
     atlas?.beginFrame();
     atlas?.flushUploads(gl);
     const scene = this.scene;
+    // Where every marker is right now: the animator moves, grows, and fades them between updates.
+    const animating = this.animator.sample(this.now(), this.dynamic, this.scene.sourceIndex);
+    this.stats.animating = animating;
     const { drawn, culled } = this.packer.pack(scene, view, {
+      dynamic: this.dynamic,
       // Only drawn markers get here, so only visible companies ask for their logo.
       logoFor: atlas
         ? (i) => {
@@ -222,6 +288,8 @@ export class CompanyLayer implements CustomLayerInterface {
     });
     this.stats.drawn = drawn;
     this.stats.culled = culled;
+    // Ask for the next frame even if nothing is visible yet: a fade-in starts at opacity 0.
+    if (animating) map.triggerRepaint();
     if (drawn === 0) return;
 
     const gpu = this.gpu;

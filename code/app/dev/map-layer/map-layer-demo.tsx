@@ -4,6 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { Button } from "@/components/ui/button";
+import { targetsFromResponse } from "@/map/animation/targets";
 import { buildGlyphSheet, cellSizeForDpr } from "@/map/atlas/glyph-sheet";
 import { pageBytes, PAGE_SIZE } from "@/map/atlas/budget";
 import { initialOf, swatchIndex } from "@/map/atlas/fallback";
@@ -26,11 +27,23 @@ type Scenario = "static" | "live" | "logos";
 
 const LOGO_COUNT = 60;
 
+type LiveControl = {
+  /** Reloads the worker with only the startups (a new filter hash), or all companies again. */
+  setStartupsOnly(on: boolean): Promise<void>;
+  stop(): void;
+};
+
 declare global {
   interface Window {
     // Test hook; not used by the app.
     __mapLayer?: { map: MapLibreMap; layer: CompanyLayer; atlas: LogoAtlas };
     __logoControl?: LogoControl;
+    /** The keys of the last worker response applied in the live scenario (test hook). */
+    __liveKeys?: string[];
+    /** Controls for the live scenario (test hook). */
+    __liveControl?: LiveControl;
+    /** If set, the layer's animation clock (test hook): a test holds a transition still by returning a fixed time. */
+    __layerNow?: () => number;
   }
 }
 
@@ -41,6 +54,7 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
   const [message, setMessage] = useState("");
   const [scenario, setScenario] = useState<Scenario>("static");
   const [stats, setStats] = useState<LayerStats | null>(null);
+  const [startupsOnly, setStartupsOnly] = useState(false);
 
   useEffect(() => {
     if (!container.current) return;
@@ -88,7 +102,12 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
           return loadLogoPixels(url, cellPx, { signal });
         },
       });
-      const layer = new CompanyLayer({ theme: readMarkerTheme(), glyphs, logoAtlas: atlas });
+      const layer = new CompanyLayer({
+        theme: readMarkerTheme(),
+        glyphs,
+        logoAtlas: atlas,
+        now: () => window.__layerNow?.() ?? performance.now(),
+      });
       if (!map.isStyleLoaded()) await new Promise<void>((resolve) => map!.once("load", () => resolve()));
       detachLayer = attachCompanyLayer(map, layer);
 
@@ -113,7 +132,12 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
           const view = viewFor(map!.getCenter(), map!.getZoom(), canvas.clientWidth, canvas.clientHeight);
           layer.setItems(buildStaticScene({ view }));
         } else {
-          removeLiveListener = startLive(map!, layer, (c) => (client = c));
+          const live = startLive(map!, layer, (c) => (client = c));
+          window.__liveControl = live;
+          removeLiveListener = () => {
+            live.stop();
+            delete window.__liveControl;
+          };
         }
       };
       api.current = { map, layer, show };
@@ -145,8 +169,15 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
     };
   }, [apiKey]);
 
+  function toggleStartups() {
+    const next = !startupsOnly;
+    setStartupsOnly(next);
+    void window.__liveControl?.setStartupsOnly(next);
+  }
+
   function choose(next: Scenario) {
     setScenario(next);
+    setStartupsOnly(false);
     api.current?.show(next);
   }
 
@@ -173,6 +204,11 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
           <Button variant={scenario === "live" ? "default" : "outline"} aria-pressed={scenario === "live"} onClick={() => choose("live")}>
             Live clusters
           </Button>
+          {scenario === "live" && (
+            <Button variant={startupsOnly ? "default" : "outline"} aria-pressed={startupsOnly} onClick={toggleStartups}>
+              Startups only
+            </Button>
+          )}
           <Button variant={scenario === "logos" ? "default" : "outline"} aria-pressed={scenario === "logos"} onClick={() => choose("logos")}>
             Logos
           </Button>
@@ -194,12 +230,14 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
 }
 
 /** The live scenario: Bengaluru M through the clustering worker, re-requested whenever the map settles. */
-function startLive(map: MapLibreMap, layer: CompanyLayer, onClient: (client: ClusterClient) => void): () => void {
+function startLive(map: MapLibreMap, layer: CompanyLayer, onClient: (client: ClusterClient) => void): LiveControl {
   const dataset = generateSyntheticDataset({ city: "bengaluru", size: "M" });
   const names = new Map(dataset.companies.map((c) => [c.id, c.name]));
+  const startups = new Set(dataset.companies.filter((c) => c.types.includes("startup")).map((c) => c.id));
   const client = createClusterWorkerClient();
   onClient(client);
   let cancelled = false;
+  let filterHash = "none";
 
   const refresh = async () => {
     const b = map.getBounds();
@@ -210,28 +248,44 @@ function startLive(map: MapLibreMap, layer: CompanyLayer, onClient: (client: Clu
       map.getZoom(),
     );
     if (!response || cancelled) return; // null: a newer request superseded this one
-    const items: LayerItem[] = response.keys.map((key, i) => {
+    const makeItem = (i: number): LayerItem => {
+      const key = response.keys[i];
       const lng = response.lngLat[2 * i];
       const lat = response.lngLat[2 * i + 1];
       if (response.kinds[i] === KIND_CLUSTER) return { key, kind: "cluster", lng, lat, count: response.companyCounts[i] };
       const name = names.get(response.companyIds[i]) ?? "";
       return { key, kind: "logo", lng, lat, letter: initialOf(name), swatch: swatchIndex(name) };
+    };
+    // The response carries each item's parent and children, so the layer can split and merge from where the
+    // markers are now. An older response than one already applied is ignored.
+    const applied = layer.setTargets({
+      targets: targetsFromResponse(response, makeItem),
+      level: response.level,
+      namespace: `synthetic:${filterHash}`,
+      generation: response.generation,
     });
-    layer.setItems(items);
+    if (applied) window.__liveKeys = response.keys;
   };
 
-  client
-    .load(
+  const load = async (hash: string) => {
+    filterHash = hash;
+    const offices = dataset.offices.filter((o) => hash === "none" || startups.has(o.companyId));
+    await client.load(
       packPointSet(
-        dataset.offices.map((o) => ({ id: o.id, companyId: o.companyId, lng: o.lng, lat: o.lat })),
-        { dataVersion: "synthetic", filterHash: "none" },
+        offices.map((o) => ({ id: o.id, companyId: o.companyId, lng: o.lng, lat: o.lat })),
+        { dataVersion: "synthetic", filterHash: hash },
       ),
-    )
-    .then(refresh)
-    .catch(() => {});
+    );
+    await refresh();
+  };
+
+  load("none").catch(() => {});
   map.on("moveend", refresh);
-  return () => {
-    cancelled = true;
-    map.off("moveend", refresh);
+  return {
+    setStartupsOnly: (on) => load(on ? "startups" : "none"),
+    stop() {
+      cancelled = true;
+      map.off("moveend", refresh);
+    },
   };
 }
