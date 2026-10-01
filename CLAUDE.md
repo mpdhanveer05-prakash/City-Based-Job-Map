@@ -4,6 +4,7 @@ Primary instruction file for Claude Code. Keep it short; details live in the lin
 
 ## Before you start any work
 
+0. **New laptop?** Follow [docs/setup-new-machine.md](docs/setup-new-machine.md) (tools, `npm ci`, local settings, and the shared Claude memory in [docs/claude-memory/](docs/claude-memory/README.md)).
 1. Read [plan.md](plan.md) and [docs/progress.md](docs/progress.md). Work on the task marked **In progress**, or the first **Not started** task whose dependencies are **Completed**.
 2. Read the docs the task links to (map work → [docs/map-spec.md](docs/map-spec.md), any UI, styling, or copy → [docs/design-system.md](docs/design-system.md), database → [docs/data-model.md](docs/data-model.md), etc.).
 3. Check [docs/decisions/](docs/decisions/) for accepted decisions and the open-decision register.

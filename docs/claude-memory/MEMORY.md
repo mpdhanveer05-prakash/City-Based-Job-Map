@@ -1,0 +1,5 @@
+- [Two laptops](user-two-laptops.md) — owner uses two laptops; keep code and this memory synced via GitHub
+- [Push only when asked](feedback-push-only-when-asked.md) — local commit per task, push to main on request, then check CI
+- [Stale test server](feedback-stale-test-server.md) — Playwright reuses port 3100 and skips the rebuild; kill wrangler by process name
+- [E2E conventions](feedback-e2e-suite-conventions.md) — workers, timeouts, key and no-key runs, deterministic gates, pixel reading
+- [Setup and secrets](project-setup-and-secrets.md) — repo URL, where the Geoapify key lives, new-laptop guide
