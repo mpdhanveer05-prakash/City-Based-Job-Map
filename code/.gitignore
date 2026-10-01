@@ -53,3 +53,6 @@ next-env.d.ts
 
 # synthetic fixtures written by npm run fixtures (P2-01)
 /map/fixtures/out/
+
+# MapLibre runtime copied by scripts/copy-maplibre.mts before dev and build
+/public/maplibre/

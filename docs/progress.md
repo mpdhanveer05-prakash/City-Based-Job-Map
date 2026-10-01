@@ -3,11 +3,27 @@
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
 ## Current state
-- **Current task:** none in progress. Phase 1 has one task left, P1-05 (basemap feasibility; the Geoapify key is in `code/.env.local`). P2-02 (clustering worker) is next in Phase 2; its dependency P2-01 is complete.
-- **Next action:** start P2-02, or P1-05 (it has no Phase 2 dependency).
-- **Blockers:** none for code work. For product decisions, see the decision register (D-01…D-10).
+- **Current task:** none in progress. Phase 1 is complete: P1-01 to P1-06 are done. P2-02 (clustering worker) is next; its dependency P2-01 is complete.
+- **Next action:** start P2-02. **Owner actions open (D-11):** restrict the Geoapify key by referrer, and decide the basemap capacity path before launch.
+- **Blockers:** none for code work. For product decisions, see the decision register (D-01…D-11).
 
 ## Log
+
+### 2026-10-01: P1-05 Basemap feasibility (Completed)
+- **Added in `code/`:** `map/theme.ts` (reads the basemap colours from the CSS tokens), `map/basemap.ts` (loads Geoapify `positron`, re-colours it with `applyBasemapTheme`, adds attribution, counts requests; `loadMapLibre()`), `scripts/copy-maplibre.mts`, the dev page `/dev/basemap`, `tests/unit/basemap.test.ts` (11 tests), and `tests/e2e/basemap.spec.ts` (5 tests × 2 projects). `maplibre-gl` 6.11.2 is a new dependency (an approved-stack library; 0 audit findings at install). Full write-up and sources: [ADR-0008](decisions/0008-basemap.md).
+- **Bug found and fixed: MapLibre's worker.** Bundled through Turbopack, MapLibre 6 stopped with "Worker failed to load": it finds `maplibre-gl-worker.mjs` by name, and the worker imports `./maplibre-gl-shared.mjs`, but Turbopack renames both with hashes. The three runtime files are now copied unhashed to `public/maplibre/<version>/` before `dev` and `build`, and loaded at run time.
+- **Bug found and fixed: a collapsed map.** MapLibre's unlayered CSS sets `position: relative` on its container, which beat Tailwind's `absolute inset-0`: the container was 0 px high and the canvas 1280 × 300. My first e2e checks passed on that sliver. A wrapper now owns the sizing, and a new test asserts that the canvas fills the viewport.
+- **Measured** (cold cache, headless Chromium, one scripted session): 25 tile responses on a Pixel 7 viewport, 48 on 1280 × 800, 75 on 1920 × 1080 (MapLibre counts 31, 60, 87 requests). At 0.25 credits a tile and 3,000 credits a day, that's roughly 240 sessions a day (160 to 480); about 140 a day if style, sprite, and glyph requests are billed at a credit each, which Geoapify's pages don't settle.
+- **Findings for the owner (D-11):** (1) **The key is not restricted**: HTTP 200 with a foreign `Referer` and with none. (2) The Free allowance is probably below launch traffic; the choices are in ADR-0008. (3) Geoapify's terms don't mention style changes; its API docs permit them.
+- **Verified in this session (from `code/`):**
+  - `npm run lint`: pass, no output. `npm run typecheck`: pass. `npm test`: **102 passed** (5 files; 11 new).
+  - `npm run build` (production): pass. 36 files, largest `maplibre-gl.mjs` 576 KiB, 3 header rules, no `/dev` output.
+  - `npm run test:e2e` (builds with `DEV_ROUTES=on`, serves through `wrangler dev`): **29 passed, 1 skipped** (it was 19 + 1). Basemap checks: attribution links visible, canvas fills the viewport, the most common pixel is exactly Milky and no pixel is green, every layer colour equals a token, and a Bengaluru ↔ Chennai switch has no HTTP error.
+  - With `NEXT_PUBLIC_GEOAPIFY_KEY=` empty, the basemap spec skips all 10 cases, as CI will (CI has no key).
+  - Screenshots at zoom 13 and 15 reviewed: Milky land, stone parks, blue water, no green, attribution and zoom controls visible.
+- **Not verified:** the new CI jobs on GitHub (not pushed); the live staging site (it doesn't have the key yet: the Deploy staging workflow would need a `NEXT_PUBLIC_GEOAPIFY_KEY` secret and env line); billing of non-tile requests; browser-cache savings on repeat visits; Firefox and Safari; Geoapify's referrer setting (needs the owner's login); a screen-reader pass on the attribution.
+- **Open for the designer:** labels are Metropolis/Noto Sans, not Overpass; Milky Shade buildings look busy from zoom 13.
+- **Next action:** P2-02.
 
 ### 2026-10-01: P2-01 Synthetic dataset generator (Completed)
 - **Added in `code/`:** `map/fixtures/generate.ts` (a pure, seeded generator; mulberry32), `map/fixtures/hotspots.ts` (density shape per city), `map/fixtures/cli.mts` (`npm run fixtures`, with `-- --manifest` to refresh the hashes), `map/fixtures/manifest.json`, and `tests/unit/synthetic-points.test.ts` (46 tests). `map/fixtures/out/` is git-ignored.

@@ -79,7 +79,7 @@ The product suits static hosting. There's no public login and nothing per-visito
 | Cloudflare Turnstile | Feedback forms | Free |
 
 Still to verify:
-- Geoapify's free allowance (P1-05; the free fallback is Protomaps PMTiles).
+- ~~Geoapify's free allowance~~ Checked in P1-05 (1 Oct 2026): 3,000 credits a day, 0.25 per tile, so about 100 to 500 sessions a day. See [ADR-0008](0008-basemap.md) and D-11.
 - Build time with real data (P1-06, then P4).
 - What backups Supabase Free includes (P9-04).
 

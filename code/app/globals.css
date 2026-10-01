@@ -182,3 +182,15 @@
     }
   }
 }
+
+/* MapLibre's attribution box uses its own white and blue; bring it onto the tokens.
+   Geoapify, OpenMapTiles and OpenStreetMap credits stay visible (ADR-0008). */
+.maplibregl-ctrl-attrib.maplibregl-compact,
+.maplibregl-ctrl.maplibregl-ctrl-attrib {
+  background-color: var(--milky);
+  color: var(--moss);
+  font-size: var(--text-xs);
+}
+.maplibregl-ctrl.maplibregl-ctrl-attrib a {
+  color: var(--mantis-deep);
+}

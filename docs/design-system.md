@@ -263,4 +263,4 @@ The first-draft instinct for each of these was a generic default. Here is what c
 ## Open items
 - Review the palette in the running UI; the owner may change it (see the note at the top). Owner: product owner.
 - The derived tokens, the font, and the map-colour rules need the product designer's sign-off (plan.md, Sprints 0–4).
-- Geoapify terms for overriding style paint properties: unverified, checked in P1-05.
+- Geoapify's API docs permit re-colouring its vector styles in MapLibre (checked in P1-05, 1 Oct 2026); its terms are silent on it, so a written confirmation is still worth asking for. Basemap labels use Geoapify's Metropolis/Noto Sans glyphs, not Overpass, and Milky Shade buildings look busy from zoom 13: both need the designer's call. See [ADR-0008](decisions/0008-basemap.md).

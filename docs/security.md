@@ -14,7 +14,7 @@
 
 ## Secrets
 - Never commit credentials. `.env*` is git-ignored except for `code/.env.example`.
-- Browser-safe values: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or its publishable-key equivalent), `NEXT_PUBLIC_GEOAPIFY_KEY` (restricted by referrer), and `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
+- Browser-safe values: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or its publishable-key equivalent), `NEXT_PUBLIC_GEOAPIFY_KEY` (to be restricted by referrer in Geoapify MyProjects; **unrestricted on 1 Oct 2026**, see ADR-0008), and `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
 - Server-only values: `SUPABASE_SERVICE_ROLE_KEY`, `TURNSTILE_SECRET_KEY`, the GitHub token for `request-rebuild`, `PIPELINE_DATABASE_URL`, and the Cloudflare API token for deploys. They live **only** in Supabase function secrets and GitHub encrypted secrets. The Next.js build sees only `NEXT_PUBLIC_*` values, and it reads the snapshot with the anon key, so RLS limits it to published data.
 - CI greps the static output (`out/`) for secret-looking strings before deploying (see testing.md).
 - CI runs a secret scan (for example gitleaks; the tool choice is open).
@@ -27,7 +27,7 @@
 
 ## Outbound links and content
 - Apply and website URLs must be `https` and match the company domain or a known ATS host. This is checked **at build time**; a failing URL fails the build. Links point to the stored URL unchanged (no redirect service). The `click` beacon sends only the job or company ID and the link kind.
-- Strict CSP set in the static-asset `_headers` file (allow self, Geoapify, Supabase, Turnstile, and `worker-src blob:` as needed), sanitised descriptions, and `rel="noopener noreferrer"`.
+- Strict CSP set in the static-asset `_headers` file (allow self, `https://maps.geoapify.com`, Supabase, Turnstile; `worker-src 'self'`, because MapLibre is served same-origin from `/maplibre/`), sanitised descriptions, and `rel="noopener noreferrer"`.
 
 ## Privacy
 - There is no visitor account and no visitor PII. Click logs contain no IP address or user identifier (the retention and analytics tool are decided in D-07).

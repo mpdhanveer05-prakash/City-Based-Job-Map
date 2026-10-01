@@ -11,5 +11,6 @@ Each ADR is short: context, decision, consequences, status (Proposed · Accepted
 | [0005](0005-map-rendering.md) | Custom WebGL layer with Supercluster in a worker | Accepted, subject to the validation gate |
 | [0006](0006-free-tier-static-hosting.md) | Free-tier hosting: Next.js static export on Cloudflare Pages, backend in Supabase | Accepted (resolves D-09); hosting target amended by 0007 |
 | [0007](0007-workers-static-assets.md) | Serve the static export as Workers static assets, not legacy Pages | Accepted |
+| [0008](0008-basemap.md) | Basemap: Geoapify Positron, re-coloured in MapLibre | Accepted · Open (free allowance vs launch traffic, D-11) |
 
 Open decisions are listed in the [plan.md decision register](../../plan.md#open-decision-register).

@@ -6,8 +6,9 @@
     "node": ">=24"
   },
   "scripts": {
+    "predev": "node scripts/copy-maplibre.mts",
     "dev": "next dev",
-    "prebuild": "node -e \"require('node:fs').rmSync('.next/dev',{recursive:true,force:true})\"",
+    "prebuild": "node scripts/copy-maplibre.mts && node -e \"require('node:fs').rmSync('.next/dev',{recursive:true,force:true})\"",
     "build": "next build",
     "postbuild": "node scripts/check-static-limits.mts out",
     "lint": "eslint",
@@ -24,6 +25,7 @@
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
     "lucide-react": "^1.49.0",
+    "maplibre-gl": "^6.11.2",
     "next": "16.3.7",
     "radix-ui": "^1.6.7",
     "react": "19.2.8",

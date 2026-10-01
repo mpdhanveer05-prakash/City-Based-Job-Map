@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // wrangler pages dev state
     ".wrangler/**",
+    // MapLibre's minified runtime, copied by scripts/copy-maplibre.mts
+    "public/maplibre/**",
   ]),
 ]);
 
