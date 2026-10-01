@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "preview": "wrangler dev --port 8788",
-    "deploy:staging": "wrangler deploy --env staging"
+    "deploy:staging": "wrangler deploy --env staging",
+    "fixtures": "node map/fixtures/cli.mts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

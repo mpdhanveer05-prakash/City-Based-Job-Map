@@ -102,7 +102,7 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Files:** `scripts/gen_synthetic_points.py` or `map/fixtures/generate.ts`, `map/fixtures/*.json`
 - **Acceptance:** Output is deterministic from a seed. Every record has `synthetic: true`.
 - **Verification:** Unit test: same seed gives the same hash.
-- **Status:** Not started
+- **Status:** Completed (1 Oct 2026). The generator is TypeScript (`map/fixtures/generate.ts`), so the prototype page, Vitest, and the CLI share it. The JSON files aren't committed: `npm run fixtures` writes them to the git-ignored `map/fixtures/out/`, and the committed `map/fixtures/manifest.json` records each dataset's SHA-256, which a unit test checks. See progress.md.
 
 ### P2-02 Clustering worker (Supercluster + Comlink)
 - **Objective:** Move clustering into a Web Worker that returns stable keys and parent lineage, and tags each response with a generation number.

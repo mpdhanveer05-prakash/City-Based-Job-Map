@@ -101,6 +101,7 @@ Run these from `code/`. Requires Node.js 24 or later. The first four rows were *
 | Dev server | `npm run dev` (http://localhost:3000; `/dev/tokens` shows the palette) | Verified |
 | Lint / types / build | `npm run lint`, `npm run typecheck`, `npm run build` | Verified |
 | Unit tests | `npm test` (Vitest) | Verified |
+| Synthetic map data | `npm run fixtures` writes the S/M/L datasets to `map/fixtures/out/`; add `-- --manifest` to refresh `map/fixtures/manifest.json` after an intentional generator change | Verified (P2-01) |
 | Build | `npm run build` writes the static export to `out/`. `postbuild` fails it on a static-assets Free limit or a secret-looking string. For staging, set `SITE_ENV=staging DEV_ROUTES=on` | Verified (P1-06) |
 | E2E + a11y | `npm run test:e2e` (Playwright + axe; builds with `DEV_ROUTES=on`, serves `out/` via `wrangler dev` on :3100). For a running site, set `PLAYWRIGHT_BASE_URL` | Verified (P1-06) |
 | Local preview | `npm run preview` (serves the existing `out/` as the assets-only Worker on :8788, with `_headers`/`_redirects`/404) | Verified (P1-06) |

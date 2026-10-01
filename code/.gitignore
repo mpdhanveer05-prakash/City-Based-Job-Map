@@ -50,3 +50,6 @@ next-env.d.ts
 # cloudflare (wrangler pages dev state)
 /.wrangler/
 .dev.vars*
+
+# synthetic fixtures written by npm run fixtures (P2-01)
+/map/fixtures/out/

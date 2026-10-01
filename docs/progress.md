@@ -3,11 +3,21 @@
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
 ## Current state
-- **Current task:** none in progress. Phase 1 has one task left, P1-05 (basemap feasibility; the Geoapify key is in `code/.env.local`). P2-01 (synthetic dataset generator) has no unmet dependencies.
-- **Next action:** start P2-01 (the map gate is the biggest risk) or P1-05.
+- **Current task:** none in progress. Phase 1 has one task left, P1-05 (basemap feasibility; the Geoapify key is in `code/.env.local`). P2-02 (clustering worker) is next in Phase 2; its dependency P2-01 is complete.
+- **Next action:** start P2-02, or P1-05 (it has no Phase 2 dependency).
 - **Blockers:** none for code work. For product decisions, see the decision register (D-01…D-10).
 
 ## Log
+
+### 2026-10-01: P2-01 Synthetic dataset generator (Completed)
+- **Added in `code/`:** `map/fixtures/generate.ts` (a pure, seeded generator; mulberry32), `map/fixtures/hotspots.ts` (density shape per city), `map/fixtures/cli.mts` (`npm run fixtures`, with `-- --manifest` to refresh the hashes), `map/fixtures/manifest.json`, and `tests/unit/synthetic-points.test.ts` (46 tests). `map/fixtures/out/` is git-ignored.
+- **What a dataset holds:** `companies` (name, overlapping `types`, `stage` only for startups), `offices` (`id`, `companyId`, `lng`, `lat`), and `groups` (the deliberate co-location cases). Every record has `synthetic: true`. Office keys are `o:<id>` (map-spec §2).
+- **Gate datasets** (seed `20260930`): Bengaluru S 1,500, M 5,000, L 15,000 offices, plus Chennai S. Each has 9 Bengaluru (7 Chennai) density hotspots with a 15% uniform background, **50 identical-coordinate groups** (sizes include 2, 8, 9, 20, and 21, so every spider rule in map-spec §7 is hit at its boundary), **a 30-company building** at one point, and 10 near-coincident groups within 5 m. About 15% of offices belong to a company that has more than one office, so counts differ between companies and offices.
+- **Hashes** (SHA-256, in `manifest.json`): Bengaluru S `b8d7add3…94cf`, M `7e99db57…e88b`, L `d62f85e9…3775`; Chennai S `26e4897c…ad38`. Sizes: 247 KB, 814 KB, 2.45 MB, 248 KB of JSON.
+- **Bug found by the tests and fixed:** near groups placed each office within 3 m of a base point, so two offices could be up to 6 m apart and break the 5 m co-location rule. The radius is now 2.3 m. The manifest was regenerated after the fix.
+- **Verified in this session (from `code/`):** `npx vitest run`: **91 passed** (4 files; 46 new). `npm run lint`, `npm run typecheck`, and `npm run build` pass; the build is still 33 files, so nothing from `map/fixtures/` reaches `out/`. `npm run fixtures -- --manifest` generates all four datasets in about 5 s.
+- **Not verified:** that the hashes match on Linux. The generator uses `Math.log`, `Math.cos`, and `Math.sqrt`, which the JS spec doesn't require to be bit-identical across engines, but coordinates are rounded to 6 decimals, so a mismatch is very unlikely. CI (Ubuntu) runs the manifest test, which is the check. The hotspot centres are approximate, for density shaping only; they are not curated locations.
+- **Notes:** `npm run fixtures` prints a Node warning that it reparses `generate.ts` as an ES module. It's harmless; adding `"type": "module"` would remove it but changes how every other `.js` file is treated, so it was left alone.
 
 ### 2026-10-01: P1-03 Supabase local setup (Completed)
 - **Added in `code/`:** the `supabase` CLI 2.118.0 as a dev dependency; `supabase/config.toml`; migration `20260930181053_extensions.sql` (PostGIS and `pg_trgm`, in the `extensions` schema); pgTAP test `supabase/tests/database/00_extensions.test.sql` (4 assertions). `.github/workflows/ci.yml` has a new `database` job (`supabase db start`, then `supabase test db`, with Postgres only, no API, Auth, or Studio).

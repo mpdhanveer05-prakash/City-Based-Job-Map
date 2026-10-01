@@ -1,0 +1,34 @@
+{
+  "seed": 20260930,
+  "sizes": {
+    "S": 1500,
+    "M": 5000,
+    "L": 15000
+  },
+  "datasets": {
+    "bengaluru-S": {
+      "offices": 1500,
+      "companies": 1366,
+      "bytes": 247479,
+      "sha256": "b8d7add36ec302a8280f6d1936c0e905f4be9ac10ba3158c3728efeb994394cf"
+    },
+    "bengaluru-M": {
+      "offices": 5000,
+      "companies": 4508,
+      "bytes": 814235,
+      "sha256": "7e99db570dbc2d135e507e1382cf53c4d7237e0324cf9e046925ea098924e88b"
+    },
+    "bengaluru-L": {
+      "offices": 15000,
+      "companies": 13490,
+      "bytes": 2450267,
+      "sha256": "d62f85e95fd5aa7583049dd3d9ef4381c2584d3a0413b5923bde67e1c7453775"
+    },
+    "chennai-S": {
+      "offices": 1500,
+      "companies": 1369,
+      "bytes": 247662,
+      "sha256": "26e4897ccf8b06a36106097fb3952b5dadde239ef74797df5349211c0663ad38"
+    }
+  }
+}
