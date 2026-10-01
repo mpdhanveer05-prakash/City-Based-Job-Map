@@ -4,7 +4,7 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Current state
 - **Current task:** none in progress. Phase 1 has one task left, P1-05 (basemap feasibility; the Geoapify key is in `code/.env.local`). P2-01 (synthetic dataset generator) has no unmet dependencies.
-- **Next action:** commit P1-03 and push, so the CI `database` job runs on GitHub. Then start P1-05 or P2-01.
+- **Next action:** start P2-01 (the map gate is the biggest risk) or P1-05.
 - **Blockers:** none for code work. For product decisions, see the decision register (D-01…D-10).
 
 ## Log
@@ -17,7 +17,8 @@ Update this after every task: what changed, how it was verified (the commands ac
   - `select extensions.postgis_version()` in the local database: `3.3 USE_GEOS=1 USE_PROJ=1 USE_STATS=1`.
   - `npx supabase db reset`: applied cleanly. `supabase test db` passed again after the reset.
   - `npm run lint`: pass. `npm run typecheck`: pass. `npm test`: **45 passed** (3 files).
-- **Not verified:** the new CI `database` job on GitHub (it runs once this is pushed). `supabase start` (the full stack with API, Auth, and Studio) was not run: only the database is needed until P3, and CI uses `db start` too. `.env.example` already documents the Supabase variables, and I haven't tested them against the full stack.
+- **CI:** [run 36816094399](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/36816094399) on `main` (commit `4a7f7f4`) passed all four jobs: lint/types/unit/build/audit, Playwright e2e + axe, **Database migrations + pgTAP**, and the gitleaks secret scan. `npm run build` (33 files), `npm audit` (0 vulnerabilities), and `npm run test:e2e` (19 passed, 1 skipped) also passed locally before the push.
+- **Not verified:** `supabase start` (the full stack with API, Auth, and Studio) was not run: only the database is needed until P3, and CI uses `db start` too. `.env.example` already documents the Supabase variables, and I haven't tested them against the full stack.
 - **Notes:** `supabase db reset` warns that `supabase/seed.sql` is missing. That is expected until P3-04. The CLI reports v2.119.0 is available; the pin stays at 2.118.0 and Dependabot will propose the bump.
 
 ### 2026-09-30: D-10 decided (Option A, with Option B on standby)
