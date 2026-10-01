@@ -28,6 +28,7 @@
 ## Outbound links and content
 - Apply and website URLs must be `https` and match the company domain or a known ATS host. This is checked **at build time**; a failing URL fails the build. Links point to the stored URL unchanged (no redirect service). The `click` beacon sends only the job or company ID and the link kind.
 - Strict CSP set in the static-asset `_headers` file (allow self, `https://maps.geoapify.com`, Supabase, Turnstile; `worker-src 'self'`, because MapLibre is served same-origin from `/maplibre/`), sanitised descriptions, and `rel="noopener noreferrer"`.
+- Company logos are fetched by the map from our own Storage host only. `allowedHosts` is set to that host once the dataset exists (P4-01), so a bad logo URL in the data cannot make a visitor's browser call a third party and reveal their IP address. Logos must be `https:` (or a same-origin path), raster (PNG, JPEG, WebP, GIF, AVIF), and at most 1 MB; they are fetched with no cookies and no referrer. SVG is refused. The CSP `connect-src` must list the Storage host, and Storage must send CORS headers (the layer reads the pixels). [Proposal until P4-01]
 
 ## Privacy
 - There is no visitor account and no visitor PII. Click logs contain no IP address or user identifier (the retention and analytics tool are decided in D-07).

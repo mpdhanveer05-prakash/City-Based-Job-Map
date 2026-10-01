@@ -1,6 +1,7 @@
 // Turns marker items into the per-instance floats the shader reads, and culls them per frame.
 // Pure and DOM-free. Anything that does not change while the camera moves (size, colour, glyph layout) is
 // computed once in prepareScene; per frame only the screen position is computed and copied.
+import type { LogoRef } from "../atlas/logo-atlas.ts";
 import { layoutText, type GlyphMetrics } from "../atlas/glyphs.ts";
 import type { Rgb } from "../theme.ts";
 import {
@@ -32,6 +33,10 @@ export type LayerItem = {
   letter?: string;
   /** Letter-fallback swatch 0…4, or null/undefined for the Milky fill. */
   swatch?: number | null;
+  /** The company, for the logo atlas. Logos are keyed by company, not by office. */
+  companyId?: number;
+  /** The company's logo. Without one (or while it loads, or if it fails) the letter fallback shows. */
+  logoUrl?: string | null;
   selected?: boolean;
   focused?: boolean;
   /** 0…1, default 1. */
@@ -46,9 +51,10 @@ const KIND_CODE: Record<MarkerKind, number> = { logo: 0, cluster: 1, stack: 2 };
 const FLAG_SELECTED = 1;
 const FLAG_FOCUS = 2;
 
-/** Floats per instance: centre (2) + the static part (17). Keep in step with the vertex attributes. */
+/** Floats per instance: centre (2) + the static part (17) + the logo reference (4). Keep in step with the vertex attributes. */
 export const STATIC_FLOATS = 17;
-export const FLOATS_PER_INSTANCE = 2 + STATIC_FLOATS;
+export const LOGO_FLOATS = 4;
+export const FLOATS_PER_INSTANCE = 2 + STATIC_FLOATS + LOGO_FLOATS;
 
 // Text sizes are ratios of the marker radius (the em box is the glyph cell).
 const LOGO_EM = 1.5;
@@ -72,6 +78,10 @@ export type PreparedScene = {
   my: Float64Array;
   /** `STATIC_FLOATS` per item: radius, kind, flags, opacity, fill rgb, cells ×4, xs ×4, em, badge em. */
   statics: Float32Array;
+  /** -1 when the item has no company. */
+  companyIds: Int32Array;
+  /** The logo to load, or null. Always null for clusters. */
+  logoUrls: Array<string | null>;
 };
 
 export function prepareScene(items: readonly LayerItem[], palette: ScenePalette, metrics: GlyphMetrics): PreparedScene {
@@ -91,6 +101,8 @@ export function prepareScene(items: readonly LayerItem[], palette: ScenePalette,
     mx: new Float64Array(n),
     my: new Float64Array(n),
     statics: new Float32Array(n * STATIC_FLOATS),
+    companyIds: new Int32Array(n).fill(-1),
+    logoUrls: new Array(n).fill(null),
   };
 
   sorted.forEach(({ item }, i) => {
@@ -98,6 +110,10 @@ export function prepareScene(items: readonly LayerItem[], palette: ScenePalette,
     scene.kinds[i] = item.kind;
     scene.mx[i] = lngToMercatorX(item.lng);
     scene.my[i] = latToMercatorY(item.lat);
+    if (item.kind !== "cluster" && item.companyId !== undefined && item.logoUrl) {
+      scene.companyIds[i] = item.companyId;
+      scene.logoUrls[i] = item.logoUrl;
+    }
 
     const base = item.kind === "cluster" ? clusterDiameter(item.count ?? 2) : LOGO_DIAMETER;
     const radius = (base / 2) * (item.scale ?? 1) * (item.selected ? SELECTED_SCALE : 1);
@@ -154,7 +170,16 @@ export class FramePacker {
     this.y = new Float32Array(grown);
   }
 
-  pack(scene: PreparedScene, view: View, margin: number = CULL_MARGIN): FrameStats {
+  /**
+   * `logoFor` is asked for each drawn item (by scene index) and returns its atlas cell, or null to draw the
+   * letter fallback. It is not called for items that were culled, so only visible markers load logos.
+   */
+  pack(
+    scene: PreparedScene,
+    view: View,
+    options: { margin?: number; logoFor?: (sceneIndex: number) => LogoRef | null } = {},
+  ): FrameStats {
+    const margin = options.margin ?? CULL_MARGIN;
     this.ensure(scene.count);
     let drawn = 0;
     for (let i = 0; i < scene.count; i++) {
@@ -168,6 +193,12 @@ export class FramePacker {
       this.data[o] = x;
       this.data[o + 1] = y;
       for (let k = 0; k < STATIC_FLOATS; k++) this.data[o + 2 + k] = scene.statics[s + k];
+      const logo = options.logoFor ? options.logoFor(i) : null;
+      const l = o + 2 + STATIC_FLOATS;
+      this.data[l] = logo ? logo.page : -1;
+      this.data[l + 1] = logo ? logo.u : 0;
+      this.data[l + 2] = logo ? logo.v : 0;
+      this.data[l + 3] = logo ? logo.mix : 0;
       this.indices[drawn] = i;
       this.x[drawn] = x;
       this.y[drawn] = y;

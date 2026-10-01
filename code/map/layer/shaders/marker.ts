@@ -18,6 +18,7 @@ layout(location = 6) in vec3 a_fill;     // logo fill (a swatch or Milky)
 layout(location = 7) in vec4 a_cells;    // glyph cells, -1 = none
 layout(location = 8) in vec4 a_xs;       // glyph centres in em units
 layout(location = 9) in vec2 a_em;       // main text em, badge text em (both x radius)
+layout(location = 10) in vec4 a_logo;    // atlas page (-1 = none), cell u, cell v, cross-fade 0…1
 
 uniform vec2 u_resolution;               // canvas size, CSS px
 
@@ -30,6 +31,7 @@ flat out vec3 v_fill;
 flat out vec4 v_cells;
 flat out vec4 v_xs;
 flat out vec2 v_em;
+flat out vec4 v_logo;
 
 void main() {
   float extent = a_radius + ${QUAD_PADDING.toFixed(1)};
@@ -44,6 +46,7 @@ void main() {
   v_cells = a_cells;
   v_xs = a_xs;
   v_em = a_em;
+  v_logo = a_logo;
 }
 `;
 
@@ -60,6 +63,7 @@ flat in vec3 v_fill;
 flat in vec4 v_cells;
 flat in vec4 v_xs;
 flat in vec2 v_em;
+flat in vec4 v_logo;
 
 uniform vec3 u_clusterFill;
 uniform vec3 u_clusterHalo;
@@ -69,8 +73,19 @@ uniform vec3 u_badge;
 uniform vec3 u_badgeText;
 uniform vec3 u_selection;
 uniform vec3 u_focus;
+uniform vec3 u_logoFill;                 // a logo sits on this once it has faded in
 uniform sampler2D u_glyphs;
 uniform vec2 u_grid;                     // sheet columns, rows
+uniform sampler2D u_logo0;               // logo atlas pages, one texture unit each
+uniform sampler2D u_logo1;
+uniform sampler2D u_logo2;
+uniform sampler2D u_logo3;
+uniform sampler2D u_logo4;
+uniform sampler2D u_logo5;
+uniform sampler2D u_logo6;
+uniform sampler2D u_logo7;
+uniform vec2 u_logoCell;                 // one cell in texture coordinates
+uniform float u_pageSize;                // page width in texels
 
 out vec4 outColor;
 
@@ -79,6 +94,20 @@ vec4 shape(vec3 rgb, float a) { return vec4(rgb * a, a); }
 vec4 over(vec4 top, vec4 below) { return top + below * (1.0 - top.a); }
 float inside(float dist, float aa) { return clamp(0.5 - dist / aa, 0.0, 1.0); }
 float band(float dist, float inner, float outer, float aa) { return inside(dist - outer, aa) * (1.0 - inside(dist - inner, aa)); }
+
+// A switch on a flat varying: every page is a separate sampler, so the whole layer stays one draw call.
+vec4 sampleLogo(int page, vec2 uv, vec2 dx, vec2 dy) {
+  switch (page) {
+    case 0: return textureGrad(u_logo0, uv, dx, dy);
+    case 1: return textureGrad(u_logo1, uv, dx, dy);
+    case 2: return textureGrad(u_logo2, uv, dx, dy);
+    case 3: return textureGrad(u_logo3, uv, dx, dy);
+    case 4: return textureGrad(u_logo4, uv, dx, dy);
+    case 5: return textureGrad(u_logo5, uv, dx, dy);
+    case 6: return textureGrad(u_logo6, uv, dx, dy);
+    default: return textureGrad(u_logo7, uv, dx, dy);
+  }
+}
 
 void main() {
   float R = v_radius;
@@ -89,6 +118,12 @@ void main() {
   bool focused = (flags & 2) != 0;
   bool isCluster = v_kind > 0.5 && v_kind < 1.5;
   bool isStack = v_kind > 1.5;
+
+  // Derivatives are taken here, in uniform control flow, then passed to textureGrad.
+  vec2 gdx = dFdx(v_local);
+  vec2 gdy = dFdy(v_local);
+  bool hasLogo = v_logo.x > -0.5 && !isCluster;
+  float fade = hasLogo ? v_logo.w : 0.0; // 0 = the letter fallback only, 1 = the logo only
 
   vec4 col = vec4(0.0);
 
@@ -103,7 +138,17 @@ void main() {
     col = over(shape(u_clusterHalo, inside(d - R, aa)), col);
     col = over(shape(u_clusterFill, inside(d - (R - 2.0), aa)), col);
   } else {
-    col = over(shape(v_fill, inside(d - R, aa)), col);
+    // The fallback swatch gives way to Milky as the logo fades in over it.
+    col = over(shape(mix(v_fill, u_logoFill, fade), inside(d - R, aa)), col);
+    if (hasLogo) {
+      float ri = R - 2.0;
+      vec2 q = v_local / (2.0 * ri) + 0.5; // the disc's bounding square, 0…1
+      vec2 texel = vec2(0.5 / u_pageSize);
+      vec2 inCell = clamp(q * u_logoCell, texel, u_logoCell - texel); // half a texel in: no bleed from a neighbour
+      vec2 g = u_logoCell / (2.0 * ri);
+      vec4 logo = sampleLogo(int(v_logo.x + 0.5), v_logo.yz + inCell, gdx * g, gdy * g);
+      col = over(logo * (fade * inside(d - ri, aa)), col); // premultiplied
+    }
     col = over(shape(u_logoRing, band(d, R - 2.0, R, aa)), col);
   }
 
@@ -116,9 +161,7 @@ void main() {
     col = over(shape(u_badge, inside(db - bR, aa)), col);
   }
 
-  // Glyphs. Derivatives are taken here, in uniform control flow, then passed to textureGrad.
-  vec2 gdx = dFdx(v_local);
-  vec2 gdy = dFdy(v_local);
+  // Glyphs.
   for (int i = 0; i < 4; i++) {
     float cell = v_cells[i];
     if (cell < 0.0) continue;
@@ -131,6 +174,7 @@ void main() {
       vec2 colRow = vec2(mod(cell, u_grid.x), floor(cell / u_grid.x));
       vec2 uv = (colRow + p + 0.5) / u_grid;
       float a = textureGrad(u_glyphs, uv, gdx / (em * u_grid), gdy / (em * u_grid)).a;
+      if (!onBadge) a *= 1.0 - fade; // the initial fades out as the logo fades in
       col = over(shape(onBadge ? u_badgeText : u_text, a), col);
     }
   }

@@ -127,7 +127,7 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Files:** `map/atlas/*`
 - **Acceptance:** Adds a second atlas page when the first is full. Stays within a configurable memory budget (proposal: 64 MB of textures on mobile). Failed or slow images show letter fallbacks without blocking the render, using the five non-green swatches in design-system.md §2.
 - **Verification:** Unit tests for packing and eviction. A throttled-network manual check.
-- **Status:** Not started
+- **Status:** Completed (1 Oct 2026), except a check on a real throttled network and on a phone: the "slow network" is simulated in the page (`?delay=` and a hold gate), and the logos are synthetic. The `/dev/map-layer` Logos scenario loads 60 synthetic logos through the real fetch, decode, upload, and shader path; unit tests cover packing, paging, LRU eviction, the budget, retries, and context loss. Real logos need the dataset (P4-01) and a Storage host for `allowedHosts`. See progress.md.
 
 ### P2-05 Animation engine
 - **Objective:** Animate position, scale, and opacity for split and merge. Transitions must be reversible and retargetable, and must be cancelled by a newer generation.

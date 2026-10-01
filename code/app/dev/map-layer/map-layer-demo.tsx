@@ -5,7 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { Button } from "@/components/ui/button";
 import { buildGlyphSheet, cellSizeForDpr } from "@/map/atlas/glyph-sheet";
+import { pageBytes, PAGE_SIZE } from "@/map/atlas/budget";
 import { initialOf, swatchIndex } from "@/map/atlas/fallback";
+import { LogoAtlas } from "@/map/atlas/logo-atlas";
+import { loadLogoPixels } from "@/map/atlas/logo-loader";
 import { createBasemap } from "@/map/basemap";
 import { generateSyntheticDataset } from "@/map/fixtures/generate";
 import { buildStaticScene } from "@/map/fixtures/static-scene";
@@ -13,17 +16,21 @@ import { viewFor } from "@/map/layer/geometry";
 import { CompanyLayer, attachCompanyLayer, type LayerStats } from "@/map/layer/company-layer";
 import type { LayerItem } from "@/map/layer/instances";
 import { readBasemapTheme, readMarkerTheme } from "@/map/theme";
+import { makeLogoUrls, type LogoControl } from "./logo-fixtures";
 import { createClusterWorkerClient, type ClusterClient } from "@/map/worker/client";
 import { KIND_CLUSTER, packPointSet } from "@/map/worker/protocol";
 
 const BENGALURU: [number, number] = [77.5946, 12.9716];
 
-type Scenario = "static" | "live";
+type Scenario = "static" | "live" | "logos";
+
+const LOGO_COUNT = 60;
 
 declare global {
   interface Window {
     // Test hook; not used by the app.
-    __mapLayer?: { map: MapLibreMap; layer: CompanyLayer };
+    __mapLayer?: { map: MapLibreMap; layer: CompanyLayer; atlas: LogoAtlas };
+    __logoControl?: LogoControl;
   }
 }
 
@@ -63,7 +70,25 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
       const glyphs = await buildGlyphSheet(fontFamily, cellSizeForDpr(window.devicePixelRatio));
       if (abort.signal.aborted) return;
 
-      const layer = new CompanyLayer({ theme: readMarkerTheme(), glyphs });
+      // Test controls, from the query string: ?delay=<ms> slows every logo load, ?pagePx=<n> shrinks the atlas
+      // pages, and ?pages=<n> caps the memory budget at n pages, so paging and eviction show with few logos.
+      const query = new URLSearchParams(location.search);
+      const control: LogoControl = { delayMs: Number(query.get("delay") ?? 0), hold: false, requested: 0 };
+      window.__logoControl = control;
+      const pageSize = Number(query.get("pagePx") ?? PAGE_SIZE);
+      const pages = Number(query.get("pages") ?? 0);
+      const atlas = new LogoAtlas({
+        cellPx: cellSizeForDpr(window.devicePixelRatio),
+        pageSize,
+        budgetBytes: pages > 0 ? pages * pageBytes(pageSize) : undefined,
+        loadPixels: async (url, cellPx, signal) => {
+          control.requested++;
+          if (control.delayMs > 0) await new Promise((resolve) => setTimeout(resolve, control.delayMs));
+          while (control.hold) await new Promise((resolve) => setTimeout(resolve, 25));
+          return loadLogoPixels(url, cellPx, { signal });
+        },
+      });
+      const layer = new CompanyLayer({ theme: readMarkerTheme(), glyphs, logoAtlas: atlas });
       if (!map.isStyleLoaded()) await new Promise<void>((resolve) => map!.once("load", () => resolve()));
       detachLayer = attachCompanyLayer(map, layer);
 
@@ -72,7 +97,18 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
         removeLiveListener = undefined;
         client?.dispose();
         client = undefined;
-        if (next === "static") {
+        if (next === "logos") {
+          const styles = getComputedStyle(document.documentElement);
+          const canvas = map!.getCanvas();
+          const view = viewFor(map!.getCenter(), map!.getZoom(), canvas.clientWidth, canvas.clientHeight);
+          makeLogoUrls(LOGO_COUNT, styles.getPropertyValue("--ink").trim(), styles.getPropertyValue("--milky").trim())
+            .then((urls) => {
+              if (abort.signal.aborted) return;
+              const scene = buildStaticScene({ view, clusters: 0, logos: LOGO_COUNT, stacks: 0, offscreen: 0 });
+              layer.setItems(scene.map((item, i) => ({ ...item, companyId: i, logoUrl: urls[i] })));
+            })
+            .catch(() => setMessage("The synthetic logos could not be made."));
+        } else if (next === "static") {
           const canvas = map!.getCanvas();
           const view = viewFor(map!.getCenter(), map!.getZoom(), canvas.clientWidth, canvas.clientHeight);
           layer.setItems(buildStaticScene({ view }));
@@ -81,7 +117,7 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
         }
       };
       api.current = { map, layer, show };
-      window.__mapLayer = { map, layer };
+      window.__mapLayer = { map, layer, atlas };
       show("static");
       // Ready means the layer has drawn a frame. It does not wait for basemap tiles (`idle`), which depend on
       // the network and are not what this page checks.
@@ -105,6 +141,7 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
       map?.remove();
       api.current = null;
       delete window.__mapLayer;
+      delete window.__logoControl;
     };
   }, [apiKey]);
 
@@ -135,6 +172,9 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
           </Button>
           <Button variant={scenario === "live" ? "default" : "outline"} aria-pressed={scenario === "live"} onClick={() => choose("live")}>
             Live clusters
+          </Button>
+          <Button variant={scenario === "logos" ? "default" : "outline"} aria-pressed={scenario === "logos"} onClick={() => choose("logos")}>
+            Logos
           </Button>
         </div>
         {status === "loading" && <p className="text-sm text-muted-foreground">Loading the map…</p>}

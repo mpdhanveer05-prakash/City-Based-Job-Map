@@ -6,6 +6,7 @@
 // stats.unsupportedCamera; the explorer turns rotation and tilt off.
 import type { CustomLayerInterface, Map as MapLibreMap } from "maplibre-gl";
 import type { GlyphSheet } from "../atlas/glyph-sheet.ts";
+import { MAX_LOGO_PAGES, type LogoAtlas } from "../atlas/logo-atlas.ts";
 import { parseCssColor, type MarkerTheme, type Rgb } from "../theme.ts";
 import { viewFor, type View } from "./geometry.ts";
 import { FLOATS_PER_INSTANCE, FramePacker, STATIC_FLOATS, prepareScene, type LayerItem, type MarkerKind, type PreparedScene, type ScenePalette } from "./instances.ts";
@@ -14,6 +15,8 @@ import { MARKER_FRAGMENT, MARKER_VERTEX } from "./shaders/marker.ts";
 export type CompanyLayerOptions = {
   theme: MarkerTheme;
   glyphs: GlyphSheet;
+  /** Without one, every logo shows its letter fallback. The layer drives it and disposes it when removed. */
+  logoAtlas?: LogoAtlas;
   id?: string;
 };
 
@@ -39,6 +42,8 @@ type Gpu = {
   /** Capacity of the instance buffer in floats. */
   capacity: number;
   texture: WebGLTexture;
+  /** A 1×1 texture for the logo sampler units when there is no atlas. */
+  dummy: WebGLTexture;
   uniforms: Record<string, WebGLUniformLocation | null>;
 };
 
@@ -55,6 +60,7 @@ const ATTRIBUTES: Array<[location: number, size: number, offset: number]> = [
   [7, 4, 9], // glyph cells
   [8, 4, 13], // glyph x
   [9, 2, 17], // em, badge em
+  [10, 4, 19], // logo: atlas page, cell u, cell v, cross-fade
 ];
 
 const UNIFORM_NAMES = [
@@ -67,9 +73,23 @@ const UNIFORM_NAMES = [
   "u_badgeText",
   "u_selection",
   "u_focus",
+  "u_logoFill",
   "u_glyphs",
   "u_grid",
+  "u_logo0",
+  "u_logo1",
+  "u_logo2",
+  "u_logo3",
+  "u_logo4",
+  "u_logo5",
+  "u_logo6",
+  "u_logo7",
+  "u_logoCell",
+  "u_pageSize",
 ] as const;
+
+/** Texture unit 0 holds the glyph sheet; the logo pages take units 1…8. */
+const FIRST_LOGO_UNIT = 1;
 
 function compile(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
   const shader = gl.createShader(type);
@@ -99,7 +119,8 @@ export class CompanyLayer implements CustomLayerInterface {
   };
 
   private readonly glyphs: GlyphSheet;
-  private readonly colours: Record<"clusterFill" | "clusterHalo" | "text" | "logoRing" | "badge" | "badgeText" | "selection" | "focus", Rgb>;
+  private readonly logoAtlas: LogoAtlas | null;
+  private readonly colours: Record<"clusterFill" | "clusterHalo" | "text" | "logoRing" | "logoFill" | "badge" | "badgeText" | "selection" | "focus", Rgb>;
   private readonly palette: ScenePalette;
   private readonly packer = new FramePacker();
   private scene: PreparedScene;
@@ -111,11 +132,13 @@ export class CompanyLayer implements CustomLayerInterface {
     const { theme } = options;
     this.id = options.id ?? "company-markers";
     this.glyphs = options.glyphs;
+    this.logoAtlas = options.logoAtlas ?? null;
     this.colours = {
       clusterFill: parseCssColor(theme.clusterFill),
       clusterHalo: parseCssColor(theme.clusterHalo),
       text: parseCssColor(theme.clusterText),
       logoRing: parseCssColor(theme.logoRing),
+      logoFill: parseCssColor(theme.logoFill),
       badge: parseCssColor(theme.stackBadge),
       badgeText: parseCssColor(theme.stackBadgeText),
       selection: parseCssColor(theme.selectionRing),
@@ -155,12 +178,14 @@ export class CompanyLayer implements CustomLayerInterface {
 
   onAdd(map: MapLibreMap, gl: WebGL2RenderingContext): void {
     this.map = map;
+    this.logoAtlas?.setOnChange(() => map.triggerRepaint());
     this.gpu = this.createGpu(gl);
   }
 
   onRemove(_map: MapLibreMap, gl: WebGL2RenderingContext): void {
     // After a context loss every GL object is already gone, and deleting them would only raise errors.
     if (this.gpu && !gl.isContextLost()) this.destroyGpu(this.gpu);
+    this.logoAtlas?.dispose(gl); // also the path after a lost context: its textures are gone with it
     this.gpu = null;
     this.map = null;
   }
@@ -180,7 +205,21 @@ export class CompanyLayer implements CustomLayerInterface {
     const canvas = map.getCanvas();
     const view = viewFor(map.getCenter(), map.getZoom(), canvas.clientWidth, canvas.clientHeight);
     this.lastView = view;
-    const { drawn, culled } = this.packer.pack(this.scene, view);
+    const atlas = this.logoAtlas;
+    atlas?.beginFrame();
+    atlas?.flushUploads(gl);
+    const scene = this.scene;
+    const { drawn, culled } = this.packer.pack(scene, view, {
+      // Only drawn markers get here, so only visible companies ask for their logo.
+      logoFor: atlas
+        ? (i) => {
+            const url = scene.logoUrls[i];
+            if (!url) return null;
+            atlas.request(scene.companyIds[i], url);
+            return atlas.lookup(scene.companyIds[i]);
+          }
+        : undefined,
+    });
     this.stats.drawn = drawn;
     this.stats.culled = culled;
     if (drawn === 0) return;
@@ -206,6 +245,7 @@ export class CompanyLayer implements CustomLayerInterface {
     gl.uniform3fv(uniforms.u_clusterHalo, this.colours.clusterHalo);
     gl.uniform3fv(uniforms.u_text, this.colours.text);
     gl.uniform3fv(uniforms.u_logoRing, this.colours.logoRing);
+    gl.uniform3fv(uniforms.u_logoFill, this.colours.logoFill);
     gl.uniform3fv(uniforms.u_badge, this.colours.badge);
     gl.uniform3fv(uniforms.u_badgeText, this.colours.badgeText);
     gl.uniform3fv(uniforms.u_selection, this.colours.selection);
@@ -214,6 +254,19 @@ export class CompanyLayer implements CustomLayerInterface {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, gpu.texture);
     gl.uniform1i(uniforms.u_glyphs, 0);
+    if (atlas) {
+      atlas.bindPages(gl, FIRST_LOGO_UNIT);
+    } else {
+      for (let i = 0; i < MAX_LOGO_PAGES; i++) {
+        gl.activeTexture(gl.TEXTURE0 + FIRST_LOGO_UNIT + i);
+        gl.bindTexture(gl.TEXTURE_2D, gpu.dummy);
+      }
+    }
+    for (let i = 0; i < MAX_LOGO_PAGES; i++) gl.uniform1i(uniforms[`u_logo${i}` as (typeof UNIFORM_NAMES)[number]], FIRST_LOGO_UNIT + i);
+    const cell = atlas ? atlas.cellPx / atlas.pageSize : 1;
+    gl.uniform2f(uniforms.u_logoCell, cell, cell);
+    gl.uniform1f(uniforms.u_pageSize, atlas ? atlas.pageSize : 1);
+    gl.activeTexture(gl.TEXTURE0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, gpu.instances);
     const needed = drawn * FLOATS_PER_INSTANCE;
@@ -226,6 +279,8 @@ export class CompanyLayer implements CustomLayerInterface {
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, drawn);
     this.stats.drawCalls = 1;
     gl.bindVertexArray(null);
+    // Logos still cross-fading, or waiting for their upload slot, need another frame.
+    if (atlas?.needsRepaint) map.triggerRepaint();
   }
 
   private createGpu(gl: WebGL2RenderingContext): Gpu {
@@ -247,6 +302,7 @@ export class CompanyLayer implements CustomLayerInterface {
     const quad = gl.createBuffer();
     const instances = gl.createBuffer();
     const texture = gl.createTexture();
+    const dummy = gl.createTexture();
     gl.bindVertexArray(vao);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, quad);
@@ -273,9 +329,14 @@ export class CompanyLayer implements CustomLayerInterface {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
+    gl.bindTexture(gl.TEXTURE_2D, dummy);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
     const uniforms = {} as Gpu["uniforms"];
     for (const name of UNIFORM_NAMES) uniforms[name] = gl.getUniformLocation(program, name);
-    return { gl, program, vao, quad, instances, capacity, texture, uniforms };
+    return { gl, program, vao, quad, instances, capacity, texture, dummy, uniforms };
   }
 
   private destroyGpu(gpu: Gpu): void {
@@ -285,6 +346,7 @@ export class CompanyLayer implements CustomLayerInterface {
     gl.deleteBuffer(gpu.quad);
     gl.deleteBuffer(gpu.instances);
     gl.deleteTexture(gpu.texture);
+    gl.deleteTexture(gpu.dummy);
   }
 }
 
@@ -295,15 +357,26 @@ export class CompanyLayer implements CustomLayerInterface {
  * removes the layer and stops listening; call it on unmount or city change.
  */
 export function attachCompanyLayer(map: MapLibreMap, layer: CompanyLayer, beforeId?: string): () => void {
+  // After a restore MapLibre reloads the style, and addLayer throws until that has finished ("Style is not done
+  // loading"). So try, and on that error try again at the next style event.
+  const add = (): void => {
+    if (map.getLayer(layer.id)) return;
+    try {
+      map.addLayer(layer, beforeId);
+      map.triggerRepaint();
+    } catch {
+      map.once("styledata", add);
+    }
+  };
   const restore = (): void => {
     layer.stats.contextRestores++;
-    if (!map.getLayer(layer.id)) map.addLayer(layer, beforeId);
-    map.triggerRepaint();
+    add();
   };
   map.addLayer(layer, beforeId);
   map.on("webglcontextrestored", restore);
   return () => {
     map.off("webglcontextrestored", restore);
+    map.off("styledata", add);
     if (map.getLayer(layer.id)) map.removeLayer(layer.id);
   };
 }
