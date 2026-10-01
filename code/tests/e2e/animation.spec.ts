@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { waitForMapReady } from "./map-ready";
 
 // P2-05. The live scenario clusters 5,000 synthetic offices in the worker and animates every zoom, as the
 // explorer will. These tests watch the layer's own state (the debug hook) frame by frame.
@@ -15,7 +16,7 @@ async function openLive(page: Page, reducedMotion = false) {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/dev/map-layer");
-  await expect(page.getByTestId("map-layer")).toHaveAttribute("data-status", "ready", { timeout: 90_000 });
+  await waitForMapReady(page);
   await page.getByRole("button", { name: "Live clusters" }).click();
   // The static scene is still on screen until the worker answers, so wait for the first live response.
   await expect.poll(() => page.evaluate(() => (window.__liveKeys ?? []).length), { timeout: 30_000 }).toBeGreaterThan(20);

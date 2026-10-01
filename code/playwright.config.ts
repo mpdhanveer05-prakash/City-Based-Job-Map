@@ -3,6 +3,9 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = 3100;
 // Set to test an already-running server instead, e.g. `npm run preview` or the staging URL.
 const externalBaseURL = process.env.PLAYWRIGHT_BASE_URL;
+// A CI runner has no GPU. Recent Chromium only falls back to software WebGL (SwiftShader) when asked to, and the map
+// pages need WebGL2. tests/e2e/webgl-environment.spec.ts reports what the browser really offers.
+const softwareWebGl = process.env.CI ? ["--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] : [];
 
 export default defineConfig({
   testDir: "./tests",
@@ -20,6 +23,7 @@ export default defineConfig({
   use: {
     baseURL: externalBaseURL ?? `http://localhost:${PORT}`,
     trace: "on-first-retry",
+    launchOptions: { args: softwareWebGl },
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
