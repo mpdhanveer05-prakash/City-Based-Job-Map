@@ -111,7 +111,7 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Steps:** Build the index (radius 60, maxZoom 17, minPoints 2: proposals from the plan). Expose `load(points, generation)` and `getClusters(bbox, zoom, generation)`. For each item, return a stable key (office ID or a deterministic cluster key) and its ancestor key at the previous and next integer zoom. Add unique-company counts per cluster.
 - **Acceptance:** Lineage is consistent (the children of cluster X at z+1 all report X as their parent at z). Responses carry their generation, and the client drops stale ones.
 - **Verification:** Vitest over the fixtures: lineage invariants, a stale-response test, company-vs-office count test.
-- **Status:** Not started
+- **Status:** Completed (1 Oct 2026). Also added `cluster-engine.ts` (the pure engine), `protocol.ts`, `worker-api.ts`, and a `/dev/cluster-worker` page with a Playwright spec that runs the real Web Worker. 23 unit tests and 6 e2e runs (3 tests × 2 projects). See progress.md.
 
 ### P2-03 Custom WebGL layer: static rendering
 - **Objective:** Draw clusters and logos as instanced quads in one pass in a MapLibre custom layer.

@@ -3,11 +3,27 @@
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
 ## Current state
-- **Current task:** none in progress. Phase 1 is complete: P1-01 to P1-06 are done. P2-02 (clustering worker) is next; its dependency P2-01 is complete.
-- **Next action:** start P2-02. **Owner actions open (D-11):** restrict the Geoapify key by referrer, and decide the basemap capacity path before launch.
+- **Current task:** none in progress. Phase 1 is complete (P1-01 to P1-06), and P2-01, P2-02 are done. P2-03 (custom WebGL layer, static rendering) is next; its dependency P2-02 is complete.
+- **Next action:** start P2-03. **Owner actions open (D-11):** restrict the Geoapify key by referrer, and decide the basemap capacity path before launch.
 - **Blockers:** none for code work. For product decisions, see the decision register (D-01…D-11).
 
 ## Log
+
+### 2026-10-01: P2-02 Clustering worker (Completed)
+- **Added in `code/map/worker/`:** `cluster-engine.ts` (the pure engine; Vitest runs it without a Worker), `lineage.ts` (keys, formation level, parent/child lineage), `protocol.ts` (types, `packPointSet`, transfer lists), `worker-api.ts` (the Comlink-exposed object), `cluster.worker.ts` (3 lines), `client.ts` (generation counter, stale-drop, `dispose()`). New dependencies, both approved-stack: `supercluster` 9.1.0 and `comlink` 4.4.2. Supercluster 9 ships its own types, so `@types/supercluster` (installed first) was removed.
+- **Protocol (map-spec §2–3):** `load(points, generation)` takes typed arrays (`lngLat`, `officeIds`, `companyIds`) plus `dataVersion` and `filterHash`; `getClusters(bbox, zoom, generation)` returns parallel arrays: keys (`o:<id>` or `c:<dataVersion>:<filterHash>:<id>`), kinds, positions, office counts, **unique-company counts**, company IDs, parent keys, and flattened child keys. Both directions transfer the buffers instead of copying. Settings: radius 60, maxZoom 17, minPoints 2.
+- **Deviation from the plan's wording, recorded in map-spec §2:** an item that survives to the next level reports **its own key** as its parent and only child, not null. The animator reads "same key" as no transition. The formation level is read from Supercluster's cluster-ID arithmetic (an internal detail), so a brute-force test guards it.
+- **Client rules:** the generation bumps on every `load` and on every change of integer zoom; panning inside one zoom keeps it. `getClusters` resolves to `null` when a newer generation was issued while it was in flight. The client never filters or reads the URL.
+- **Verified in this session (from `code/`):**
+  - `npm run lint`: pass. `npm run typecheck`: pass. `npm test`: **125 passed** (6 files; 23 new in `tests/unit/cluster-worker.test.ts`).
+  - The new tests: children of X at level + 1 report X as parent (all 19 levels); every item's parent lists it as a child; children partition the parent's offices (checked against an independent Supercluster index with `getLeaves`); partial viewports agree with the whole-city answer; unique-company counts equal a brute-force `Set`, and some clusters have fewer companies than offices; key namespace and determinism; the 20-office identical-coordinate group; empty and single-office sets; stale responses in both resolution orders, on `load`, and after `dispose`; and a real Comlink round trip over a `MessageChannel` (arrays are detached after transfer).
+  - **Mutation checks** (changed and restored): dropping the `- 1` in the formation level fails 3 lineage tests; disabling the stale check fails 2 client tests; zero viewport padding fails the partial-viewport test.
+  - `npm run build`: pass, 36 files (unchanged; the dev page is not in production output). `npm audit --audit-level=high`: 0 vulnerabilities.
+  - `npm run test:e2e`: **35 passed, 1 skipped** (it was 29 + 1). The new `/dev/cluster-worker` page starts the real Web Worker from the static export served by `wrangler dev` (Playwright sees the `worker` event with a `/_next/static/` URL), loads Bengaluru S (1,500 offices), and checks: 1,500 offices at levels 0, 9, 12, 15, 18; one city-wide cluster at level 0; 1,500 separate items at level 18; one stale response dropped and the newer one kept; no serious or critical axe violations.
+  - **Timings** (Node, Windows laptop, whole-city bbox, not the gate devices): load 6 ms (S), 8 ms (M), 23 ms (L, 15,000 offices). Worst cold `getClusters` on L is 14 ms (with unique-company counting); warm calls are 0–9 ms. These are not gate measurements; they say only that the worker is not the likely bottleneck.
+- **Not verified:** the worker on a mid-range phone or in Firefox/Safari (Chromium only); worker start-up cost in the browser; behaviour above the L dataset (15,000 offices); the cost of a 20-company stack through the spider rules (P2-06 owns that).
+- **Notes:** the dev page generates its 1,500-office dataset in the browser, so the fixture generator ships in the `/dev` bundle only. Unique-company counts use `getLeaves` per cluster and are cached for one load; if the gate shows this is slow on a phone, a per-cluster set built at load time is the fallback.
+- **Next action:** P2-03 (custom WebGL layer, static rendering). Not pushed; local commits are ahead of `origin/main` (P1-05 and this task).
 
 ### 2026-10-01: P1-05 Basemap feasibility (Completed)
 - **Added in `code/`:** `map/theme.ts` (reads the basemap colours from the CSS tokens), `map/basemap.ts` (loads Geoapify `positron`, re-colours it with `applyBasemapTheme`, adds attribution, counts requests; `loadMapLibre()`), `scripts/copy-maplibre.mts`, the dev page `/dev/basemap`, `tests/unit/basemap.test.ts` (11 tests), and `tests/e2e/basemap.spec.ts` (5 tests × 2 projects). `maplibre-gl` 6.11.2 is a new dependency (an approved-stack library; 0 audit findings at install). Full write-up and sources: [ADR-0008](decisions/0008-basemap.md).
