@@ -39,6 +39,8 @@ Update this after every task: what changed, how it was verified (the commands ac
 - **CI-conditions run (`CI=true NEXT_PUBLIC_GEOAPIFY_KEY= npm run test:e2e`, retries on, map specs on desktop only):** **64 passed, 15 skipped, 0 failed, 0 flaky** (3.9 min). The skips are the keyed basemap and tile tests, the phone-profile specs CI ignores, and the desktop-only keyboard test.
 - **Commits** are grouped by task but P2-06 and P2-07 share the dev page (`map-layer-demo.tsx`), so the demo changes for both are in the later commit.
 
+**First GitHub run of this work (`5533d25`):** lint/types/unit/build/audit, database, and secret scan passed. Playwright ran every WebGL test for the first time (the font fix works): **63 passed, 15 skipped, 1 failed**. The failure was a test assumption, not the layer: `takes marker, cluster, selection, and focus colours` sampled the selected logo's fill 10 px down and left of centre, and on the runner's font the letter's anti-aliased edge reached it (209,204,220: lilac with 8.6% Ink). The three logo fills are now sampled above the letter (0.78 of the radius up), clear in any font. Passes locally; the next GitHub run is the check.
+
 **Next action:** P2-09 is Blocked (D-06). Ask the owner for the reference devices and the gate owner, or for permission to run an informal gate here.
 
 ### 2026-10-02: P2-05 Animation engine (Completed, except frame cost on the reference devices and a phone)

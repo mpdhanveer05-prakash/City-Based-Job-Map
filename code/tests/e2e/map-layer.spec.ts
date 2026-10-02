@@ -168,9 +168,12 @@ test("takes marker, cluster, selection, and focus colours from the design tokens
   };
   const points: Array<[number, number]> = [
     [c.x, c.y - 0.78 * c.radius], // cluster disc, above the digits
-    [l.x - 10, l.y + 10], // logo fill, clear of the letter
-    [s.x - 10, s.y + 10], // selected logo fill
-    [p.x - 10, p.y + 10], // plain logo: Milky fill
+    // Logo fills are sampled above the letter, as the cluster's is above its digits: the letter's height is a fixed
+    // share of the disc, so this is clear whatever font the machine draws it in. (An offset to the lower left
+    // was clear with Overpass but hit the letter's anti-aliased edge on a CI runner, 8.6% Ink in the lilac.)
+    [l.x, l.y - 0.78 * l.radius], // logo fill
+    [s.x, s.y - 0.78 * s.radius], // selected logo fill
+    [p.x, p.y - 0.78 * p.radius], // plain logo: Milky fill
     ...Object.values(ringScans).flat(),
   ];
   const got = await pixelsAt(page, points);
