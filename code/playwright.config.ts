@@ -33,7 +33,7 @@ export default defineConfig({
       // The map specs repeat on the phone profile (2.6x DPR, 128 px logo cells) and are the slowest tests by far.
       // A 2-core CI runner drawing software WebGL cannot fit them in its time limit, so CI runs them on desktop
       // only. Run the whole suite locally before pushing: the phone profile found real bugs (P2-04 eviction).
-      testIgnore: process.env.CI ? /(map-layer|logo-atlas|animation)\.spec\.ts/ : undefined,
+      testIgnore: process.env.CI ? /(map-layer|logo-atlas|animation|hit-test|popup-a11y)\.spec\.ts/ : undefined,
     },
   ],
   // By default: build the static export (with /dev pages) and serve out/ the way

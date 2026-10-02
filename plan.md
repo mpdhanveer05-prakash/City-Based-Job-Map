@@ -143,7 +143,7 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Files:** `map/hit-test/*`, `map/layer/spider.ts`
 - **Acceptance:** A tap during an animation selects what is drawn under the finger. Overlaps resolve by the rule in map-spec.md §6. Stacks of up to 8 open on a circle, 9–20 on a spiral, and more than 20 open a list.
 - **Verification:** Unit tests for the tie-break rule. Playwright tap tests on the co-location fixture.
-- **Status:** Not started
+- **Status:** Completed (2 Oct 2026), except a real touch device: the phone profile is Chromium's Pixel 7 emulation with touch events. `map/hit-test/` (the tie-break rule, a linear scan while moving and a KDBush index once settled, the click wiring), `map/layer/colocation.ts` (5 m grouping and the stacks), `map/layer/spider.ts` (circle, spiral, list), `map/layer/marker-controller.ts` (selection, focus, and the open spider), and the worker's `getExpansionZoom`. Three refinements to the proposed overlap rule are in map-spec §6. All 61 co-location groups open correctly on desktop (sizes 2 to 30), and the six rule-boundary sizes on the phone profile. See progress.md.
 
 ### P2-07 Popup, keyboard, accessible list, reduced motion, failure modes
 - **Objective:** Build the logo popup with View company, a focusable mirror list with a visible focus ring, reduced-motion behaviour, and WebGL-failure and tile-failure fallbacks.
@@ -151,21 +151,21 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Files:** `components/explorer/map-popup.tsx`, `components/explorer/map-a11y-list.tsx`, `map/fallback.ts`
 - **Acceptance:** Every drawn company can be reached by keyboard. When WebGL is unavailable, the user lands on List view with a notice.
 - **Verification:** An axe scan passes on the prototype route. Manual screen-reader smoke test.
-- **Status:** Not started
+- **Status:** Completed (2 Oct 2026), except the manual screen-reader smoke test (NVDA, TalkBack), which was not done. Popup, placement (desktop and bottom sheet), the keyboard list with roving tabindex and spatial arrow keys, the focus ring, reduced motion, the WebGL2-unavailable fallback, and the tile-failure banner with Try again are built and tested; the axe scan of the page with the popup open has no serious or critical violations. The failure checks are in `map/fallback.ts`. The sheet's 60% expanded state and the map's bottom padding are left for the explorer shell (P4-03). See progress.md.
 
 ### P2-08 Cleanup and lifecycle
 - **Objective:** On unmount or city change, dispose of the worker, GL textures and buffers, and event listeners.
 - **Dependencies:** P2-05
 - **Acceptance:** Mounting and unmounting 20 times shows no listener growth and a flat heap (within the proposed tolerance in map-spec.md).
 - **Verification:** A Playwright script with CDP heap and listener counts.
-- **Status:** Not started
+- **Status:** Completed (2 Oct 2026), on the blank background (no basemap) and in Chromium with software WebGL. 20 mount and unmount cycles of the live scenario: event listeners (313), DOM nodes (62), WebGL contexts (0), and canvases (0) are identical after every cycle, and our clustering worker is gone each time. MapLibre keeps one pooled worker of its own after `map.remove()` (a bare Map does the same), reused rather than added to. The heap climbs from 6.2 to 7.4 MB over the first ten cycles while caches fill, then moves about 10 KB a cycle (7.39 to 7.52 MB over the last ten, +1.8%). Page: `/dev/map-lifecycle`. See progress.md.
 
 ### P2-09 Validation gate run and report
 - **Objective:** Run the reproducible gate in map-spec.md §10 on the named devices.
 - **Dependencies:** P2-02 … P2-08; **D-06** (named reference devices) decided
 - **Files:** `docs/map-gate-report.md`
 - **Acceptance:** A report with raw numbers for each metric and device, pass or fail against the proposed thresholds, and sign-off by the gate owner. **If it fails:** status becomes Blocked, the options go into an ADR with their trade-offs, and nothing switches to plain markers without approval.
-- **Status:** Not started
+- **Status:** Blocked (2 Oct 2026) on **D-06**: the reference devices, the network profile, and the gate owner are not named. P2-02 to P2-08 are done. Nothing here can be passed honestly on a laptop with software WebGL, so no gate numbers were produced. When D-06 is answered, run map-spec §10 on those devices; the debug hooks (`window.__mapLayer`, `__markers`) and the lifecycle page already give the frame, key, hit, listener, and heap measurements.
 
 ## Phase 3 — Database schema, authorization policies, migrations, sample data
 
