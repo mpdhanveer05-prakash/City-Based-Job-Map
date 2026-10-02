@@ -76,6 +76,17 @@ async function tokenColour(page: Page, name: string): Promise<Rgb> {
 const near = (actual: Rgb, expected: Rgb, tolerance = 3) =>
   actual.every((channel, i) => Math.abs(channel - expected[i]) <= tolerance);
 
+test("still draws when a font in the family list cannot load (a CI runner has no Arial)", async ({ page }) => {
+  // next/font adds an "Overpass Fallback" face defined as local("Arial"). Without Arial, document.fonts.load rejects
+  // with "NetworkError: A network error occurred." Force exactly that failure before the page's scripts run.
+  await page.addInitScript(() => {
+    document.fonts.load = () => Promise.reject(new DOMException("A network error occurred.", "NetworkError"));
+  });
+  const errors = await openLayer(page);
+  expect(await stats(page)).toMatchObject({ drawn: 463, drawCalls: 1 });
+  expect(errors).toEqual([]);
+});
+
 test("draws 60 clusters and 400 logos in one call and culls the far items", async ({ page }, testInfo) => {
   const errors = await openLayer(page);
   const s = await stats(page);

@@ -30,7 +30,13 @@ function createCanvas(width: number, height: number): HTMLCanvasElement | Offscr
 export async function buildGlyphSheet(fontFamily: string, cellPx: number): Promise<GlyphSheet> {
   const fontSize = cellPx * FONT_FRACTION;
   const font = `800 ${fontSize}px ${fontFamily}`;
-  await document.fonts.load(font, GLYPH_CHARS);
+  // load() rejects if any face in the family list fails, including next/font's local("Arial") fallback on a machine
+  // without Arial (a CI runner). That must not stop the layer: draw with whatever the browser resolves.
+  try {
+    await document.fonts.load(font, GLYPH_CHARS);
+  } catch {
+    // reported through fontLoaded below
+  }
   const fontLoaded = document.fonts.check(font, GLYPH_CHARS);
 
   const canvas = createCanvas(GLYPH_COLUMNS * cellPx, GLYPH_ROWS * cellPx);
