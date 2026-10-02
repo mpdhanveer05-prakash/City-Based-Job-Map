@@ -25,6 +25,8 @@ export type ClusterClient = {
    * generation was issued while this request was in flight: the caller should use the newer request's result.
    */
   getClusters(bbox: BBox, zoom: number): Promise<ClusterResponse | null>;
+  /** The zoom at which a cluster first splits, or `null` if the key is not a cluster of the loaded dataset. */
+  getExpansionZoom(key: string): Promise<number | null>;
   /** Terminates the worker and releases the proxy (map-spec §9). Later calls reject. */
   dispose(): void;
 };
@@ -64,6 +66,10 @@ export function createClusterClient(api: AsyncClusterApi, onDispose: () => void 
         return null;
       }
       return response;
+    },
+    async getExpansionZoom(key) {
+      assertLive();
+      return api.getExpansionZoom(key);
     },
     dispose() {
       if (disposed) return;

@@ -9,6 +9,7 @@ export function createClusterWorkerApi(): ClusterWorkerApi {
   return {
     load: (points, generation) => engine.load(points, generation),
     // The response's typed arrays move to the main thread instead of being copied.
+    getExpansionZoom: (key) => engine.getExpansionZoom(key),
     getClusters: (bbox, zoom, generation) => {
       const response = engine.getClusters(bbox, zoom, generation);
       return transfer(response, responseTransferables(response));

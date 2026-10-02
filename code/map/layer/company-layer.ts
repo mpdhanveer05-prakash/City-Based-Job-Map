@@ -10,7 +10,7 @@ import type { GlyphSheet } from "../atlas/glyph-sheet.ts";
 import { MAX_LOGO_PAGES, type LogoAtlas } from "../atlas/logo-atlas.ts";
 import { parseCssColor, type MarkerTheme, type Rgb } from "../theme.ts";
 import { latToMercatorY, lngToMercatorX, viewFor, type View } from "./geometry.ts";
-import { FLOATS_PER_INSTANCE, FramePacker, prepareScene, type LayerItem, type MarkerKind, type PreparedScene, type ScenePalette } from "./instances.ts";
+import { FLOATS_PER_INSTANCE, FramePacker, STATIC_FLOATS, prepareScene, type LayerItem, type MarkerKind, type PreparedScene, type ScenePalette } from "./instances.ts";
 import { MARKER_FRAGMENT, MARKER_VERTEX } from "./shaders/marker.ts";
 
 export type CompanyLayerOptions = {
@@ -36,7 +36,16 @@ export type LayerUpdate = {
   generation: number;
 };
 
-export type DrawnItem = { key: string; kind: MarkerKind; x: number; y: number; radius: number };
+export type DrawnItem = {
+  key: string;
+  kind: MarkerKind;
+  x: number;
+  y: number;
+  radius: number;
+  selected: boolean;
+  /** 0…1 as drawn in the last frame, after animation. */
+  opacity: number;
+};
 
 export type LayerStats = {
   items: number;
@@ -230,6 +239,8 @@ export class CompanyLayer implements CustomLayerInterface {
         x: this.packer.x[k],
         y: this.packer.y[k],
         radius: this.packer.r[k],
+        selected: (this.scene.statics[i * STATIC_FLOATS + 2] & 1) === 1, // flag bit 0 (instances.ts)
+        opacity: this.packer.data[k * FLOATS_PER_INSTANCE + 5],
       });
     }
     return out;
@@ -428,7 +439,7 @@ export class CompanyLayer implements CustomLayerInterface {
 }
 
 /**
- * Adds the layer and keeps it alive across WebGL context loss (map-spec §9). MapLibre removes custom layers
+ * Adds the layer (as soon as the style allows it) and keeps it alive across WebGL context loss (map-spec §9). MapLibre removes custom layers
  * when the context is lost and does not bring them back, so this re-adds the layer on `webglcontextrestored`.
  * The layer still holds its items, so the scene reappears with no further call. Returns a function that
  * removes the layer and stops listening; call it on unmount or city change.
@@ -449,7 +460,9 @@ export function attachCompanyLayer(map: MapLibreMap, layer: CompanyLayer, before
     layer.stats.contextRestores++;
     add();
   };
-  map.addLayer(layer, beforeId);
+  // The same path as a restore, so the layer also attaches while the style is still loading. It must not wait for
+  // the map's `load` event: that needs every visible tile, and with a failing basemap it never comes (map-spec §9).
+  add();
   map.on("webglcontextrestored", restore);
   return () => {
     map.off("webglcontextrestored", restore);

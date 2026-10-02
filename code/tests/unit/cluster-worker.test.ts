@@ -250,12 +250,50 @@ describe("edge cases", () => {
   });
 });
 
+describe("expansion zoom (tap a cluster)", () => {
+  it("is the first level at which the cluster is no longer one item, for every cluster at every level", () => {
+    const engine = loadedEngine();
+    let checked = 0;
+    for (const level of [3, 8, 11, 13, 15, 17]) {
+      const r = engine.getClusters(WORLD, level, 1);
+      r.keys.forEach((key, i) => {
+        if (r.kinds[i] !== KIND_CLUSTER) return;
+        const zoom = engine.getExpansionZoom(key)!;
+        expect(zoom, key).toBeGreaterThan(level);
+        expect(zoom, key).toBeLessThanOrEqual(MAX_LEVEL);
+        // At the expansion zoom the cluster's offices are in more than one item; one level before they are still one.
+        const itemsOf = (z: number) => {
+          const members = new Set(leavesOf(key));
+          const out = engine.getClusters(WORLD, z, 1);
+          return out.keys.filter((k) => leavesOf(k).some((id) => members.has(id)));
+        };
+        expect(itemsOf(zoom).length, `${key} at its expansion zoom ${zoom}`).toBeGreaterThan(1);
+        expect(itemsOf(zoom - 1).length, `${key} one level before`).toBe(1);
+        checked++;
+      });
+    }
+    expect(checked).toBeGreaterThan(50);
+  });
+
+  it("is null for an office, a stack, a malformed key, a key from an earlier load, and before any load", () => {
+    const engine = loadedEngine();
+    const cluster = engine.getClusters(WORLD, 8, 1).keys.find((k) => k.startsWith("c:"))!;
+    expect(engine.getExpansionZoom("o:1")).toBeNull();
+    expect(engine.getExpansionZoom("s:o:1")).toBeNull();
+    expect(engine.getExpansionZoom("c:test:f0:not-a-number")).toBeNull();
+    expect(engine.getExpansionZoom("c:test:f0:99999999")).toBeNull();
+    expect(engine.getExpansionZoom(cluster.replace("test:f0", "test:other"))).toBeNull();
+    expect(createClusterEngine().getExpansionZoom(cluster)).toBeNull();
+  });
+});
+
 /** A fake worker whose responses the test releases by hand, in any order. */
 function manualApi() {
   const engine = createClusterEngine();
   const pending: Array<() => void> = [];
   const api: AsyncClusterApi = {
     load: async (points, generation) => engine.load(points, generation),
+    getExpansionZoom: async (key) => engine.getExpansionZoom(key),
     getClusters: (bbox, zoom, generation) =>
       new Promise((resolve, reject) => {
         pending.push(() => {

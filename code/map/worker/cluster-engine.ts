@@ -34,6 +34,11 @@ export const levelForZoom = (zoom: number): number => Math.max(MIN_LEVEL, Math.m
 export type ClusterEngine = {
   load(points: PointSet, generation: number): LoadResult;
   getClusters(bbox: BBox, zoom: number, generation: number): ClusterResponse;
+  /**
+   * The integer zoom at which a cluster first splits (map-spec §6), for "tap a cluster to fly there". `null` for a
+   * key that is not a cluster of the loaded dataset (an office, a stack, or a key from an earlier load).
+   */
+  getExpansionZoom(key: string): number | null;
 };
 
 export function createClusterEngine(): ClusterEngine {
@@ -129,6 +134,19 @@ export function createClusterEngine(): ClusterEngine {
         companyIds,
         ...lineage,
       };
+    },
+
+    getExpansionZoom(key) {
+      if (!index) return null;
+      const prefix = `c:${namespace.dataVersion}:${namespace.filterHash}:`;
+      if (!key.startsWith(prefix)) return null;
+      const id = Number(key.slice(prefix.length));
+      if (!Number.isInteger(id)) return null;
+      try {
+        return index.getClusterExpansionZoom(id);
+      } catch {
+        return null; // Supercluster throws for an ID that is not in this index
+      }
     },
   };
 }

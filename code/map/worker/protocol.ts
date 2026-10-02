@@ -60,6 +60,7 @@ export type LoadResult = { generation: number; officeCount: number };
 export type ClusterWorkerApi = {
   load(points: PointSet, generation: number): LoadResult;
   getClusters(bbox: BBox, zoom: number, generation: number): ClusterResponse;
+  getExpansionZoom(key: string): number | null;
 };
 
 /** The same API as the client sees it: every call is asynchronous. */
