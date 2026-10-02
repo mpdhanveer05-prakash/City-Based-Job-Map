@@ -194,3 +194,14 @@
 .maplibregl-ctrl.maplibregl-ctrl-attrib a {
   color: var(--mantis-deep);
 }
+
+/* Popups and sheets open in 160 ms ease-out (design-system.md). The global reduced-motion rule above makes it instant. */
+@keyframes popup-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.popup-in {
+  animation: popup-in 160ms ease-out;
+}
