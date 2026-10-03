@@ -187,8 +187,8 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Dependencies:** P3-01
 - **Objective:** Write one `company_filter(city, filters)` used by `city_points`, `search_companies`, and `company_facets`. Search covers job title, company name, location, and founder name.
 - **Acceptance:** For the same filters, the points, list, and facet counts agree (unique companies).
-- **Verification:** pgTAP consistency tests across a filter matrix, including Startup+stage and the overlapping types.
-- **Status:** Not started
+- **Verification:** pgTAP consistency tests across a filter matrix, including Startup+stage and the overlapping types. Contract: [docs/filters.md](docs/filters.md).
+- **Status:** Completed (3 Oct 2026)
 
 ### P3-04 Sample data for Bengaluru and Chennai
 - **Dependencies:** P3-01
