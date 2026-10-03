@@ -175,7 +175,7 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Steps:** Create the tables in [docs/data-model.md](docs/data-model.md): city, neighbourhood, tech_park, company, company_type_tag, startup stage, founder, sector, office, job, job_city, source.
 - **Acceptance:** `supabase db reset` succeeds. The city-boundary trigger rejects an out-of-boundary published office.
 - **Verification:** pgTAP tests in `supabase/tests/`.
-- **Status:** Not started
+- **Status:** Completed (3 Oct 2026)
 
 ### P3-02 RLS policies and admin roles
 - **Dependencies:** P3-01
@@ -252,11 +252,11 @@ Local shortlist (Dexie), recently viewed, compare, cluster previews, neighbourho
 | ID | Decision | Blocks | Owner |
 | --- | --- | --- | --- |
 | D-01 | Launch both cities together, or ship the code for both and stagger Chennai's data go-live? Re-baseline dates | P9-05 | Product owner |
-| D-02 | Accept the multi-tag company-type model and the definition of "Product" (ADR-0004) | P3-01, P5-02 | Product owner |
-| D-03 | Founder data: source, permitted use, and privacy handling for a named individual | P3-01, P5-01 | Product owner + legal |
+| D-02 | **Decided 3 Oct 2026 by the owner:** accept the multi-tag company-type model and the OR-within-group rule (ADR-0004). The written definition of "Product" for the curation guide is still to do | Resolved | Product owner |
+| D-03 | **Owner decided 3 Oct 2026: founders are in scope.** The `company_founder` table and founder-name search are built. Still open before any real founder is loaded: the source, permitted use, and privacy handling for a named individual (legal) | P5-01 (build); real data waits on legal | Product owner + legal |
 | D-04 | Launch data sources and the coverage target for each city | P8-01, P9-04 | Product owner |
 | D-05 | Is "Public"/"Acquired" a *startup stage* (as the brief lists it) or a separate company status? | P5-03 | Product owner |
-| D-06 | Named reference devices, network profile, and the map gate owner | P2-09 | Product owner |
+| D-06 | Named reference devices, network profile, and the map gate owner. **Owner chose on 3 Oct 2026 to run an informal gate on this laptop, labelled informal**; it does not close P2-09 | P2-09 | Product owner |
 | D-07 | Geocoding provider, error-reporting tool, analytics + privacy notice | P7-04, P9 | Tech lead |
 | D-08 | Product name and domain. **Brand colours confirmed 30 Sep 2026** (Milky + Mantis `#59C749`); Milky `#FFFDF1` confirmed the same day. The owner may revisit the combination after seeing it in the UI. Still open: designer sign-off on the derived tokens and font ([design-system.md](docs/design-system.md)) | P9-05 | Product owner |
 | D-09 | **Decided 30 Sep 2026 by the owner: no paid plans.** Staging and production are a Next.js static export on Cloudflare (Free; served as Workers static assets per [ADR-0007](docs/decisions/0007-workers-static-assets.md), since Pages is now part of Workers). Backend work runs in Supabase (Free; projects staging + prod). The explorer uses static per-city datasets, and Apply links go direct with a click beacon. See [ADR-0006](docs/decisions/0006-free-tier-static-hosting.md) (supersedes the ADR-0003 recommendation) | Resolved | Product owner |

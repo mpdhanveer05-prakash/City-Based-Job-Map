@@ -3,14 +3,24 @@
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
 ## Current state
-- **Current task:** none in progress. Phase 1 is complete, and **P2-01 to P2-08 are done**. **P2-09 (the validation gate run and report) is next but is Blocked on D-06**: it needs the named reference devices, a network profile, and a gate owner. Nothing in P2-09 can be run honestly on this laptop, whose software WebGL is not a reference device.
-- **Next action:** the owner answers D-06 (or says to run the gate on this laptop and label it informal). Phase 3 starts with P3-01, which depends on **D-02** (company-type model, ADR-0004) and **D-03** (founder data); both need the owner. P3-02 to P3-04 wait on P3-01.
+- **Current task:** P3-01 is **done** (3 Oct 2026). Next: P3-02 (RLS policies and admin roles), then P3-03 and P3-04. P2-09 stays Blocked (see below).
+- **Owner decisions, 3 Oct 2026:** D-02 accepted (multi-tag types, OR within the group; ADR-0004). D-03: founders are in scope; no real founder data is loaded until legal settles source and privacy handling. D-06: the owner chose an **informal** gate on this laptop, labelled informal; it cannot close P2-09, which still needs named devices and a gate owner.
 - **Pushed and green (3 Oct 2026):** everything is on `origin/main`. GitHub CI run 36989473591 on `ef48210` (the colour-test fix) completed with **success**. The earlier run on `5533d25` had failed on that one test. A Dependabot branch (react 19.3.0, `minor-and-patch-0a85864cd4`) failed CI because it was cut before the fix; it needs a rebase and has not been reviewed or merged.
-- **Owner actions open:** D-06 (reference devices); D-02 and D-03 (to start Phase 3); (D-11) restrict the Geoapify key by referrer and decide the basemap capacity path before launch; (ADR-0009) confirm that rotation and tilt are off in the explorer.
+- **Owner actions open:** D-06 (reference devices and gate owner); D-05 (are Public and Acquired startup stages); legal sign-off on founder data before any is loaded; (D-11) restrict the Geoapify key by referrer and decide the basemap capacity path before launch; (ADR-0009) confirm that rotation and tilt are off in the explorer.
 - **Second laptop:** the repository and `docs/claude-memory/` carry everything. Start with [setup-new-machine.md](setup-new-machine.md).
-- **Blockers:** P2-09 (D-06) and P3-01 (D-02, D-03). Code work that needs no decision is finished.
+- **Blockers:** P2-09 (D-06 devices and gate owner).
 
 ## Log
+
+### 2026-10-03: P3-01 Core schema migration (Completed)
+- **Added in `code/supabase/`:** `migrations/20261003090000_core.sql` and `tests/database/01_core_schema.test.sql` (56 assertions). Twelve tables: `city`, `neighbourhood`, `tech_park`, `source`, `sector`, `company`, `company_type_tag`, `company_sector`, `company_founder`, `office`, `job`, `job_city`; the `company_type` and `startup_stage` enums.
+- **Deviations from the plan's DDL** (listed in data-model.md §5): `company.company_type` replaced by tags (D-02); `funding_stage` dropped in favour of `startup_stage`; `company_founder` added (D-03); `source` created first so its foreign keys are real; `https` CHECKs on every stored URL; kebab-case slugs, lower-case domains, merged-company consistency, experience range, and an office's neighbourhood and tech park must be in the office's city.
+- **Rules in the database:** the city-boundary trigger rejects a published office outside `city.boundary` unless `outside_reviewed` (on insert and on update); `startup_stage` requires a `startup` tag, through **deferred** constraint triggers so tags and stage can be written in either order; `search_doc` (name A, description B, published founders C) is kept current by triggers on `company` and `company_founder`.
+- **RLS:** on for all twelve tables with **no policies**, so the API roles can read and write nothing until P3-02. A test fails if any table in `public` lacks RLS.
+- **Bugs found by the first run:** `case when tg_table_name = 'company' then new.id else old.company_id end` fails in PL/pgSQL because `old` is resolved as a `company` row; rewritten as an `if`. Fixed before anything was committed.
+- **Verified (from `code/`, Docker 29.4.0):** `npx supabase db reset` applied both migrations; `npx supabase test db`: **both files ok, 60 tests, Result: PASS**. **Mutation check:** dropping the boundary, stage, and founder-search triggers in the live database made **9 of 56** assertions fail; after `db reset` all pass again.
+- **Not verified:** the migration against a hosted Supabase project (none exists yet); behaviour with real data volumes; the founder-name privacy handling (legal, D-03); `city.data_version` bumping (arrives with publish, P7-02). `verification_check`, `submission`, `admin_user`, `audit_log`, `slug_redirect`, and `import_batch` are not created yet: `admin_user` and `is_admin()` come with P3-02, the rest with the tasks that use them.
+- **Next action:** P3-02.
 
 ### 2026-10-02: CI fix, P2-06 hit testing and co-location, P2-07 popup and fallbacks, P2-08 lifecycle (all Completed, with the gaps listed)
 

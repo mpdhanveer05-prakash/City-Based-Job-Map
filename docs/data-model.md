@@ -22,7 +22,7 @@ erDiagram
 
 ## Changes against the plan
 
-### 1. Company types overlap [Proposal, D-02]
+### 1. Company types overlap [Confirmed, D-02, 3 Oct 2026; built in P3-01]
 The plan's single `company.company_type` column can't represent a company that is both a Startup and a Product company. Proposed replacement:
 
 ```sql
@@ -34,20 +34,22 @@ CREATE TABLE company_type_tag (
 );
 ```
 - The filter is OR within the group: `type IN (...)` via `EXISTS`, and results are always `DISTINCT company`.
-- The plan's extra values (`services`, `gcc`, `other`) aren't in the launch filter. Whether to keep them as non-filterable tags is part of D-02.
+- The plan's extra values (`services`, `gcc`, `other`) are not in the launch enum. Add them by a migration if a non-filterable tag is wanted.
 - The definition of "Product" (the company builds its own product, as opposed to services) must be written into the curation guide.
 
-### 2. Startup stage [Proposal, D-05]
+### 2. Startup stage [Proposal, D-05; built in P3-01 as proposed]
 ```sql
 CREATE TYPE startup_stage AS ENUM
   ('pre_seed','seed','bootstrapped','series_a','series_b','series_c','series_c_plus','public','acquired');
 ALTER TABLE company ADD COLUMN startup_stage startup_stage;  -- NULL = unknown, never guessed
--- CHECK via trigger: startup_stage IS NULL OR company has 'startup' tag
+-- Enforced by a deferred constraint trigger: startup_stage IS NULL OR company has a 'startup' tag.
+-- Deferred so a company and its tags can be written in any order inside one transaction.
+-- The plan's company.funding_stage text column is dropped: startup_stage is the one stage field.
 ```
 - The stage filter applies only when `startup` is in the type filter. The server **ignores** stage parameters without `type=startup`, and the client normalises the URL to match.
 - Open question D-05: "Bootstrapped" is a funding mode, and "Public" and "Acquired" are outcomes rather than stages. They're kept in one list because the brief asks for it.
 
-### 3. Founder name search [Proposal, D-03]
+### 3. Founder name search [Confirmed in scope, D-03, 3 Oct 2026; built in P3-01]
 The plan has no founder data. Proposed:
 ```sql
 CREATE TABLE company_founder (
@@ -59,10 +61,18 @@ CREATE TABLE company_founder (
 );
 CREATE INDEX company_founder_name_trgm ON company_founder USING gin (full_name gin_trgm_ops);
 ```
-Only founders the company itself publishes (on its website or in a press kit) are stored, and only after admin review. Founder names are included in `company.search_doc`. Removal requests go through the feedback process.
+Only founders the company itself publishes (on its website or in a press kit) are stored, and only after admin review. Published founder names are included in `company.search_doc` (weight C; name is A, description B), kept current by triggers on `company` and `company_founder`. Removal requests go through the feedback process. The table ships empty: no real founder is loaded until legal settles source, permitted use, and privacy handling (D-03).
 
 ### 4. Search scope [Confirmed brief]
 One search input matches: **job title** (`job.title_norm`, trigram + role family), **company name** (FTS + trigram), **location** (neighbourhood, tech park, office address locality), and **founder name**. Suggest results are grouped by kind.
+
+### 5. Other changes made in P3-01
+- `source` is created before `company` and `job`, so `company.source_id` and `job.source_id` are real foreign keys.
+- Website, careers, apply, source base, and founder source URLs must start with `https://` (a CHECK, as well as the build-time domain check).
+- `company.domain` must be lower case; `company.slug` and `city.slug` must be kebab-case; a `merged` company must name its survivor and only a `merged` company may.
+- An office's neighbourhood and tech park must belong to the office's city, checked by the same trigger as the city-boundary rule.
+- `job.exp_min_years <= exp_max_years` when both are set.
+- RLS is enabled on all twelve tables with **no policies**, so nothing is reachable through the API roles until P3-02 adds them.
 
 ## Indexes (plan plus additions)
 - GIN on `company.search_doc` and trigram on `company.name`, `job.title_norm`, and `company_founder.full_name`.
