@@ -117,6 +117,8 @@ All thresholds are **proposals** until the gate owner (D-06) confirms them.
 | Memory | `performance.memory` / CDP heap, and the GPU texture count | Heap back within 10% of baseline after the 20 mount cycles; texture pages ≤ budget |
 | Listener leak | CDP `getEventListeners` count | No growth across mount cycles |
 
+**How to run it (built 4 Oct 2026):** `npm run gate` runs scenarios 1 to 3, filter latency, and hit accuracy on the datasets named in `GATE_SIZES` (default `S,M,L`) in the installed Google Chrome on the machine's own GPU (`tests/gate/`, `playwright.gate.config.ts`); `GATE_DPR=2` repeats it at a device pixel ratio of 2; `GATE_HEADED=1` shows the window; the default build uses the blank background so no Geoapify credits are spent (`GATE_BASEMAP=on` uses the key from `.env.local`). Scenarios 4 and 5 are `tests/e2e/hit-test.spec.ts` and `tests/e2e/map-lifecycle.spec.ts`, which the same config also runs. Raw numbers go to `gate-results/` (git-ignored); `node scripts/gate-report.mts` turns them into the report's tables. The run needs about 4 GB of free memory (a Next.js build, Chrome, and Wrangler).
+
 **Output:** `docs/map-gate-report.md`, with raw numbers, device and browser versions, dataset hashes, and pass or fail for each metric.
 
 **If the gate fails:** don't switch to ordinary markers silently. Record which metric failed, the options (optimise; reduce the dataset or LOD; cross-fade at a lower threshold; DOM markers with `transform` at high zoom only), each option's effect on UX, accessibility, and schedule, and ask for a decision in an ADR.

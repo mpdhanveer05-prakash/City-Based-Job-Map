@@ -154,6 +154,12 @@ export class CompanyLayer implements CustomLayerInterface {
   private readonly packer = new FramePacker();
   private readonly animator = new Animator<LayerItem>();
   private scene: PreparedScene;
+  /**
+   * The scene the last frame was packed from. The packer's indices refer to it, not to `scene`: an update that
+   * lands between two frames replaces `scene` at once, and reading the old indices through the new scene returned
+   * wrong or missing keys until the next frame (found by the P2-09 gate, scenario 2).
+   */
+  private framedScene: PreparedScene;
   /** The animator's state for each scene item, refilled every frame. */
   private dynamic: AnimOutput = { x: new Float64Array(0), y: new Float64Array(0), scale: new Float32Array(0), opacity: new Float32Array(0) };
   private map: MapLibreMap | null = null;
@@ -181,6 +187,7 @@ export class CompanyLayer implements CustomLayerInterface {
     };
     this.palette = { swatches: theme.swatches.map(parseCssColor), logoFill: parseCssColor(theme.logoFill) };
     this.scene = prepareScene([], this.palette, this.glyphs.metrics);
+    this.framedScene = this.scene;
   }
 
   /** Replaces everything on the map at once, with no animation. Keys must be unique. */
@@ -231,15 +238,16 @@ export class CompanyLayer implements CustomLayerInterface {
   /** The items drawn in the last frame, in draw order, with their screen positions (CSS px). */
   getDrawn(): DrawnItem[] {
     const out: DrawnItem[] = [];
+    const scene = this.framedScene;
     for (let k = 0; k < this.stats.drawn; k++) {
       const i = this.packer.indices[k];
       out.push({
-        key: this.scene.keys[i],
-        kind: this.scene.kinds[i],
+        key: scene.keys[i],
+        kind: scene.kinds[i],
         x: this.packer.x[k],
         y: this.packer.y[k],
         radius: this.packer.r[k],
-        selected: (this.scene.statics[i * STATIC_FLOATS + 2] & 1) === 1, // flag bit 0 (instances.ts)
+        selected: (scene.statics[i * STATIC_FLOATS + 2] & 1) === 1, // flag bit 0 (instances.ts)
         opacity: this.packer.data[k * FLOATS_PER_INSTANCE + 5],
       });
     }
@@ -284,6 +292,7 @@ export class CompanyLayer implements CustomLayerInterface {
     atlas?.beginFrame();
     atlas?.flushUploads(gl);
     const scene = this.scene;
+    this.framedScene = scene;
     // Where every marker is right now: the animator moves, grows, and fades them between updates.
     const time = this.now();
     const animating = this.animator.sample(time, this.dynamic, this.scene.sourceIndex);

@@ -238,3 +238,25 @@ test("under reduced motion nothing moves and a transition lasts at most 100 ms",
   expect(after.length).toBeGreaterThan(0);
   expect(after.every((f) => f.mode === "reduced" && f.moving === 0), `modes: ${[...new Set(after.map((f) => f.mode))]}`).toBe(true);
 });
+
+// Found by the P2-09 gate (scenario 2). The layer's drawn list describes the last frame. An update that lands
+// between two frames replaces the scene at once; reading the old frame's indices through the new scene gave
+// wrong or missing keys (and so wrong or crashing taps) until the next frame was drawn.
+test("the drawn list keeps describing the last frame when an update lands before the next one", async ({ page }) => {
+  await openLive(page);
+  const result = await page.evaluate(() => {
+    const { layer } = window.__mapLayer!;
+    const before = layer.getDrawn().map((d) => d.key);
+    // One much smaller scene, replacing the 80 or so markers on screen, read in the same task: no frame in between.
+    layer.setItems([{ key: "gate:only", kind: "logo", lng: 77.6, lat: 12.97, letter: "X", swatch: 0 }]);
+    const between = layer.getDrawn();
+    return { before, between: between.map((d) => d.key), undefinedKeys: between.filter((d) => typeof d.key !== "string").length };
+  });
+  expect(result.before.length).toBeGreaterThan(10);
+  expect(result.undefinedKeys, "every key is defined").toBe(0);
+  expect(result.between, "the list is still the last frame's markers").toEqual(result.before);
+  // And the next frame draws the new scene.
+  await expect
+    .poll(() => page.evaluate(() => window.__mapLayer!.layer.getDrawn().map((d) => d.key).join(",")), { timeout: 10_000 })
+    .toBe("gate:only");
+});

@@ -21,7 +21,8 @@
     "deploy:staging": "wrangler deploy --env staging",
     "fixtures": "node map/fixtures/cli.mts",
     "test:parity": "vitest run --config vitest.parity.config.ts",
-    "data": "node scripts/build-datasets.mts"
+    "data": "node scripts/build-datasets.mts",
+    "gate": "playwright test --config playwright.gate.config.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

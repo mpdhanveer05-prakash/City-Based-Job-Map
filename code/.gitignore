@@ -59,3 +59,6 @@ next-env.d.ts
 
 # per-city datasets written by npm run data (P4-01)
 /public/data/
+
+# raw numbers of the map validation gate (P2-09); the report in docs/ is generated from them
+/gate-results/

@@ -15,6 +15,7 @@ import { mirrorEntries } from "@/map/a11y-mirror";
 import { createBasemap } from "@/map/basemap";
 import { TILE_NOTICE, WEBGL_NOTICE, checkWebGl2, watchTileFailures, type TileWatcher } from "@/map/fallback";
 import { generateSyntheticDataset } from "@/map/fixtures/generate";
+import type { GateFilter } from "@/map/fixtures/gate-filters";
 import { buildStaticScene } from "@/map/fixtures/static-scene";
 import { attachMarkerInteractions, type MarkerInteractions } from "@/map/hit-test/interactions";
 import type { HitCandidate } from "@/map/hit-test/hit-test";
@@ -63,6 +64,10 @@ type MarkerHooks = {
 type LiveControl = {
   /** Reloads the worker with only the startups (a new filter hash), or all companies again. */
   setStartupsOnly(on: boolean): Promise<void>;
+  /** Reloads the worker with one of the gate's filters, and resolves once the new points are applied. */
+  setFilter(filter: GateFilter): Promise<void>;
+  /** How many offices the current filter keeps, out of how many. */
+  counts(): { offices: number; total: number; companies: number };
   /** Gives a marker the keyboard-focus ring (what the mirror list does on focus). */
   setFocused(key: string | null): void;
   /** Does what a tap on a drawn marker does (what Enter does in the mirror list). */
@@ -414,11 +419,19 @@ function startLive(
   onClient: (client: ClusterClient) => void,
   ui: LiveUi,
 ): LiveControl {
-  const dataset = generateSyntheticDataset({ city: "bengaluru", size: "M" });
+  // ?size=S|M|L picks the gate dataset (default M); the Phase 2 specs rely on M.
+  const sizeParam = new URLSearchParams(location.search).get("size");
+  const size = sizeParam === "S" || sizeParam === "L" ? sizeParam : "M";
+  const dataset = generateSyntheticDataset({ city: "bengaluru", size });
   const companies = new Map(dataset.companies.map((c) => [c.id, c]));
   const names = new Map(dataset.companies.map((c) => [c.id, c.name]));
   const officeById = new Map(dataset.offices.map((o) => [o.id, o]));
   const startups = new Set(dataset.companies.filter((c) => c.types.includes("startup")).map((c) => c.id));
+  const startupSeed = new Set(dataset.companies.filter((c) => c.types.includes("startup") && c.stage === "seed").map((c) => c.id));
+  const mnc = new Set(dataset.companies.filter((c) => c.types.includes("mnc")).map((c) => c.id));
+  const keeps = (hash: string, companyId: number) =>
+    hash === "none" || (hash === "startups" ? startups : hash === "startup-seed" ? startupSeed : mnc).has(companyId);
+  let keptOffices = dataset.offices.length;
   const client = createClusterWorkerClient();
   onClient(client);
   const memo: StackMemo = emptyStackMemo();
@@ -617,7 +630,8 @@ function startLive(
 
   const load = async (hash: string) => {
     filterHash = hash;
-    const offices = dataset.offices.filter((o) => hash === "none" || startups.has(o.companyId));
+    const offices = dataset.offices.filter((o) => keeps(hash, o.companyId));
+    keptOffices = offices.length;
     await client.load(
       packPointSet(
         offices.map((o) => ({ id: o.id, companyId: o.companyId, lng: o.lng, lat: o.lat })),
@@ -631,6 +645,8 @@ function startLive(
   map.on("moveend", refresh);
   return {
     setStartupsOnly: (on) => load(on ? "startups" : "none"),
+    setFilter: (filter) => load(filter),
+    counts: () => ({ offices: keptOffices, total: dataset.offices.length, companies: dataset.companies.length }),
     setFocused: (key) => controller.setFocused(key),
     activate: (key) => {
       const hit = layer.getDrawn().find((d) => d.key === key);
