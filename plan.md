@@ -194,7 +194,7 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Dependencies:** P3-01
 - **Files:** `supabase/seed/*.sql`
 - **Acceptance:** Both city rows exist with boundaries, neighbourhoods, and parks. Sample companies are clearly marked synthetic until real curated data replaces them.
-- **Status:** Not started
+- **Status:** Completed (3 Oct 2026)
 
 ## Phase 4 — City selection and company explorer
 

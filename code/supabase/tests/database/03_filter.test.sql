@@ -5,6 +5,13 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(99);
 
+-- `supabase db reset` loads the sample data (seed/01_sample_data.sql). These tests use their own
+-- fixtures, so start from empty tables. TRUNCATE is transactional: the rollback below restores
+-- the seed.
+truncate public.city, public.source, public.sector, public.company, public.admin_user
+  restart identity cascade;
+
+
 -- ---------------------------------------------------------------------------
 -- Helpers (rolled back with the transaction)
 -- ---------------------------------------------------------------------------

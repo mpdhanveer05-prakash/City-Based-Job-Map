@@ -87,6 +87,9 @@ jobs:
       - run: npm ci
       # Postgres only (no API, Auth, or Studio), with every migration applied from scratch.
       - run: npx supabase db start
+      # Re-applies every migration and loads the synthetic sample data (supabase/seed), which
+      # tests/database/04_seed.test.sql checks. The other database tests empty the tables first.
+      - run: npx supabase db reset
       - run: npx supabase test db
 
   secret-scan:
