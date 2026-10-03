@@ -56,3 +56,6 @@ next-env.d.ts
 
 # MapLibre runtime copied by scripts/copy-maplibre.mts before dev and build
 /public/maplibre/
+
+# per-city datasets written by npm run data (P4-01)
+/public/data/

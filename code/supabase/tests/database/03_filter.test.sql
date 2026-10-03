@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(99);
+select plan(102);
 
 -- `supabase db reset` loads the sample data (seed/01_sample_data.sql). These tests use their own
 -- fixtures, so start from empty tables. TRUNCATE is transactional: the rollback below restores
@@ -267,6 +267,12 @@ select is(tests.slugs('bangalore', '{"q":"alpha engineer"}'), array['alpha-labs'
 select is(tests.slugs('bangalore', '{"q":"alpha payments"}'), '{}'::text[], 'every word must match the same company');
 select is(tests.slugs('bangalore', '{"q":"  Backend   Engineer "}'), array['alpha-labs'], 'extra spaces are ignored');
 select is(tests.slugs('bangalore', '{"q":"   "}'), tests.slugs('bangalore'), 'a blank search does not constrain');
+select is(tests.slugs('bangalore', jsonb_build_object('q', 'bravo' || chr(160) || 'engineer')), array['bravo-pay'],
+  'a no-break space separates words (the Unicode White_Space set, not the locale''s \s)');
+select is(tests.slugs('bangalore', jsonb_build_object('q', 'bravo' || chr(65279) || 'engineer')), '{}'::text[],
+  'a byte-order mark is not white space, though JavaScript''s \s says it is');
+select is(tests.slugs('bangalore', jsonb_build_object('q', 'bravo' || chr(31) || 'engineer')), '{}'::text[],
+  'a control separator is not white space, though this database''s \s says it is');
 select is(tests.slugs('bangalore', '{"q":"%"}'), '{}'::text[], 'a percent sign is literal text, not a wildcard');
 select is(tests.slugs('bangalore', '{"q":"_"}'), '{}'::text[], 'an underscore is literal text, not a wildcard');
 select is(tests.slugs('bangalore', '{"q":"engineer","types":["startup"]}'), array['alpha-labs', 'bravo-pay'], 'search AND type');

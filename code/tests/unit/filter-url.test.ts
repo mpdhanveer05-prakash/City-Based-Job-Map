@@ -227,6 +227,13 @@ describe("serializeExplorerSearch is canonical", () => {
 });
 
 describe("search text", () => {
+  it("treats the same characters as white space as the SQL filter does", () => {
+    expect(normalizeQuery("a\u00a0\u3000b")).toBe("a b");
+    expect(normalizeQuery("\u00a0a\u2003")).toBe("a");
+    expect(normalizeQuery("a\ufeffb")).toBe("a\ufeffb");
+    expect(normalizeQuery("\ufeffa")).toBe("\ufeffa");
+  });
+
   it("collapses white space, trims, and cuts to the maximum length", () => {
     expect(normalizeQuery("  backend   engineer \n")).toBe("backend engineer");
     expect(normalizeQuery(null)).toBe("");

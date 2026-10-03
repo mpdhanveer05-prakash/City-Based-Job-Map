@@ -27,6 +27,14 @@ export type StartupStage = (typeof STARTUP_STAGES)[number];
 export const VIEWS = ["map", "grid", "list"] as const;
 export type View = (typeof VIEWS)[number];
 
+/**
+ * White space in search text: the Unicode White_Space property, spelled out as a regular-expression
+ * class body. The SQL `parse_filters` uses the same set (neither JavaScript's `\s` nor PostgreSQL's is
+ * the same as the other's, see docs/filters.md).
+ */
+export const WHITESPACE = String.raw`\t-\r \u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000`;
+const WHITESPACE_RUN = new RegExp(`[${WHITESPACE}]+`, "g");
+
 /** The longest search text kept. Longer input is cut, not rejected. */
 export const MAX_QUERY_LENGTH = 100;
 
@@ -72,7 +80,9 @@ export const filtersSchema = z.object({
 /** Trim, collapse runs of white space, and cut to the maximum length. Case is kept as typed. */
 export function normalizeQuery(q: string | null | undefined): string {
   if (!q) return "";
-  return q.replace(/\s+/g, " ").trim().slice(0, MAX_QUERY_LENGTH).trim();
+  // Not String.trim(): it also strips U+FEFF, which is not white space here.
+  const spaced = q.replace(WHITESPACE_RUN, " ").replace(/^ | $/g, "");
+  return spaced.slice(0, MAX_QUERY_LENGTH).replace(/ $/, "");
 }
 
 function uniqueSorted<T extends string>(values: readonly T[], order?: readonly T[]): T[] {

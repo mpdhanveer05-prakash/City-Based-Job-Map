@@ -56,6 +56,10 @@ declare
   args public.filter_args;
   q text;
   unknown_key text;
+  -- White space is spelled out (the Unicode White_Space property), not \s: PostgreSQL's \s follows the
+  -- database locale (it includes U+001C to U+001F), JavaScript's has U+FEFF, and the browser filter
+  -- must split a search exactly as this does. lib/filters/schema.ts WHITESPACE is the same set.
+  ws constant text := '[\t-\r \u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]';
 begin
   filters := coalesce(filters, '{}'::jsonb);
   if jsonb_typeof(filters) <> 'object' then
@@ -75,9 +79,9 @@ begin
     if jsonb_typeof(filters -> 'q') <> 'string' then
       raise exception 'filters.q must be a string' using errcode = 'invalid_parameter_value';
     end if;
-    q := lower(regexp_replace(filters ->> 'q', '^\s+|\s+$', '', 'g'));
+    q := lower(regexp_replace(filters ->> 'q', '^' || ws || '+|' || ws || '+$', '', 'g'));
     if q <> '' then
-      args.tokens := regexp_split_to_array(q, '\s+');
+      args.tokens := regexp_split_to_array(q, ws || '+');
     end if;
   end if;
 

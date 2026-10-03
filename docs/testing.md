@@ -16,7 +16,7 @@
 
 ## Required consistency tests (confirmed brief)
 - Map, Grid, and List return identical company ID sets and counts for a filter matrix that includes overlapping types (Startup+Product), Startup+stage, and search by each of the four kinds.
-- **Filter parity (ADR-0006):** the TypeScript filter in `lib/filters/` and SQL `company_filter` return identical company-ID sets for the same matrix, against local Supabase.
+- **Filter parity (ADR-0006):** the TypeScript filter in `lib/filters/` and SQL `company_filter` return identical company-ID sets for the same matrix, against local Supabase. Built in P4-01: `npm run test:parity` (see [filters.md](filters.md)); CI runs it after the database tests.
 - Deselecting Startup clears the stages. A URL with a stage but no Startup is normalised.
 - A job row's DOM contains only the title and Apply.
 

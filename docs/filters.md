@@ -35,7 +35,7 @@ A company is a candidate in a city when it is `published` and has at least one `
 
 ## Search [Proposal: substring matching, chosen so the TypeScript mirror can be exact]
 
-`q` is trimmed and lower-cased, then split on whitespace into words. **Every word must be a substring of at least one field** of the company; different words may match different fields. A blank `q` does not constrain. Characters such as `%` and `_` are plain text (the SQL uses `strpos`, not `LIKE`).
+`q` is trimmed and lower-cased, then split into words on **white space, which here means exactly the Unicode White_Space set** (U+0009 to U+000D, U+0020, U+0085, U+00A0, U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F, U+205F, U+3000). The class is spelled out in both the SQL (`parse_filters`) and TypeScript (`WHITESPACE` in `lib/filters/schema.ts`) because the engines' own `\s` differ: PostgreSQL's follows the database locale and includes U+001C to U+001F; JavaScript's includes U+FEFF. The parity test found this. **Every word must be a substring of at least one field** of the company; different words may match different fields. A blank `q` does not constrain. Characters such as `%` and `_` are plain text (the SQL uses `strpos`, not `LIKE`).
 
 The fields, all lower-cased:
 
@@ -47,7 +47,7 @@ The fields, all lower-cased:
 
 Typo tolerance (trigram similarity) is deliberately **not** part of the filter, because the TypeScript mirror must return exactly the same company IDs. Suggestions and "did you mean" belong to the browser search index (P5-01).
 
-**Known limit:** SQL `lower()` follows the database collation and JavaScript `toLowerCase()` follows Unicode, so they can differ for a few non-ASCII upper-case letters. Scripts without letter case (Kannada, Tamil, Devanagari) are unaffected. The parity matrix should include at least one non-ASCII name before launch.
+**Case folding.** SQL `lower()` follows the database collation and JavaScript `toLowerCase()` follows Unicode. On this project's local database (`en_US.UTF-8`) they agree on everything the parity matrix tries: accented capitals, a final sigma, the dotted capital I, `ß`, Kannada, and an emoji. **Unverified on a hosted Supabase project**: check its collation (`select datcollate from pg_database`) when one exists; if it differs, the parity test (run against it) will show where.
 
 ## Functions
 
@@ -75,6 +75,26 @@ A facet's count is the size of `company_filter` **with that group's selection re
 
 So selecting Startup does not zero the MNC count: the user can still add MNC. Counts can add up to more than the total because types overlap, so the UI shows the unique-company total from the `total` row. Every value is returned, including those with a count of 0. The tests check each facet count against `company_filter` itself, so the two cannot drift apart.
 
+## City datasets [Confirmed design, ADR-0006; file layout is a Proposal]
+
+`city_build_snapshot(city_slug)` returns, as one JSON document, everything the build needs for a city: the city, its neighbourhoods and tech parks, all sectors, every candidate company (with its types, stage, sectors, and published founders), its published offices in the city, and its active and suspect jobs listed in the city. The candidates are exactly `company_filter(city, '{}')`. It returns `null` for an unknown city or one the caller cannot see. Slug redirects are not in it yet (the table arrives with company merging, P7).
+
+`npm run data` (`scripts/build-datasets.mts`) reads it once per launch city, validates it with Zod, and writes, under `public/data/` (git-ignored; Next copies it into the static export):
+
+| File | Holds | Loaded by the browser |
+| --- | --- | --- |
+| `<city>/<version>/companies.json` | the city, reference lists, one summary per company | at city entry |
+| `<city>/<version>/offices.json` | one point per published office | at city entry |
+| `<city>/<version>/search.json` | active job titles and published founder names per company | when a visitor first searches |
+| `<city>/<version>/details.json` | description, links, last verified, and the jobs to list | on a company page |
+| `manifest.json` | each city's current version, counts, file paths, and byte sizes (no timestamp) | first |
+
+The version is `city.data_version`, so a file URL changes when the data does and can be cached for a long time. Older version folders are removed on each run. The data source is Supabase's REST API with the public anon key (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`; Row-Level Security applies), or `LOCAL_DATABASE_URL` for a local database as the anon role (development only). With neither, the script skips with a message; `--require` makes that an error. It is not yet part of `npm run build`: that is decided with the pages that read it (P4-02).
+
+`lib/filters/filter.ts` is the TypeScript mirror: `prepareIndex(dataset)` once, then `companyFilter`, `cityPoints`, `searchCompanies`, `companyFacets`. Before `search.json` has loaded, pass an empty `search` list: a search then matches names and locations only.
+
+Seed size (3 Oct 2026, 48 + 24 companies): about 88 KB of JSON in all, roughly 230 bytes per company and 245 per office in the explorer files, and 610 per company in `details.json`.
+
 ## URL state [Proposal for the parameter names; the rules are Confirmed]
 
 `lib/filters/url.ts` is the only code that reads or writes the explorer's query string; components never touch `searchParams` (CLAUDE.md). The city is the path (`/bangalore`, `/chennai`), not a parameter.
@@ -96,7 +116,11 @@ So selecting Startup does not zero the MNC count: the user can still add MNC. Co
 
 ## Tests
 
-`tests/unit/filter-url.test.ts` (59 tests, including a seeded round trip over 3,000 generated states).
+- `supabase/tests/database/03_filter.test.sql`: the SQL rules.
+- `tests/unit/filter-mirror.test.ts`: the same rules against the TypeScript filter, with no database.
+- `tests/parity/filter-parity.test.ts` (`npm run test:parity`, needs the seeded local database): runs both over the same data for about 340 filters per city (20 hand-written, one per awkward search text, and 250 seeded random ones), including nine companies with awkward text (accents, Kannada, a final sigma, an emoji, `%`, `_`, a backslash, no-break spaces) inserted in a rolled-back transaction, and requires identical company IDs, office points, list rows (in order, with counts), and facet counts. CI runs it after the database tests.
+- `tests/unit/filter-url.test.ts` (URL state; includes a seeded round trip over 3,000 generated states).
+- `tests/unit/dataset-build.test.ts`: the serialiser, the manifest, and the REST reader against a local HTTP server.
 
 
 `supabase/tests/database/03_filter.test.sql` covers each rule above, the error cases, the visibility rules for anon and a signed-in editor, and a 23-filter matrix across two cities that checks the points, the list, and every facet count against `company_filter`. The TypeScript parity test (P4-01) reuses the same matrix.

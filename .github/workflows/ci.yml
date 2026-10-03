@@ -91,6 +91,13 @@ jobs:
       # tests/database/04_seed.test.sql checks. The other database tests empty the tables first.
       - run: npx supabase db reset
       - run: npx supabase test db
+      # The TypeScript filter returns the same results as the SQL functions over the seeded data
+      # (ADR-0006; tests/parity). Needs the database above.
+      - run: npm run test:parity
+      # The build-time dataset writer works against the same database and writes valid files.
+      - run: npm run data -- --out "$RUNNER_TEMP/data" --require
+        env:
+          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
 
   secret-scan:
     name: Secret scan (gitleaks)
