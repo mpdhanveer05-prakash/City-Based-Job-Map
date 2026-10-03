@@ -75,6 +75,28 @@ A facet's count is the size of `company_filter` **with that group's selection re
 
 So selecting Startup does not zero the MNC count: the user can still add MNC. Counts can add up to more than the total because types overlap, so the UI shows the unique-company total from the `total` row. Every value is returned, including those with a count of 0. The tests check each facet count against `company_filter` itself, so the two cannot drift apart.
 
+## URL state [Proposal for the parameter names; the rules are Confirmed]
+
+`lib/filters/url.ts` is the only code that reads or writes the explorer's query string; components never touch `searchParams` (CLAUDE.md). The city is the path (`/bangalore`, `/chennai`), not a parameter.
+
+| Parameter | Value | Default (omitted) |
+| --- | --- | --- |
+| `view` | `map`, `grid`, `list` | `map` |
+| `q` | search text, white space collapsed, at most 100 characters | empty |
+| `type` | comma list of `startup`, `mnc`, `product` | none |
+| `stage` | comma list of the nine stages | none |
+| `hood`, `park`, `sector` | comma lists of slugs | none |
+| `company` | the selected company's slug | none |
+| `map` | `lat,lng,zoom` (5, 5, and 2 decimals; zoom 0 to 22) | the city's default view |
+
+- **Parsing is lenient, writing is canonical.** A bad value is dropped (anyone can edit a URL); the result is always normalised. The same state always gives the same string: fixed parameter order, sorted lists, no defaults. Back and Forward therefore compare URLs by value.
+- **Stages need Startup.** `?stage=seed` alone, or with only `type=mnc`, is corrected on load; deselecting Startup clears the stages from the state and the URL (`applyFilterChange`).
+- **History.** `historyMode(previous, next)`: a camera-only change replaces the current entry, any other change adds one, no change does nothing. Back and Forward step through what the visitor chose, not through every pan.
+- **Not here:** clearing `company` when a filter hides the selected company depends on the dataset, so the explorer (P4-03, P5-05) does it. The Playwright check of Back and Forward (AC07) needs the explorer shell.
+
 ## Tests
+
+`tests/unit/filter-url.test.ts` (59 tests, including a seeded round trip over 3,000 generated states).
+
 
 `supabase/tests/database/03_filter.test.sql` covers each rule above, the error cases, the visibility rules for anon and a signed-in editor, and a 23-filter matrix across two cities that checks the points, the list, and every facet count against `company_filter`. The TypeScript parity test (P4-01) reuses the same matrix.
