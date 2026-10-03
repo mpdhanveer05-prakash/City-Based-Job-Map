@@ -3,7 +3,7 @@
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
 ## Current state
-- **Current task:** P3-01 is **done** (3 Oct 2026). Next: P3-02 (RLS policies and admin roles), then P3-03 and P3-04. P2-09 stays Blocked (see below).
+- **Current task:** P3-01 and P3-02 are **done** (3 Oct 2026). Next: P3-03 (shared filter and search SQL) and P3-04 (sample data). P2-09 stays Blocked (see below).
 - **Owner decisions, 3 Oct 2026:** D-02 accepted (multi-tag types, OR within the group; ADR-0004). D-03: founders are in scope; no real founder data is loaded until legal settles source and privacy handling. D-06: the owner chose an **informal** gate on this laptop, labelled informal; it cannot close P2-09, which still needs named devices and a gate owner.
 - **Pushed and green (3 Oct 2026):** everything is on `origin/main`. GitHub CI run 36989473591 on `ef48210` (the colour-test fix) completed with **success**. The earlier run on `5533d25` had failed on that one test. A Dependabot branch (react 19.3.0, `minor-and-patch-0a85864cd4`) failed CI because it was cut before the fix; it needs a rebase and has not been reviewed or merged.
 - **Owner actions open:** D-06 (reference devices and gate owner); D-05 (are Public and Acquired startup stages); legal sign-off on founder data before any is loaded; (D-11) restrict the Geoapify key by referrer and decide the basemap capacity path before launch; (ADR-0009) confirm that rotation and tilt are off in the explorer.
@@ -11,6 +11,14 @@ Update this after every task: what changed, how it was verified (the commands ac
 - **Blockers:** P2-09 (D-06 devices and gate owner).
 
 ## Log
+
+### 2026-10-03: P3-02 RLS policies and admin roles (Completed)
+- **Added in `code/supabase/`:** `migrations/20261003100000_rls.sql` and `tests/database/02_rls.test.sql` (86 assertions). `admin_user`, `is_admin(min_role)` (SECURITY DEFINER, fixed `search_path`, fails closed on an unknown role), policies on all twelve tables plus `admin_user`, privilege revokes, and the publish-needs-a-reviewer trigger. The rules as built are in data-model.md ("As built in P3-02").
+- **Tested as each role** (the test switches `role` and the JWT claims and probes reads, writes, and row counts): anon, a signed-in non-admin, editor, reviewer, admin, and `service_role`. It checks that anon and a non-admin see exactly the published companies (3 of 6 in the fixture), the one visible office out of five, only active and suspect jobs, only published founders, only visible job-city rows; that a draft city hides its offices; that an editor cannot publish, unpublish, activate a job, or delete a published record; that a reviewer can publish but not delete a published record; that only an admin changes cities, sources, and admin roles; and that nobody can make themselves an admin.
+- **Verified (from `code/`):** `npx supabase db reset` applied all three migrations; `npx supabase test db`: **3 files ok, 146 tests, Result: PASS**. **Mutation check:** opening `company_public_read` and `job_public_read`, dropping the publish trigger, granting INSERT to anon, and letting editors delete published companies made **13 of 86** assertions fail; after `db reset` all pass. (A bare INSERT grant to anon alone is still stopped by RLS, which is the intended second layer; the privilege test catches the grant itself.)
+- **Decisions made here that the owner should confirm** (all in data-model.md): suspect jobs are visible; a `beta` city is public (only `draft` hides); reference data is admin-only; a reviewer cannot delete a published record (the matrix gives that to admin).
+- **Not verified:** the policies through the real Supabase API (PostgREST and a real JWT); the test impersonates roles inside Postgres. Policy cost on large tables (the build reads through `city_build_snapshot`, P4-01). The pipeline role and `audit_log` (later tasks).
+- **Next action:** P3-03 (`company_filter`, `city_points`, `search_companies`, `company_facets`).
 
 ### 2026-10-03: P3-01 Core schema migration (Completed)
 - **Added in `code/supabase/`:** `migrations/20261003090000_core.sql` and `tests/database/01_core_schema.test.sql` (56 assertions). Twelve tables: `city`, `neighbourhood`, `tech_park`, `source`, `sector`, `company`, `company_type_tag`, `company_sector`, `company_founder`, `office`, `job`, `job_city`; the `company_type` and `startup_stage` enums.

@@ -181,7 +181,7 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 - **Dependencies:** P3-01
 - **Acceptance:** anon reads only published companies and offices and active jobs, and writes nothing. Authenticated non-admins get the same access as anon. Admin roles follow their matrix. The service role is never used from the browser.
 - **Verification:** pgTAP RLS tests for each role and table.
-- **Status:** Not started
+- **Status:** Completed (3 Oct 2026)
 
 ### P3-03 Shared filter + search SQL functions
 - **Dependencies:** P3-01

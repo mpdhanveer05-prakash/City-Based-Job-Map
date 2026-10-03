@@ -97,4 +97,12 @@ Since ADR-0006 the explorer runs in the browser over a static dataset. `city_bui
 
 RLS is enabled on **every** table in `public`. `is_admin()` is `SECURITY DEFINER` with a fixed `search_path` (see the plan's DDL). Every policy has a pgTAP test.
 
-Open question: the plan's public policy exposes `suspect` jobs. Confirm that suspect jobs stay visible until the second failed check.
+### As built in P3-02 (`migrations/20261003100000_rls.sql`)
+- **Publishing needs a reviewer.** A policy cannot compare old and new status, so a `BEFORE INSERT OR UPDATE` trigger on `company`, `office`, `company_founder`, and `job` rejects a signed-in editor who moves a record into or out of its public state (`published`; for jobs `active` or `suspect`). Connections with no signed-in user (the migration owner, `service_role`, the future pipeline role) are not affected, because `auth.uid()` is null for them.
+- **Deleting.** An editor or reviewer may delete only records that are not published (a job counts as published while `active` or `suspect`); only an `admin` may delete a published record. Tags and links follow the editor rule.
+- **Visibility chain.** An office is public only if it is published **and** its company is published **and** its city is `beta` or `live`. A `draft` city hides itself, its neighbourhoods, tech parks, offices, and job-city rows. Jobs are public when `active` or `suspect` and the company is published. Founders are public when published and the company is published.
+- **Reference data** (`city`, `neighbourhood`, `tech_park`, `sector`, `source`) is writable by `admin` only. The matrix above does not name it; loosen it in P7 if editors need it. `source` and `admin_user` are closed to `anon` at the privilege level, not just filtered.
+- **Privileges.** `anon` has no INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, or TRIGGER on any table in `public`, including tables created later (default privileges). `authenticated` has no TRUNCATE, REFERENCES, or TRIGGER.
+- **Not built yet:** the pipeline role (P8-01), `audit_log` (P7-02), `submission` (P8-04).
+
+Open question: suspect jobs are **built as visible** until the second failed check (as the plan's policy has it). Confirm.
