@@ -29,7 +29,7 @@ Lint, typecheck, Vitest, pgTAP (local Supabase in CI), dependency audit, secret 
 
 | Job | Steps |
 | --- | --- |
-| `checks` | `npm ci`, lint, typecheck, Vitest, build, then `npm audit --audit-level=high` (fails on high or critical) |
+| `checks` | `npm ci`, lint, typecheck, Vitest, build, then `npm audit --omit=dev --audit-level=high` (fails on high or critical in what ships) and an informational `npm audit --audit-level=high` over the tooling ([ADR-0015](decisions/0015-dependency-audit-gate.md)) |
 | `e2e` | Chromium install, then `npm run test:e2e` (Playwright + axe, desktop and Pixel 7). The HTML report is uploaded on failure |
 
 To run the same Playwright suite against a server that's already running (`wrangler dev`, or a preview Worker URL), set `PLAYWRIGHT_BASE_URL`; the built-in `next start` server is then skipped.
@@ -40,6 +40,8 @@ To run the same Playwright suite against a server that's already running (`wrang
 - The repository became public on 30 Sep 2026, so standard GitHub-hosted runners are free. The first run took 1.7 job-minutes in total (checks 0.6, e2e 1.0, secret scan 0.1). GitHub's dependency-review action is now available on the public repository and could be added in a later PR.
 
 ## Release checklist
+The full list, with who does each item and its state, is in [release-checklist.md](release-checklist.md). The short form:
+
 - [ ] All CI checks green on the release commit
 - [ ] Map gate re-run on the reference devices with each city's real data
 - [ ] axe clean, and the manual accessibility pass recorded

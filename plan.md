@@ -235,11 +235,11 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 
 ## Phase 9 — Accessibility, security, performance, release verification
 
-- **P9-01 WCAG 2.2 AA audit** (axe plus a manual keyboard and screen-reader pass). Status: Not started
-- **P9-02 Security review** (CSP, RLS re-test, secret scan, dependency audit). Status: In progress (CSP, anonymous-API probe, and RLS tests done; the dependency-audit policy is open)
-- **P9-03 Performance budgets with real data on the reference devices** (map gate re-run). Status: Not started
-- **P9-04 Backup restore drill; city launch gate for each city.** Status: Not started
-- **P9-05 Release checklist** ([docs/testing.md](docs/testing.md) §Release). A production deploy **requires explicit authorization**. Status: Not started
+- **P9-01 WCAG 2.2 AA audit** (axe plus a manual keyboard and screen-reader pass). Status: In progress (automated axe, keyboard-journey, focus, and 44 px checks pass; **the manual screen-reader pass (NVDA, TalkBack) is not done**)
+- **P9-02 Security review** (CSP, RLS re-test, secret scan, dependency audit). Status: Completed locally, 5 Oct 2026 (CSP [ADR-0014](docs/decisions/0014-content-security-policy.md), RLS and anonymous-API probe, secret scan in CI; the dependency-audit change is [ADR-0015](docs/decisions/0015-dependency-audit-gate.md), Proposed, owner confirms)
+- **P9-03 Performance budgets with real data on the reference devices** (map gate re-run). Status: In progress (the JavaScript size is measured and capped; it is **629 KB against the plan's 350 KB**, open decision D-12; real-device timing is blocked on D-06)
+- **P9-04 Backup restore drill; city launch gate for each city.** Status: In progress (launch-gate script and a local backup-restore drill done; the drill on a hosted project and the gate on real data cannot run yet)
+- **P9-05 Release checklist** ([docs/testing.md](docs/testing.md) §Release). A production deploy **requires explicit authorization**. Status: In progress ([release checklist](docs/release-checklist.md) and a manual production workflow written, **never run**; most items need the owner)
 
 ## Phase 10 — Optional enhancements and additional cities
 
@@ -262,3 +262,4 @@ Local shortlist (Dexie), recently viewed, compare, cluster previews, neighbourho
 | D-09 | **Decided 30 Sep 2026 by the owner: no paid plans.** Staging and production are a Next.js static export on Cloudflare (Free; served as Workers static assets per [ADR-0007](docs/decisions/0007-workers-static-assets.md), since Pages is now part of Workers). Backend work runs in Supabase (Free; projects staging + prod). The explorer uses static per-city datasets, and Apply links go direct with a click beacon. See [ADR-0006](docs/decisions/0006-free-tier-static-hosting.md) (supersedes the ADR-0003 recommendation) | Resolved | Product owner |
 | D-11 | Basemap capacity and key. (a) Restrict the Geoapify key by referrer (owner action in MyProjects). (b) Before launch, choose: stay on Geoapify Free and monitor, move to Protomaps PMTiles on R2 (free path; would also allow Overpass labels), or a paid Geoapify plan (excluded by ADR-0006 unless lifted). Evidence in [ADR-0008](docs/decisions/0008-basemap.md) | P9-03, P9-05 | Product owner |
 | D-10 | **Decided 30 Sep 2026 by the owner: Option A.** Each company gets a separate `/companies/{slug}/jobs` page (about 17,650 files for 2 cities). **Option B** (jobs on the company page; `View jobs` jumps to `#jobs`; about 9,650 files) stays ready as task **P6-04**. The build warns above 15,000 files and fails above 18,000 (limit 20,000). See [ADR-0007](docs/decisions/0007-workers-static-assets.md) | Resolved | Product owner |
+| D-12 | **Explorer JavaScript budget.** The architecture plan proposes under 350 KB gzipped including MapLibre (NFR01). Measured 5 Oct 2026 (`tests/e2e/budgets.spec.ts`): **about 629 KB** (MapLibre 297 KB, the app 331 KB), so the proposal is not met and MapLibre alone is 85% of it. Choose: (a) raise the target to match reality (a proposal: 650 KB, with the real-device timing in D-06 as the true test), (b) cut app code (what is in the 331 KB has not been profiled), (c) a lighter basemap library (an ADR-0005/0008 change). Until decided, CI enforces a ceiling at 660 KB so it cannot get worse | P9-03 | Product owner, tech lead |

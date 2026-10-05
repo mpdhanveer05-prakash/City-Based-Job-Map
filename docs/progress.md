@@ -15,6 +15,33 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-05: P9-01, P9-03, P9-04, P9-05 (in progress) and the dependency-audit change (ADR-0015)
+- **Built (`code/`):**
+  - `tests/a11y/keyboard.spec.ts`: axe on the company, jobs and suggest pages with their report forms open; keyboard-only journeys (company page, jobs page, the suggest form, the explorer toolbar); visible focus; and a 44 px rule for every control on five pages, on desktop and the phone profile.
+  - `tests/e2e/budgets.spec.ts`: gzipped JavaScript the explorer really loads, and the city dataset sizes.
+  - `scripts/backup-drill.mts`.
+  - `.github/workflows/deploy-production.yml`: manual, needs a typed phrase and the `production` environment, **never run**.
+  - [release-checklist.md](release-checklist.md) and [backup-restore.md](backup-restore.md).
+  - ADR-0015: `shadcn` moved to `devDependencies`, and CI audits production dependencies as a blocking step and tooling as an informational one.
+- **Real problems the new checks found, and fixed:**
+  - The explorer's "All cities" link was 53 by 20 px (now a 44 px target).
+  - Keyboard focus met the whole company list before the search and filters (the toolbar is now first in the document; it is positioned, so the look is unchanged).
+  - Every company and jobs page loaded Cloudflare's Turnstile script even if nobody opened the report form (`ReportDisclosure` now builds the form only when it is opened).
+  - Four test faults of my own: wrong tab order, a focus check that read the first frame of a transition, a predicate built with `new Function` that the page's own policy forbids, and a CSP spec that waited on a real third party.
+- **Open finding, not fixed (D-12):** the explorer loads **629 KB of JavaScript gzipped (MapLibre 297 KB, the app 331 KB)** against the architecture plan's proposed 350 KB, so the proposal is not met and MapLibre alone is 85% of it. The spec reports the gap on every run and enforces a ceiling of 660 KB so it cannot get worse. The owner chooses: raise the target, cut app code (not yet profiled), or change the map library (an ADR-0005 change).
+- **Verified this session (from `code/`):**
+  - `npx supabase test db`: **11 files, 508 tests, PASS**. `npm run test:parity`: **8 passed**.
+  - `npm run lint` and `npm run typecheck`: clean. `npm test`: **586 passed** (34 files).
+  - `npm run test:e2e -- --project=desktop` (full, on the final UI code): **146 passed, 1 failed, 1 skipped**. The failure was the new `csp.spec.ts` for `/suggest` waiting on the real Cloudflare script (I fixed the spec to stub it; rerun: **9 passed**).
+  - `tests/a11y/keyboard.spec.ts` on desktop and phone: **20 passed, 4 skipped** (the keyboard-only journeys skip on the phone profile).
+  - `npm run test:admin`: **41 passed** in each of 2 consecutive runs after the Edge-container fix. Earlier runs failed about one time in two on `503 {"message":"name resolution failed"}` from the local Edge runtime (see below).
+  - `node scripts/backup-drill.mts` on the seeded local database: dump 471 KB, restored in 20 s, **23 tables with identical row counts, 100 policies and 38 functions identical**. One expected error (pg_cron cannot be created in a scratch database; documented).
+  - `npm audit --omit=dev --audit-level=high`: **0 vulnerabilities**. The unrestricted audit still reports 8 high findings in tooling (`fast-glob` via `shadcn` and `eslint-config-next`), which have no fix.
+- **The flaky 503 (local only):** the Edge runtime's own DNS lookup failed intermittently on the second of two back-to-back admin runs. I could not identify the lookup. What changed it: global setup now removes the leftover Edge container before and after each run (consecutive runs share a stale one), warms all three functions (the user-token path for `request-rebuild`), and the Publish-now calls retry that exact answer for up to 90 s. I saw it pass 5 of 5 runs after the container fix, but 5 runs is not proof. A failing run says what the function answered. Whether a hosted project can show this is unknown.
+- **Not verified:** the full suite on the phone profile after the last UI changes (only the keyboard spec ran on it); the manual screen-reader pass; the real Turnstile widget under the policy; the backup drill and the launch gate on any hosted project or real data; everything in the release checklist marked "Owner".
+- **Decisions needing the owner:** D-12 (the JavaScript budget); ADR-0015 (the weaker audit gate for tooling); the items in [release-checklist.md](release-checklist.md).
+- **Next action:** nothing more can be done without the owner for P9: name the reference devices (D-06), decide D-12, create the hosted projects, and load real data. Phase 10 is optional and stays Not started.
+
 ### 2026-10-05: P7-01 to P7-04 admin, P8-01 to P8-05 pipeline and public feedback, P9-02 CSP and anonymous-API probe (Completed locally, with the gaps listed)
 - **Built (`code/`):**
   - *Admin (ADR-0012):* client-rendered `/admin` (sign-in, dashboard with Publish now, companies, offices, jobs, CSV import with preview, review queue, audit log, sources), roles enforced by the database. Migrations `20261005110000` to `20261005140000`.

@@ -1,0 +1,108 @@
+name: Deploy production
+
+# P9-05. Builds the real-data static export and deploys it to the production assets-only Worker `company-map`
+# (ADR-0006, ADR-0007). THIS WORKFLOW HAS NEVER RUN. It exists so the release is a recorded, repeatable step, and it does
+# nothing unless a person starts it by hand and types the confirmation phrase. There is no schedule and no dispatch trigger:
+# the nightly and publish-now rebuilds go to staging until the owner decides otherwise (docs/release-checklist.md).
+#
+# CLAUDE.md, "Hard rules": do not deploy publicly without the owner's explicit authorization. The `confirm` input is that
+# authorization being typed in; the `production` environment should also be set up with required reviewers in the
+# repository settings, so a second person approves the run.
+#
+# Needs: repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID; repository variables SUPABASE_URL and
+# SUPABASE_ANON_KEY (the PRODUCTION Supabase project; the anon key is public by design) and SITE_URL (the public address).
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy company-map to production" to confirm. The release checklist (docs/release-checklist.md) must be complete.'
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  deploy:
+    name: Build and deploy production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Required reviewers on this environment make the deploy a two-person step.
+    environment: production
+    defaults:
+      run:
+        working-directory: code
+    env:
+      NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+      # Production reads the production database and never the synthetic sample: RELEASE_BUILD=1 refuses synthetic or mixed
+      # data (ADR-0010), and DEV_ROUTES stays off so no /dev page is published.
+      RELEASE_BUILD: "1"
+      DATA_SOURCE: ""
+    steps:
+      - name: Check the confirmation phrase
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [ "$CONFIRM" != "deploy company-map to production" ]; then
+            echo "The confirmation phrase did not match, so nothing was built or deployed." >&2
+            exit 1
+          fi
+      - name: Check the production settings exist
+        run: |
+          missing=0
+          for name in NEXT_PUBLIC_SITE_URL NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY; do
+            if [ -z "${!name}" ]; then echo "$name is not set (repository variable)." >&2; missing=1; fi
+          done
+          exit $missing
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: code/package-lock.json
+      - run: npm ci
+      # `prebuild` fails without real data; `postbuild` enforces the static-assets limits, writes the CSP, and scans out/.
+      - run: npm run build
+      - name: Launch gate (each city must pass)
+        run: node scripts/launch-gate.mts --out ../launch-gate-report.md
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: launch-gate-report
+          path: launch-gate-report.md
+          if-no-files-found: ignore
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy
+      # The browser specs use the synthetic fixtures, which a real-data site does not have, so production gets plain HTTP checks:
+      # the pages exist, carry a policy, and say nothing about sample data.
+      - name: Smoke-test production
+        env:
+          SITE: ${{ vars.SITE_URL }}
+        run: |
+          fail=0
+          for path in / /bangalore /chennai /suggest /sitemap.xml; do
+            code=$(curl -s -o /tmp/page.html -w '%{http_code}' "$SITE$path")
+            if [ "$code" != "200" ]; then echo "$path answered $code" >&2; fail=1; continue; fi
+            case "$path" in
+              /sitemap.xml) ;;
+              *)
+                grep -q 'http-equiv="Content-Security-Policy"' /tmp/page.html || { echo "$path has no Content-Security-Policy" >&2; fail=1; }
+                if grep -qi 'synthetic' /tmp/page.html; then echo "$path mentions synthetic data" >&2; fail=1; fi
+                ;;
+            esac
+          done
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/dev/tokens")
+          if [ "$code" = "200" ]; then echo "/dev/tokens is published" >&2; fail=1; fi
+          exit $fail
