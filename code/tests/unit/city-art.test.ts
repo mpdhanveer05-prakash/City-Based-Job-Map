@@ -28,6 +28,12 @@ describe("projectCity", () => {
     expect(Math.abs(b.minY + b.maxY - BOX.height)).toBeLessThan(0.3);
   });
 
+  it("can start at the left padding instead of centring", () => {
+    const art = projectCity(square(10, 10, 11, 12), [], { ...BOX, align: "start" });
+    expect(bounds(art.path).minX).toBeCloseTo(BOX.padding, 0);
+    expect(bounds(art.path).maxX).toBeLessThan(BOX.width / 2);
+  });
+
   it("keeps the real shape: a square degree box is narrower than tall in the north, by cos(latitude)", () => {
     const art = projectCity(square(80, 60, 81, 61), [], { width: 1000, height: 1000, padding: 0 });
     const b = bounds(art.path);

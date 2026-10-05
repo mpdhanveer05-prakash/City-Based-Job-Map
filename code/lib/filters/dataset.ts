@@ -95,7 +95,10 @@ export type SnapshotJob = z.infer<typeof jobSchema>;
 export type CompanySummary = Pick<
   z.infer<typeof companySchema>,
   "id" | "slug" | "name" | "logo_key" | "startup_stage" | "types" | "sectors"
->;
+> & {
+  /** Active jobs listed in this city. In the summary, not only in search.json, so the popup and the list are right before a search loads. */
+  open_jobs: number;
+};
 
 export type CompaniesFile = {
   version: 1;
@@ -192,6 +195,7 @@ export function splitSnapshot(snapshot: CitySnapshot): CityDatasetFiles {
         startup_stage: c.startup_stage,
         types: c.types,
         sectors: c.sectors,
+        open_jobs: activeJobs.get(c.id)?.length ?? 0,
       })),
     },
     offices: { version: 1, offices: snapshot.offices },

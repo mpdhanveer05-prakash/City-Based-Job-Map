@@ -99,6 +99,12 @@ The version is `city.data_version`, so a file URL changes when the data does and
 
 Seed size (3 Oct 2026, 48 + 24 companies): about 88 KB of JSON in all, roughly 230 bytes per company and 245 per office in the explorer files, and 610 per company in `details.json`.
 
+## One result for every view [As built, P4-03 and P5]
+
+`lib/filters/filter.ts` exports `filterResult(index, filters)`: **one pass** that returns the matching companies (each once) and every office of those companies. The explorer calls it once per filter change, and the map (`setOffices`), the Grid and List rows (`listRows`, the same order and shape as `search_companies`), the toolbar's "38 companies in 41 offices", and every count read that one result, so the three views cannot disagree. `searchCompanies` is `listRows(filterResult(...))`, so the parity test covers the list path too. Each company summary carries `open_jobs` (active jobs listed in this city), so the popup and the list show the right count before `search.json` has loaded.
+
+The search box (`components/explorer/explorer-toolbar.tsx`) applies after 200 ms, adds **one** history entry per search (the keys that follow rewrite it, and Back leaves the search), and starts loading `search.json` when it is first focused. Its suggestions (`lib/explorer/suggestions.ts`) are up to four companies, two neighbourhoods, one tech park, and three job titles that start with or contain the text: choosing a neighbourhood or tech park adds that filter and clears the text; choosing a company sets the text to its name, **drops the other filters that could hide it**, and selects it; choosing a job title sets the text. A URL that is not canonical (stages without Startup, a stray parameter, unsorted lists) is rewritten in place on load.
+
 ## URL state [Proposal for the parameter names; the rules are Confirmed]
 
 `lib/filters/url.ts` is the only code that reads or writes the explorer's query string; components never touch `searchParams` (CLAUDE.md). The city is the path (`/bangalore`, `/chennai`), not a parameter.

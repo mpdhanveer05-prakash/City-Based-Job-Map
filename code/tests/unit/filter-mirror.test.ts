@@ -10,6 +10,7 @@ import {
   companyFacets,
   companyFilter,
   compareCodePoints,
+  filterResult,
   prepareIndex,
   searchCompanies,
   searchTokens,
@@ -276,7 +277,7 @@ describe("splitting the snapshot", () => {
 
   it("keeps summaries small: no description or links in companies.json", () => {
     for (const c of files.companies.companies) {
-      expect(Object.keys(c).sort()).toEqual(["id", "logo_key", "name", "slug", "sectors", "startup_stage", "types"].sort());
+      expect(Object.keys(c).sort()).toEqual(["id", "logo_key", "name", "open_jobs", "slug", "sectors", "startup_stage", "types"].sort());
     }
   });
 
@@ -298,5 +299,44 @@ describe("splitting the snapshot", () => {
     expect(again).toEqual(files);
     const idx = prepareIndex(mergeDataset(again));
     expect(companyFilter(idx, f({ types: ["startup"] }))).toEqual(companyFilter(index, f({ types: ["startup"] })));
+  });
+});
+
+describe("filterResult: one pass for every view", () => {
+  const filters = [
+    f(),
+    f({ types: ["startup"] }),
+    f({ types: ["startup", "mnc"], stages: ["seed"] }),
+    f({ q: "payments" }),
+    f({ neighbourhoods: ["koramangala"], sectors: ["fintech"] }),
+    f({ q: "nothing matches this" }),
+  ];
+
+  it("returns the same companies as company_filter and the same offices as city_points", () => {
+    for (const filter of filters) {
+      const result = filterResult(index, filter);
+      expect(result.companies.map((c) => c.id)).toEqual(companyFilter(index, filter));
+      expect(result.offices.map((o) => o.id).sort()).toEqual(cityPoints(index, filter).map((o) => o.id));
+    }
+  });
+
+  it("gives the list the same companies the map has points for", () => {
+    for (const filter of filters) {
+      const result = filterResult(index, filter);
+      const onMap = new Set(result.offices.map((o) => o.company_id));
+      const inList = new Set(searchCompanies(index, filter, 1000).map((r) => r.company_id));
+      expect(inList).toEqual(new Set(result.companies.map((c) => c.id)));
+      for (const id of onMap) expect(inList.has(id)).toBe(true);
+    }
+  });
+
+  it("counts open jobs from the summary, so they are right before search.json has loaded", () => {
+    const withoutSearch = prepareIndex({ ...mergeDataset(splitSnapshot(snapshot)), search: [] });
+    const rows = searchCompanies(withoutSearch, f(), 100);
+    const bravo = rows.find((r) => r.slug === "bravo-pay")!;
+    expect(bravo.open_job_count).toBe(1);
+    expect(rows.map((r) => [r.slug, r.open_job_count])).toEqual(
+      searchCompanies(index, f(), 100).map((r) => [r.slug, r.open_job_count]),
+    );
   });
 });

@@ -12,7 +12,7 @@ export default function HomePage() {
         <p className="text-base font-bold">Company Map</p>
       </header>
       <main className="mt-12 sm:mt-18">
-        <h1 className="max-w-[24ch] text-4xl font-bold">Find companies by where they work.</h1>
+        <h1 className="max-w-[30ch] text-4xl font-bold">Find companies by where they work.</h1>
         <p className="mt-4 max-w-[60ch] text-lg text-muted-foreground">
           Choose a city, find a company on the map, and apply on the employer&apos;s own site.
         </p>

@@ -53,7 +53,7 @@ export function prepareIndex(dataset: CityDataset): FilterIndex {
       fields.push(o.address.toLowerCase());
     }
     for (const name of extra?.founders ?? []) fields.push(name.toLowerCase());
-    return { company, offices, fields, openJobs: extra?.jobs.length ?? 0 };
+    return { company, offices, fields, openJobs: company.open_jobs };
   });
 
   return { dataset, prepared, neighbourhoodNames, techParkNames };
@@ -102,6 +102,25 @@ export function filterCompanies(index: FilterIndex, filters: Filters): CompanySu
   return index.prepared.filter((p) => matches(p, filters, tokens)).map((p) => p.company);
 }
 
+/**
+ * Everything the three views show for one filter, from one pass: the matching companies (each once,
+ * in dataset order) and every office of those companies. Map, Grid, List, and every count read this
+ * and nothing else, so they cannot disagree.
+ */
+export type FilterResult = { companies: CompanySummary[]; offices: Office[] };
+
+export function filterResult(index: FilterIndex, filters: Filters): FilterResult {
+  const tokens = searchTokens(filters.q);
+  const companies: CompanySummary[] = [];
+  const offices: Office[] = [];
+  for (const p of index.prepared) {
+    if (!matches(p, filters, tokens)) continue;
+    companies.push(p.company);
+    offices.push(...p.offices);
+  }
+  return { companies, offices };
+}
+
 /** The matching company IDs. This is the mirror of `company_filter`. */
 export function companyFilter(index: FilterIndex, filters: Filters): string[] {
   return filterCompanies(index, filters).map((c) => c.id);
@@ -139,27 +158,31 @@ export function compareCodePoints(a: string, b: string): number {
 }
 
 /**
- * The list (mirror of `search_companies`): name order (lower-cased, by code point), then ID.
+ * The list rows for a filter result, in the order of `search_companies`: name (lower-cased, by code point),
+ * then ID. Grid and List render exactly these rows, so they hold the same companies as the map's points.
  * `office_count` is the offices in this city; `open_job_count` is active jobs listed in this city.
  */
-export function searchCompanies(index: FilterIndex, filters: Filters, limit = 50, offset = 0): ListRow[] {
-  const tokens = searchTokens(filters.q);
-  const rows = index.prepared
-    .filter((p) => matches(p, filters, tokens))
-    .map((p) => ({ p, key: p.company.name.toLowerCase() }))
-    .sort((a, b) => compareCodePoints(a.key, b.key) || compareCodePoints(a.p.company.id, b.p.company.id));
-  return rows
-    .slice(Math.max(offset, 0), Math.max(offset, 0) + Math.max(limit, 0))
-    .map(({ p }) => ({
-      company_id: p.company.id,
-      slug: p.company.slug,
-      name: p.company.name,
-      logo_key: p.company.logo_key,
-      types: p.company.types,
-      startup_stage: p.company.startup_stage,
-      office_count: p.offices.length,
-      open_job_count: p.openJobs,
+export function listRows(result: FilterResult): ListRow[] {
+  const officeCounts = new Map<string, number>();
+  for (const o of result.offices) officeCounts.set(o.company_id, (officeCounts.get(o.company_id) ?? 0) + 1);
+  return result.companies
+    .map((company) => ({ company, key: company.name.toLowerCase() }))
+    .sort((a, b) => compareCodePoints(a.key, b.key) || compareCodePoints(a.company.id, b.company.id))
+    .map(({ company }) => ({
+      company_id: company.id,
+      slug: company.slug,
+      name: company.name,
+      logo_key: company.logo_key,
+      types: company.types,
+      startup_stage: company.startup_stage,
+      office_count: officeCounts.get(company.id) ?? 0,
+      open_job_count: company.open_jobs,
     }));
+}
+
+/** The list (mirror of `search_companies`): `listRows` of the filter result, one page of it. */
+export function searchCompanies(index: FilterIndex, filters: Filters, limit = 50, offset = 0): ListRow[] {
+  return listRows(filterResult(index, filters)).slice(Math.max(offset, 0), Math.max(offset, 0) + Math.max(limit, 0));
 }
 
 export type FacetRow = { facet: "total" | "type" | "stage" | "neighbourhood" | "tech_park" | "sector"; value: string; company_count: number };

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { projectCity } from "@/lib/city-art";
 import type { CityFiles } from "@/lib/data/city-data";
 
-const BOX = { width: 480, height: 280, padding: 24 };
+// Content is left-aligned everywhere (design-system.md §5), so the shape starts at the left padding.
+const BOX = { width: 480, height: 280, padding: 24, align: "start" } as const;
 
 /**
  * One city on the selection page (design-system.md §5): the real boundary in Moss with the office
@@ -31,6 +32,7 @@ export function CityTile({ city }: { city: CityFiles }) {
         aria-hidden="true"
         focusable="false"
         viewBox={`0 0 ${BOX.width} ${BOX.height}`}
+        preserveAspectRatio="xMinYMid meet"
         className="block h-auto w-full"
         data-testid={`city-art-${city.slug}`}
       >

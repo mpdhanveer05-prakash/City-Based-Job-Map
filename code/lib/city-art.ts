@@ -2,7 +2,13 @@
 // points inside it. Pure geometry, so it is unit-tested; the tile only draws what this returns.
 import type { CityBoundary } from "./filters/dataset.ts";
 
-export type ArtBox = { width: number; height: number; padding: number };
+export type ArtBox = {
+  width: number;
+  height: number;
+  padding: number;
+  /** Where the shape sits when the box is wider than it needs: the page is left-aligned, so tiles use "start". Default "center". */
+  align?: "start" | "center";
+};
 
 export type CityArt = {
   /** SVG path data for the boundary: one closed sub-path per ring. */
@@ -14,7 +20,7 @@ export type CityArt = {
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
 /**
- * Fits the boundary into the box with a single scale (never stretched) and centres it. Longitude is
+ * Fits the boundary into the box with a single scale (never stretched) and centres it (or starts it at the left padding). Longitude is
  * scaled by cos(latitude of the centre) so a city keeps its real shape. Points outside the boundary's
  * box are dropped: the tile shows the city, not a stray point.
  */
@@ -37,7 +43,7 @@ export function projectCity(boundary: CityBoundary, points: ReadonlyArray<readon
   const spanX = Math.max((maxLng - minLng) * k, 1e-9);
   const spanY = Math.max(maxLat - minLat, 1e-9);
   const scale = Math.min((box.width - 2 * box.padding) / spanX, (box.height - 2 * box.padding) / spanY);
-  const offsetX = (box.width - spanX * scale) / 2;
+  const offsetX = box.align === "start" ? box.padding : (box.width - spanX * scale) / 2;
   const offsetY = (box.height - spanY * scale) / 2;
 
   const toX = (lng: number) => round1(offsetX + (lng - minLng) * k * scale);

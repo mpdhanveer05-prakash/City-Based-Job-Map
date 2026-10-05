@@ -25,6 +25,8 @@
     "gate": "playwright test --config playwright.gate.config.ts"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.104.1",
+    "@tanstack/react-virtual": "^3.14.13",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
     "comlink": "4.4.2",
