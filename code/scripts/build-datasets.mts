@@ -19,6 +19,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import path from "node:path";
 import { fetchCitySnapshot, parseCitySnapshot } from "../lib/api/snapshot.ts";
 import { assertReleaseData, chooseDataSource, describeDataSource } from "../lib/api/data-source.ts";
+import { collectRedirects, renderRedirects } from "../lib/redirects.ts";
 import { buildManifest, DATASET_FILE_NAMES, serializeDataset, type SerializedDataset } from "../lib/filters/dataset-files.ts";
 import type { CitySnapshot } from "../lib/filters/dataset.ts";
 import { snapshotIsSynthetic } from "../lib/filters/dataset.ts";
@@ -129,6 +130,11 @@ async function main() {
   }
   const manifest = buildManifest(sets);
   writeFileSync(path.join(outDir, "manifest.json"), JSON.stringify(manifest));
+
+  // public/_redirects = the static rules (config/redirects.static) + one rule per old company slug (P6-01).
+  const redirects = collectRedirects(sets.map((s) => ({ city: s.city, redirects: s.slugRedirects, currentSlugs: s.slugs })));
+  writeFileSync(path.resolve("public/_redirects"), renderRedirects(readFileSync(path.resolve("config/redirects.static"), "utf8"), redirects));
+  if (redirects.length > 0) console.log(`build-datasets: ${redirects.length} company slug redirects written to public/_redirects`);
 
   const rows = Object.entries(manifest.cities).map(([city, c]) => ({
     city,

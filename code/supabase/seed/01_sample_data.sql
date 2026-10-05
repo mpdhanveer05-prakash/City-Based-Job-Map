@@ -230,6 +230,10 @@ cross join lateral (
 ) t
 where s.n % 5 <> 4;
 
+-- One old slug that redirects to a current company page (P6-01), so the redirect path is exercised end to end.
+insert into slug_redirect (old_slug, company_id)
+select 'amber-labs-old-synthetic', id from company where slug = 'amber-labs-synthetic';
+
 -- A job is listed in every city where its company has a published office.
 insert into job_city (job_id, city_id)
 select distinct j.id, o.city_id

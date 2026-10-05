@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(50);
+select plan(53);
 
 create schema tests;
 grant usage on schema tests to anon;
@@ -122,6 +122,17 @@ select cmp_ok(jsonb_array_length(public.city_build_snapshot('chennai') -> 'city'
 select is((public.city_build_snapshot('bangalore') -> 'companies' -> 0 ->> 'id')::uuid, md5('company:' || (public.city_build_snapshot('bangalore') -> 'companies' -> 0 ->> 'slug'))::uuid,
   'ids come from the slug, so the committed snapshot is stable across db reset');
 reset role;
+
+-- A redirect from an old slug shows up in the snapshot of the company's city, once, pointing at the current slug.
+insert into slug_redirect (old_slug, company_id) select 'old-amber-forge', id from company where slug = 'amber-forge-synthetic';
+select tests.become_anon();
+select is(public.city_build_snapshot('bangalore') -> 'slug_redirects',
+  '[{"old_slug": "amber-labs-old-synthetic", "new_slug": "amber-labs-synthetic"}, {"old_slug": "old-amber-forge", "new_slug": "amber-forge-synthetic"}]'::jsonb,
+  'the Bengaluru snapshot carries the slug redirects (the seed''s and this test''s) to the current slugs');
+select is(public.city_build_snapshot('chennai') -> 'slug_redirects', '[]'::jsonb, 'and Chennai, which does not hold that company, carries none');
+reset role;
+select is((select count(*)::int from information_schema.tables where table_schema = 'public' and table_name in ('slug_redirect', 'link_click_daily')), 2,
+  'the redirect and click tables exist');
 
 select * from finish();
 rollback;

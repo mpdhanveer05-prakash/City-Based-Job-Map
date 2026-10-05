@@ -1,0 +1,5 @@
+# Static redirects (ADR-0006/0007); `npm run data` copies this file into public/_redirects and appends the generated rules. Up to 2,000 static and 100 dynamic rules; `postbuild` checks the count.
+# Company slug redirects are appended by `npm run data` into public/_redirects (P6-01).
+
+/bengaluru /bangalore 301
+/bengaluru/* /bangalore/:splat 301

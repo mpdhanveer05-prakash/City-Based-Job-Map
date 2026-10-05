@@ -106,3 +106,11 @@ RLS is enabled on **every** table in `public`. `is_admin()` is `SECURITY DEFINER
 - **Not built yet:** the pipeline role (P8-01), `audit_log` (P7-02), `submission` (P8-04).
 
 Open question: suspect jobs are **built as visible** until the second failed check (as the plan's policy has it). Confirm.
+
+## As built in P6 (5 Oct 2026)
+
+Migration `20261005100000_clicks_and_slug_redirects.sql`:
+
+- **`slug_redirect(old_slug, company_id)`**: an old company slug that redirects to the company's current page. Anyone reads the rows of published companies; reviewers and above write them (the merge and rename tooling arrives in P7). Triggers refuse an old slug that a company uses today, and refuse a company taking a slug that redirects elsewhere. `city_build_snapshot` returns `slug_redirects` for its companies; the build flattens chains, refuses loops and conflicts, and writes two rules per old slug (the company page and its jobs page) into `public/_redirects`, after the static rules in `config/redirects.static` (see [filters.md](filters.md)).
+- **`link_click_daily(day, kind, target_id, count)`** and **`record_click(kind, target_id)`**: the outbound click counter. Only the `click` Edge Function writes it, through `record_click`, which only the service role can call and which checks that the target is a listed job (`apply`) or a published company (`website`). The table has no column for an address, agent, user, session, or timestamp; reviewers and above can read it. See [ADR-0011](decisions/0011-click-beacon.md).
+- **`company.is_synthetic`** (migration `20261005090000`): marks sample records; see [ADR-0010](decisions/0010-build-data-source.md).

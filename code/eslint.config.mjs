@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     ".wrangler/**",
     // MapLibre's minified runtime, copied by scripts/copy-maplibre.mts
     "public/maplibre/**",
+    // Deno entry points (npm: imports, the Deno global): not part of the Next.js app.
+    "supabase/functions/*/index.ts",
   ]),
 ]);
 

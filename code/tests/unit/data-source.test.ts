@@ -66,6 +66,7 @@ describe("snapshotIsSynthetic", () => {
         boundary: { type: "MultiPolygon", coordinates: [[[[80, 12], [81, 12], [81, 13], [80, 13], [80, 12]]]] },
       },
       synthetic_companies: synthetic,
+  slug_redirects: [],
       neighbourhoods: [], tech_parks: [], sectors: [],
       companies: Array.from({ length: companies }, (_, i) => company(i + 1)),
       offices: [], jobs: [],

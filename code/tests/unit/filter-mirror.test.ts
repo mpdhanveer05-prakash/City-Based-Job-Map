@@ -69,6 +69,7 @@ const snapshot: CitySnapshot = citySnapshotSchema.parse({
   city: { slug: "bangalore", name: "Bengaluru", aliases: [], status: "live", centre: [77.6, 12.97], default_zoom: 11, data_version: 1,
     boundary: { type: "MultiPolygon", coordinates: [[[[77.45, 12.8], [77.8, 12.8], [77.8, 13.15], [77.45, 13.15], [77.45, 12.8]]]] } },
   synthetic_companies: 0,
+  slug_redirects: [],
   neighbourhoods: [
     { slug: "indiranagar", name: "Indiranagar" },
     { slug: "koramangala", name: "Koramangala" },

@@ -4,3 +4,4 @@
 - [E2E conventions](feedback-e2e-suite-conventions.md) — workers, timeouts, key and no-key runs, deterministic gates, pixel reading
 - [Setup and secrets](project-setup-and-secrets.md) — repo URL, where the Geoapify key lives, new-laptop guide
 - [Playwright wipes test-results](feedback-playwright-wipes-test-results.md) — write gate numbers to gate-results/; do not restart a run killed for low memory
+- [Bash tool backslashes](feedback-bash-tool-backslashes.md) — Bash collapses backslashes; write files with Write/Edit when text has escapes

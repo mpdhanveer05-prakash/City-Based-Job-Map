@@ -46,6 +46,8 @@ export default defineConfig({
         reuseExistingServer: !process.env.CI,
         timeout: 240_000,
         // The build needs a data source (ADR-0010); the e2e suite runs on the committed synthetic sample.
-        env: { DEV_ROUTES: "on", DATA_SOURCE: "seed" },
+        // NEXT_PUBLIC_SUPABASE_URL makes the build include the click beacon's endpoint; the specs intercept it, so no
+        // Supabase project is needed. The anon key stays a placeholder, so the build still reads the committed sample.
+        env: { DEV_ROUTES: "on", DATA_SOURCE: "seed", NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321" },
       },
 });

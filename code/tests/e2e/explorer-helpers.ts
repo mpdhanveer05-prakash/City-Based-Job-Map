@@ -16,14 +16,18 @@ export type CityData = {
   techParks: Array<{ slug: string; name: string }>;
   jobs: Record<string, string[]>;
   synthetic: boolean;
+  /** What only the company pages need (details.json). */
+  details: { companies: Record<string, { description: string | null; website_url: string; careers_url: string | null }>; jobs: Job[] };
 };
+
+export type Job = { id: string; company_id: string; title: string; apply_url: string; status: "active" | "suspect"; last_checked_at: string | null };
 
 /** The dataset the build wrote, read over HTTP like the browser does: the oracle the specs compare the page with. */
 export async function loadCityData(request: APIRequestContext, city: string): Promise<CityData> {
   const manifest = (await (await request.get("/data/manifest.json")).json()) as Manifest;
   const entry = manifest.cities[city];
   const get = async (name: string) => (await request.get(entry.files[name].path)).json();
-  const [companies, offices, search] = await Promise.all([get("companies"), get("offices"), get("search")]);
+  const [companies, offices, search, details] = await Promise.all([get("companies"), get("offices"), get("search"), get("details")]);
   return {
     companies: companies.companies,
     offices: offices.offices,
@@ -31,6 +35,7 @@ export async function loadCityData(request: APIRequestContext, city: string): Pr
     techParks: companies.tech_parks,
     jobs: Object.fromEntries((search.entries as Array<{ company_id: string; jobs: string[] }>).map((e) => [e.company_id, e.jobs])),
     synthetic: entry.synthetic,
+    details,
   };
 }
 

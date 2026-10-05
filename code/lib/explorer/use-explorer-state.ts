@@ -5,6 +5,7 @@
 // (lib/filters/url.ts) do the parsing and writing, `historyMode` decides push, replace, or nothing.
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo } from "react";
+import { rememberExplorer } from "./last-explorer";
 import { explorerHref, historyMode, parseExplorerState, type ExplorerState } from "../filters/url";
 import type { CitySlug } from "../filters/schema";
 
@@ -27,6 +28,8 @@ export function useExplorerState(city: CitySlug): readonly [ExplorerState, (chan
     const canonical = explorerHref(state);
     const current = window.location.pathname.replace(/\/$/, "") + window.location.search;
     if (canonical !== current) window.history.replaceState(null, "", canonical);
+    // The company pages' "Back to map" returns here, filters and camera included.
+    rememberExplorer(canonical);
   }, [state]);
 
   const update = useCallback(

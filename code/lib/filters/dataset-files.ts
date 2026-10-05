@@ -16,6 +16,9 @@ export type SerializedDataset = {
   /** True when every company is synthetic sample data. */
   synthetic: boolean;
   counts: { companies: number; offices: number; jobs: number };
+  /** The company slugs in this city and its slug redirects, for the build's `_redirects` (not written to the dataset files). */
+  slugs: string[];
+  slugRedirects: Array<{ old_slug: string; new_slug: string }>;
   /** The JSON text of each file (compact, in a fixed key order, so equal data gives equal bytes). */
   files: Record<DatasetFileName, string>;
 };
@@ -26,6 +29,8 @@ export function serializeDataset(snapshot: CitySnapshot): SerializedDataset {
     city: snapshot.city.slug,
     dataVersion: snapshot.city.data_version,
     synthetic: snapshotIsSynthetic(snapshot),
+    slugs: snapshot.companies.map((c) => c.slug),
+    slugRedirects: snapshot.slug_redirects,
     counts: {
       companies: snapshot.companies.length,
       offices: snapshot.offices.length,

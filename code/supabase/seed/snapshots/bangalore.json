@@ -46,6 +46,12 @@
   }
  },
  "synthetic_companies": 48,
+ "slug_redirects": [
+  {
+   "old_slug": "amber-labs-old-synthetic",
+   "new_slug": "amber-labs-synthetic"
+  }
+ ],
  "neighbourhoods": [
   {
    "slug": "bellandur",

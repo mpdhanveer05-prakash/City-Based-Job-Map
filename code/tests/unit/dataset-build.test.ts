@@ -11,6 +11,7 @@ const snapshot: CitySnapshot = citySnapshotSchema.parse({
   city: { slug: "chennai", name: "Chennai", aliases: ["Madras"], status: "beta", centre: [80.27, 13.08], default_zoom: 11, data_version: 3,
     boundary: { type: "MultiPolygon", coordinates: [[[[80.1, 12.85], [80.33, 12.85], [80.33, 13.2], [80.1, 13.2], [80.1, 12.85]]]] } },
   synthetic_companies: 1,
+  slug_redirects: [],
   neighbourhoods: [{ slug: "adyar", name: "Adyar" }],
   tech_parks: [],
   sectors: [{ slug: "saas", name: "SaaS" }],

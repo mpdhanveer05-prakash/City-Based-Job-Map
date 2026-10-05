@@ -14,5 +14,6 @@ Each ADR is short: context, decision, consequences, status (Proposed · Accepted
 | [0008](0008-basemap.md) | Basemap: Geoapify Positron, re-coloured in MapLibre | Accepted · Open (free allowance vs launch traffic, D-11) |
 | [0009](0009-marker-layer-projection.md) | The marker layer projects on the CPU; the explorer camera is north-up | Accepted (implementation) · Proposed (rotation and tilt off) |
 | [0010](0010-build-data-source.md) | Where the build gets its city data; keeping synthetic data out of production | Accepted (release rule to confirm) |
+| [0011](0011-click-beacon.md) | How an Apply or Visit website click is counted | Accepted (retention is D-07) |
 
 Open decisions are listed in the [plan.md decision register](../../plan.md#open-decision-register).

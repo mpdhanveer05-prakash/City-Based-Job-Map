@@ -77,6 +77,8 @@ export const citySnapshotSchema = z.object({
   city: citySchema,
   /** How many of `companies` are synthetic sample data (`company.is_synthetic`). */
   synthetic_companies: z.number().int().nonnegative(),
+  /** Old slugs of these companies and the slug each now has. Build-time only: they become `_redirects` rules (P6-01). */
+  slug_redirects: z.array(z.object({ old_slug: slugSchema, new_slug: slugSchema })),
   neighbourhoods: z.array(refSchema),
   tech_parks: z.array(refSchema),
   sectors: z.array(refSchema),

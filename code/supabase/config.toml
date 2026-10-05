@@ -385,6 +385,13 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# The click beacon (P6-03) cannot send an Authorization header, so its JWT check is off; the function validates its own input.
+[functions.click]
+enabled = true
+verify_jwt = false
+import_map = "./functions/click/deno.json"
+entrypoint = "./functions/click/index.ts"
+
 [analytics]
 # Log analytics container; not needed locally.
 enabled = false
