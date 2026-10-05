@@ -16,6 +16,9 @@
 
 begin;
 
+-- The seed is not an admin's edit: keep it out of the audit log (migration 20261005110000).
+set local app.skip_audit = 'on';
+
 -- ---------------------------------------------------------------------------
 -- Source
 -- ---------------------------------------------------------------------------
@@ -23,6 +26,9 @@ begin;
 insert into source (id, name, kind, permission_note) values
   (1, 'Synthetic sample data', 'manual',
    'Generated for development and staging. Not real companies, offices, or jobs. Replace with curated data (D-04). Never load into production.');
+-- The row above names its own id, which does not move the serial's counter: without this, the next source an admin adds
+-- (or the pipeline's tests make) is given id 1 and collides.
+select setval(pg_get_serial_sequence('source', 'id'), (select max(id) from source));
 
 -- ---------------------------------------------------------------------------
 -- Cities (boundaries are approximate placeholders; beta = visible, not yet launched)

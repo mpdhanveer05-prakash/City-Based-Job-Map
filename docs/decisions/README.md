@@ -15,5 +15,8 @@ Each ADR is short: context, decision, consequences, status (Proposed · Accepted
 | [0009](0009-marker-layer-projection.md) | The marker layer projects on the CPU; the explorer camera is north-up | Accepted (implementation) · Proposed (rotation and tilt off) |
 | [0010](0010-build-data-source.md) | Where the build gets its city data; keeping synthetic data out of production | Accepted (release rule to confirm) |
 | [0011](0011-click-beacon.md) | How an Apply or Visit website click is counted | Accepted (retention is D-07) |
+| [0012](0012-admin-workspace-and-publishing.md) | The admin workspace, its saves, the audit log, and "Publish now" | Accepted (MFA, logo upload, geocoding are owner calls) |
+| [0013](0013-pipeline-and-public-feedback.md) | The data pipeline, its database role, and public reports and suggestions | Accepted (thresholds and ATS host list are proposals) |
+| [0014](0014-content-security-policy.md) | Content-Security-Policy as a per-page meta tag with script hashes | Accepted |
 
 Open decisions are listed in the [plan.md decision register](../../plan.md#open-decision-register).

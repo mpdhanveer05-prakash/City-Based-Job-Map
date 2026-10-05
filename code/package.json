@@ -10,7 +10,7 @@
     "dev": "next dev",
     "prebuild": "node scripts/copy-maplibre.mts && node scripts/build-datasets.mts --require && node -e \"require('node:fs').rmSync('.next/dev',{recursive:true,force:true})\"",
     "build": "next build",
-    "postbuild": "node scripts/check-static-limits.mts out",
+    "postbuild": "node scripts/inject-csp.mts out && node scripts/check-static-limits.mts out",
     "lint": "eslint",
     "pretypecheck": "node -e \"require('node:fs').rmSync('.next/dev',{recursive:true,force:true})\"",
     "typecheck": "next typegen && tsc --noEmit",
@@ -22,9 +22,11 @@
     "fixtures": "node map/fixtures/cli.mts",
     "test:parity": "vitest run --config vitest.parity.config.ts",
     "data": "node scripts/build-datasets.mts",
-    "gate": "playwright test --config playwright.gate.config.ts"
+    "gate": "playwright test --config playwright.gate.config.ts",
+    "test:admin": "playwright test --config playwright.admin.config.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
     "@tanstack/react-query": "^5.104.1",
     "@tanstack/react-virtual": "^3.14.13",
     "class-variance-authority": "^0.7.1",

@@ -220,23 +220,23 @@ This phase runs in a standalone prototype route (`/dev/map-prototype`), using sy
 
 ## Phase 7 — Admin tools and data imports
 
-- **P7-01 Admin auth** (Supabase Auth in the browser, allowlist, no public sign-up). `/admin` pages are client-rendered and have their own chunks. The admin JavaScript is public, so RLS and RPC checks are the only enforcement. Deps: P3-02. Status: Not started
-- **P7-02 CRUD + publish for companies, offices, and jobs,** with an audit log. **Publish now** calls the `request-rebuild` Edge Function (reviewer+, debounced to one build per 10 min) → GitHub `repository_dispatch` → deploy. Deps: P7-01. Status: Not started
-- **P7-03 CSV import with preview, validation, duplicate detection, and error summary.** Deps: P7-02. Status: Not started
-- **P7-04 Review queues** (geocode below building accuracy, suspect jobs, submissions). Deps: P7-02. Status: Not started
+- **P7-01 Admin auth** (Supabase Auth in the browser, allowlist, no public sign-up). `/admin` pages are client-rendered and have their own chunks. The admin JavaScript is public, so RLS and RPC checks are the only enforcement. Deps: P3-02. Status: Completed (locally, 5 Oct 2026; see progress.md and ADR-0012)
+- **P7-02 CRUD + publish for companies, offices, and jobs,** with an audit log. **Publish now** calls the `request-rebuild` Edge Function (reviewer+, debounced to one build per 10 min) → GitHub `repository_dispatch` → deploy. Deps: P7-01. Status: Completed (locally, 5 Oct 2026; see progress.md and ADR-0012)
+- **P7-03 CSV import with preview, validation, duplicate detection, and error summary.** Deps: P7-02. Status: Completed (locally, 5 Oct 2026; see progress.md and ADR-0012)
+- **P7-04 Review queues** (geocode below building accuracy, suspect jobs, submissions). Deps: P7-02. Status: Completed (locally, 5 Oct 2026; see progress.md and ADR-0012)
 
 ## Phase 8 — Data refresh, link checks, public feedback
 
-- **P8-01 Python feed sync** (ATS feeds, JSON-LD) in GitHub Actions against staging. Deps: P3-01, D-04 (sources). Status: Not started
-- **P8-02 Link checker with a two-strike expiry.** Deps: P8-01. Status: Not started
-- **P8-03 Supabase Cron sweeps + missed-run detection** (heartbeat table + alert). Deps: P8-01. Status: Not started
-- **P8-05 Rebuild triggers.** The site rebuilds and deploys after each successful pipeline run, on `request-rebuild`, and nightly. Record the time from a data change to live. Deps: P1-06, P8-01. Status: Not started
-- **P8-04 Reports and suggestions forms** through the `submit-feedback` Edge Function: Turnstile `siteverify`, Zod, single-use token, and a rate limit keyed on a salted, daily-rotated hash (no raw IP). Deps: P3-02. Status: Not started
+- **P8-01 Python feed sync** (ATS feeds, JSON-LD) in GitHub Actions against staging. Deps: P3-01, D-04 (sources). Status: Completed (locally, 5 Oct 2026; nothing run against a hosted project; ADR-0013)
+- **P8-02 Link checker with a two-strike expiry.** Deps: P8-01. Status: Completed (locally, 5 Oct 2026; nothing run against a hosted project; ADR-0013)
+- **P8-03 Supabase Cron sweeps + missed-run detection** (heartbeat table + alert). Deps: P8-01. Status: Completed (locally, 5 Oct 2026; nothing run against a hosted project; ADR-0013)
+- **P8-05 Rebuild triggers.** The site rebuilds and deploys after each successful pipeline run, on `request-rebuild`, and nightly. Record the time from a data change to live. Deps: P1-06, P8-01. Status: Completed (locally, 5 Oct 2026; nothing run against a hosted project; ADR-0013)
+- **P8-04 Reports and suggestions forms** through the `submit-feedback` Edge Function: Turnstile `siteverify`, Zod, single-use token, and a rate limit keyed on a salted, daily-rotated hash (no raw IP). Deps: P3-02. Status: Completed (locally, 5 Oct 2026; nothing run against a hosted project; ADR-0013)
 
 ## Phase 9 — Accessibility, security, performance, release verification
 
 - **P9-01 WCAG 2.2 AA audit** (axe plus a manual keyboard and screen-reader pass). Status: Not started
-- **P9-02 Security review** (CSP, RLS re-test, secret scan, dependency audit). Status: Not started
+- **P9-02 Security review** (CSP, RLS re-test, secret scan, dependency audit). Status: In progress (CSP, anonymous-API probe, and RLS tests done; the dependency-audit policy is open)
 - **P9-03 Performance budgets with real data on the reference devices** (map gate re-run). Status: Not started
 - **P9-04 Backup restore drill; city launch gate for each city.** Status: Not started
 - **P9-05 Release checklist** ([docs/testing.md](docs/testing.md) §Release). A production deploy **requires explicit authorization**. Status: Not started

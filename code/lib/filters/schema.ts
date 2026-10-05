@@ -1,5 +1,6 @@
 // The filter object shared by the URL, the browser filter (P4-01), and the SQL reference
 // (`company_filter`, docs/filters.md). One definition of the values and one normaliser.
+import "../zod-config.ts";
 import { z } from "zod";
 
 /** Launch cities (ADR-0002). A city is a path segment (`/bangalore`), never a query parameter. */

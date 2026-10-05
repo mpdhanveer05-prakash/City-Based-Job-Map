@@ -217,8 +217,11 @@ web3 = 30
 # secret = ""
 
 [auth.email]
-# Allow/disallow new user signups via email to your project.
-enable_signup = false
+# This switch turns the email-and-password PROVIDER on or off (the CLI maps it to GOTRUE_EXTERNAL_EMAIL_ENABLED): with
+# false, nobody can sign in with a password at all, administrators included. Public self-sign-up is stopped by
+# `enable_signup = false` under [auth] above, which refuses every sign-up through the public API; administrators are created
+# by an admin in the dashboard or the Auth admin API (docs/security.md, "Admin access"). tests/admin checks both.
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
@@ -391,6 +394,21 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/click/deno.json"
 entrypoint = "./functions/click/index.ts"
+
+# Public reports and suggestions (P8-04): a visitor has no account, so JWT verification is off; the function verifies Turnstile
+# before it stores anything.
+[functions.submit-feedback]
+enabled = true
+verify_jwt = false
+import_map = "./functions/submit-feedback/deno.json"
+entrypoint = "./functions/submit-feedback/index.ts"
+
+# "Publish now" (P7-02): called by a signed-in reviewer, so JWT verification stays on; publish_now checks the role.
+[functions.request-rebuild]
+enabled = true
+verify_jwt = true
+import_map = "./functions/request-rebuild/deno.json"
+entrypoint = "./functions/request-rebuild/index.ts"
 
 [analytics]
 # Log analytics container; not needed locally.

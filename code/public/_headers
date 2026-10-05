@@ -1,5 +1,6 @@
 # Static asset headers (ADR-0006/0007). Up to 100 rules; CI checks the count.
-# A full Content-Security-Policy is added in P9-02 (the export's inline scripts need hashes).
+# The Content-Security-Policy is not here: it is a meta tag written into each page after the build, with the hashes of that
+# page's inline scripts (ADR-0014, scripts/inject-csp.mts). A header cannot carry per-page hashes within 100 rules.
 
 /*
   X-Content-Type-Options: nosniff

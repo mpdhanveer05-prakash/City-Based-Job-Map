@@ -8,6 +8,7 @@
 //                   and published founder names (loaded when a visitor first types a search)
 //   details.json    what only the company pages need: description, links, and the jobs to list
 // The browser merges the first three into a `CityDataset` and filters it with `lib/filters/filter.ts`.
+import "../zod-config.ts";
 import { z } from "zod";
 import { COMPANY_TYPES, STARTUP_STAGES, slugSchema } from "./schema.ts";
 

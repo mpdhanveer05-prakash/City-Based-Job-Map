@@ -8,6 +8,7 @@
 // result is always normalised. Serialising is canonical: the same state always gives the same
 // string, in a fixed parameter order with sorted lists and no defaults, so Back and Forward compare
 // URLs by value and a shared link looks the same however it was reached.
+import "../zod-config.ts";
 import { z } from "zod";
 import {
   CITY_SLUGS,

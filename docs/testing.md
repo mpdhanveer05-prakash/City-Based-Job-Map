@@ -13,6 +13,8 @@
 | Accessibility | @axe-core/playwright + manual pass | Zero serious or critical axe violations (the `color-contrast` rule stays enabled); keyboard-only journey; screen-reader smoke test (NVDA + TalkBack) |
 | Map gate | Playwright + real devices | [map-spec.md §10](map-spec.md#10-validation-gate-reproducible) |
 | Pipeline | pytest | Parsers, dedup, two-strike expiry, retry/backoff |
+| Admin and Edge Functions, end to end | Playwright against the real local stack (`npm run test:admin`) | **As built (P7, P8, P9-02):** sign-in and roles, the forms, CSV import, the review queue, Publish now (through the real `request-rebuild` function and a stand-in for GitHub), the audit log, the public forms (through the real `submit-feedback` function and a stand-in for Cloudflare `siteverify`, with the rate limit), the anonymous-API probe, and no CSP violation on the admin dashboard. Needs the full stack (about 2 GB), so it is **not in CI**; run it before a release (`db reset` first). The local Edge runtime is occasionally flaky (`503 name resolution failed`); the one place it matters retries that exact answer |
+| CSP | Playwright (`tests/e2e/csp.spec.ts`, in the normal e2e run) | No `securitypolicyviolation` on the key public pages; every page has a policy with no `unsafe-inline` or `unsafe-eval` for scripts and no wildcard; an injected inline script and a foreign script are blocked ([ADR-0014](decisions/0014-content-security-policy.md)) |
 
 ## Required consistency tests (confirmed brief)
 - Map, Grid, and List return identical company ID sets and counts for a filter matrix that includes overlapping types (Startup+Product), Startup+stage, and search by each of the four kinds.
