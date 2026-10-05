@@ -331,6 +331,35 @@ test.describe("review queue", () => {
   });
 });
 
+// The local Edge runtime sometimes answers 503 {"message":"name resolution failed"} (Docker's internal DNS on Windows, under
+// memory pressure) from a lookup it makes itself, such as the signing keys, the database gateway, or the GitHub stand-in. It
+// clears after a while. These helpers retry that exact answer for up to 90 seconds and nothing else: any other answer, and a
+// 503 that does not clear, is returned (and fails the test with what the function said).
+const isDnsFlake = (status: number, body: string) => status === 503 && body.includes("name resolution failed");
+
+async function clickPublish(page: Page): Promise<{ status: number; body: string }> {
+  const deadline = Date.now() + 90_000;
+  for (;;) {
+    const answered = page.waitForResponse((r) => r.url().includes("/functions/v1/request-rebuild") && r.request().method() === "POST");
+    await page.getByTestId("publish-now").click();
+    const response = await answered;
+    const body = await response.text().catch(() => "(no body)");
+    if (!isDnsFlake(response.status(), body) || Date.now() > deadline) return { status: response.status(), body };
+    await page.waitForTimeout(3_000);
+    await expect(page.getByTestId("publish-now")).toBeEnabled();
+  }
+}
+
+async function postRebuild(request: APIRequestContext, headers: Record<string, string>): Promise<{ status: number; body: string }> {
+  const deadline = Date.now() + 90_000;
+  for (;;) {
+    const response = await request.post(`${SUPABASE}/functions/v1/request-rebuild`, { headers });
+    const body = await response.text();
+    if (!isDnsFlake(response.status(), body) || Date.now() > deadline) return { status: response.status(), body };
+    await new Promise((resolve) => setTimeout(resolve, 3_000));
+  }
+}
+
 test.describe("publish", () => {
   test("a reviewer publishes a company, and Publish now starts one build", async ({ page, request }) => {
     await request.get(github("/__reset"));
@@ -343,20 +372,8 @@ test.describe("publish", () => {
 
     await page.goto("/admin");
     await expect(page.getByTestId("publish-now")).toBeEnabled();
-    // The local Edge runtime sometimes answers 503 {"message":"name resolution failed"} (Docker's internal DNS, seen on
-    // Windows under memory pressure) before the function's own code runs, so nothing was published and a second click is
-    // safe. Retry only that exact answer; anything else is a real failure and says what the function answered.
-    let answer;
-    let answerBody = "";
-    for (let attempt = 1; attempt <= 4; attempt++) {
-      const answered = page.waitForResponse((r) => r.url().includes("/functions/v1/request-rebuild") && r.request().method() === "POST");
-      await page.getByTestId("publish-now").click();
-      answer = await answered;
-      answerBody = await answer.text().catch(() => "(no body)");
-      if (!(answer.status() === 503 && answerBody.includes("name resolution failed"))) break;
-      await expect(page.getByTestId("publish-now")).toBeEnabled();
-    }
-    expect(answer!.status(), `the request-rebuild answer was: ${answerBody}`).toBe(200);
+    const answer = await clickPublish(page);
+    expect(answer.status, `the request-rebuild answer was: ${answer.body}`).toBe(200);
     await expect(page.getByText("Published. The site is rebuilding")).toBeVisible({ timeout: 30_000 });
 
     const dispatches = (await (await request.get(github("/__requests"))).json()) as Array<{ url: string; authorization: string; body: string }>;
@@ -369,7 +386,8 @@ test.describe("publish", () => {
   test("a second Publish now inside ten minutes saves, does not start another build, and says when to retry", async ({ page, request }) => {
     await signInAs(page, "reviewer");
     await page.goto("/admin");
-    await page.getByTestId("publish-now").click();
+    const answer = await clickPublish(page);
+    expect(answer.status, `the request-rebuild answer was: ${answer.body}`).toBe(200);
     await expect(page.getByText(/A rebuild was already started in the last ten minutes/)).toBeVisible({ timeout: 30_000 });
     const dispatches = (await (await request.get(github("/__requests"))).json()) as unknown[];
     expect(dispatches).toHaveLength(1);
@@ -381,13 +399,13 @@ test.describe("publish", () => {
       const key = Object.keys(localStorage).find((k) => k.endsWith("-auth-token"))!;
       return (JSON.parse(localStorage.getItem(key)!) as { access_token: string }).access_token;
     });
-    const res = await request.post(`${SUPABASE}/functions/v1/request-rebuild`, { headers: { Authorization: `Bearer ${token}`, Origin: "http://localhost:3100" } });
-    expect(res.status()).toBe(403);
-    expect((await res.json()).error).toMatch(/reviewer or an admin/);
-    const none = await request.post(`${SUPABASE}/functions/v1/request-rebuild`, { headers: { Origin: "http://localhost:3100" } });
-    expect(none.status()).toBe(401);
-    const wrongOrigin = await request.post(`${SUPABASE}/functions/v1/request-rebuild`, { headers: { Authorization: `Bearer ${token}`, Origin: "https://evil.example" } });
-    expect(wrongOrigin.status()).toBe(403);
+    const refused = await postRebuild(request, { Authorization: `Bearer ${token}`, Origin: "http://localhost:3100" });
+    expect(refused.status, refused.body).toBe(403);
+    expect(JSON.parse(refused.body).error).toMatch(/reviewer or an admin/);
+    const none = await postRebuild(request, { Origin: "http://localhost:3100" });
+    expect(none.status, none.body).toBe(401);
+    const wrongOrigin = await postRebuild(request, { Authorization: `Bearer ${token}`, Origin: "https://evil.example" });
+    expect(wrongOrigin.status, wrongOrigin.body).toBe(403);
     expect(((await (await request.get(github("/__requests"))).json()) as unknown[]).length).toBe(1);
   });
 

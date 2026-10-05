@@ -1,5 +1,5 @@
 // Global setup for the admin specs: the admin accounts, the two Edge Functions, and a stand-in for GitHub.
-import { spawn, type ChildProcess } from "node:child_process";
+import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { mkdtempSync, openSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
@@ -29,6 +29,21 @@ async function ensureUser(url: string, serviceKey: string, email: string): Promi
   return (await res.json()).id as string;
 }
 
+const EDGE_CONTAINER = "supabase_edge_runtime_company-map";
+
+/**
+ * Removes the Edge runtime container and waits until it is gone. `supabase functions serve` leaves it behind (and its
+ * secrets folder is cleaned up late), so a run that starts right after another one can end up talking to the old
+ * container, or to none, and see "503 name resolution failed" for the whole run. Starting from nothing avoids that.
+ */
+function removeEdgeContainer() {
+  try {
+    execFileSync("docker", ["rm", "-f", EDGE_CONTAINER], { stdio: "ignore" });
+  } catch {
+    // No such container: that is the state we want.
+  }
+}
+
 async function waitFor(check: () => Promise<boolean>, what: string, ms = 90_000) {
   const deadline = Date.now() + ms;
   while (Date.now() < deadline) {
@@ -41,6 +56,8 @@ async function waitFor(check: () => Promise<boolean>, what: string, ms = 90_000)
 export default async function globalSetup() {
   const url = process.env.ADMIN_E2E_SUPABASE_URL!;
   const serviceKey = process.env.ADMIN_E2E_SERVICE_KEY!;
+
+  removeEdgeContainer();
 
   // 1. Accounts: an editor, a reviewer, an admin, and a signed-in user who is not an administrator.
   const ids: Record<keyof typeof USERS, string> = {
@@ -119,20 +136,37 @@ export default async function globalSetup() {
     return res.status === 204;
   }, "the Edge Functions runtime");
   // The runtime starts a function's worker, and fetches its npm packages, on the first request to it. Do that now for the
-  // other two, so no spec pays for a cold start (a cold first call to request-rebuild once came back as a failure).
-  // Any answer below 500 means the worker is up: a bare POST is refused (401 or 403) by the function itself.
+  // other two, so no spec pays for a cold start.
+  //
+  // request-rebuild is warmed with a real user's token on purpose. A signed-in user's token is signed with a key pair, so the
+  // runtime must fetch the signing keys from the auth container before it will run the function, and right after `db reset`
+  // restarts that container the fetch can fail ("503 name resolution failed") for a while. The anon key is an older kind of
+  // token that needs no fetch, so it would not have shown this. Wait until the real path works: a non-administrator is
+  // refused by the function itself (403), which proves the token was verified.
   const anon = process.env.ADMIN_E2E_ANON_KEY!;
-  for (const name of ["request-rebuild", "submit-feedback"]) {
+  const signIn = await fetch(`${url}/auth/v1/token?grant_type=password`, { method: "POST", headers: { apikey: anon, "Content-Type": "application/json" }, body: JSON.stringify({ email: USERS.plain, password: PASSWORD }) });
+  const userToken = ((await signIn.json()) as { access_token?: string }).access_token;
+  if (!userToken) throw new Error("Could not sign in the warm-up user");
+  const warm: Array<[string, string]> = [["request-rebuild", userToken], ["submit-feedback", anon]];
+  for (const [name, token] of warm) {
     await waitFor(async () => {
-      const res = await fetch(`${url}/functions/v1/${name}`, { method: "POST", headers: { Origin: "http://localhost:3100", apikey: anon, Authorization: `Bearer ${anon}` } });
+      const res = await fetch(`${url}/functions/v1/${name}`, { method: "POST", headers: { Origin: "http://localhost:3100", apikey: anon, Authorization: `Bearer ${token}` } });
       return res.status < 500;
-    }, `the ${name} function`);
+    }, `the ${name} function`, 120_000);
   }
 
   return async () => {
     github.close();
     functions.kill();
-    // `supabase functions serve` runs in a container that outlives its CLI: stop the CLI's process tree on Windows too.
-    if (process.platform === "win32" && functions.pid) spawn("taskkill", ["/pid", String(functions.pid), "/T", "/F"], { stdio: "ignore" });
+    // `supabase functions serve` runs in a container that outlives its CLI: stop the CLI's process tree on Windows too,
+    // then remove the container, so the next run starts clean.
+    if (process.platform === "win32" && functions.pid) {
+      try {
+        execFileSync("taskkill", ["/pid", String(functions.pid), "/T", "/F"], { stdio: "ignore" });
+      } catch {
+        // Already gone.
+      }
+    }
+    removeEdgeContainer();
   };
 }
