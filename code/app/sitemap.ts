@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const companies = [...loadCompanyPages().keys()].sort();
   return [
     { url: `${SITE_URL}/` },
+    { url: `${SITE_URL}/suggest` },
     ...loadAllCities().map((city) => ({ url: `${SITE_URL}/${city.slug}` })),
     ...companies.flatMap((slug) => [{ url: `${SITE_URL}/companies/${slug}` }, { url: `${SITE_URL}/companies/${slug}/jobs` }]),
   ];

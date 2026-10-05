@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CityTile } from "@/components/city/city-tile";
 import { loadAllCities } from "@/lib/data/city-data";
 
@@ -27,6 +28,11 @@ export default function HomePage() {
           Coming soon: {COMING_SOON.join(", ")}
         </p>
       </main>
+      <footer className="mt-12 border-t border-rule pt-4 text-sm">
+        <Link href="/suggest" className="inline-flex min-h-11 items-center" data-testid="suggest-link">
+          Suggest a company
+        </Link>
+      </footer>
     </div>
   );
 }

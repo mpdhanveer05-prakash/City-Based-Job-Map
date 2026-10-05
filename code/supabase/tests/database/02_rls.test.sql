@@ -132,7 +132,9 @@ select is(
 );
 select is(
   (select count(*)::int from pg_class c
-   where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p')
+   -- A partition has no policy of its own: the parent's apply to queries through the parent, and the partition itself is
+   -- closed (row-level security on, nothing granted), which the migration does for each one.
+   where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p') and not c.relispartition
      and not exists (select 1 from pg_policy p where p.polrelid = c.oid)),
   0,
   'every table in public has at least one policy'
