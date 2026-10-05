@@ -5,6 +5,7 @@ import { BackToMap } from "@/components/company/back-to-map";
 import { CompanyAvatar } from "@/components/company/company-avatar";
 import { OutboundLink } from "@/components/company/outbound-link";
 import { FeedbackForm } from "@/components/feedback/feedback-form";
+import { ReportDisclosure } from "@/components/feedback/report-disclosure";
 import { Button } from "@/components/ui/button";
 import { locationLine, metaDescription, safeJsonLd, typeSentence, verifiedText } from "@/lib/company-text";
 import { loadCompanyPages } from "@/lib/data/company-data";
@@ -151,12 +152,9 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[slu
         <h2 id="report" className="sr-only">
           Report a problem
         </h2>
-        <details>
-          <summary className="inline-flex min-h-11 cursor-pointer items-center text-link underline underline-offset-3">Something wrong on this page? Tell us</summary>
-          <div className="mt-3">
-            <FeedbackForm mode="report" title="Report a problem" target={{ type: "company", legend: "Company", options: [{ id: company.id, label: company.name }] }} />
-          </div>
-        </details>
+        <ReportDisclosure summary="Something wrong on this page? Tell us">
+          <FeedbackForm mode="report" title="Report a problem" target={{ type: "company", legend: "Company", options: [{ id: company.id, label: company.name }] }} />
+        </ReportDisclosure>
       </section>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />

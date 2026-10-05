@@ -48,6 +48,9 @@ export default defineConfig({
         // The build needs a data source (ADR-0010); the e2e suite runs on the committed synthetic sample.
         // NEXT_PUBLIC_SUPABASE_URL makes the build include the click beacon's endpoint; the specs intercept it, so no
         // Supabase project is needed. The anon key stays a placeholder, so the build still reads the committed sample.
-        env: { DEV_ROUTES: "on", DATA_SOURCE: "seed", NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321" },
+        //
+        // NEXT_PUBLIC_TURNSTILE_SITE_KEY is Cloudflare's published always-pass test key: it makes the report forms render.
+        // The specs stub the Turnstile script, so no request goes to Cloudflare.
+        env: { DEV_ROUTES: "on", DATA_SOURCE: "seed", NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321", NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA" },
       },
 });

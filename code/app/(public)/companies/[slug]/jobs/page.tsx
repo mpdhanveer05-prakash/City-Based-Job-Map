@@ -5,6 +5,7 @@ import { BackToMap } from "@/components/company/back-to-map";
 import { Freshness } from "@/components/company/freshness";
 import { OutboundLink } from "@/components/company/outbound-link";
 import { FeedbackForm } from "@/components/feedback/feedback-form";
+import { ReportDisclosure } from "@/components/feedback/report-disclosure";
 import { loadCompanyPages } from "@/lib/data/company-data";
 import { slugSchema } from "@/lib/filters/schema";
 
@@ -83,16 +84,13 @@ export default async function CompanyJobsPage({ params }: PageProps<"/companies/
           <h2 id="report" className="sr-only">
             Report a job
           </h2>
-          <details>
-            <summary className="inline-flex min-h-11 cursor-pointer items-center text-link underline underline-offset-3">A job that is closed or wrong? Tell us</summary>
-            <div className="mt-3">
-              <FeedbackForm
-                mode="report"
-                title="Report a job"
-                target={{ type: "job", legend: "Which job?", options: company.jobs.map((j) => ({ id: j.id, label: j.title })) }}
-              />
-            </div>
-          </details>
+          <ReportDisclosure summary="A job that is closed or wrong? Tell us">
+            <FeedbackForm
+              mode="report"
+              title="Report a job"
+              target={{ type: "job", legend: "Which job?", options: company.jobs.map((j) => ({ id: j.id, label: j.title })) }}
+            />
+          </ReportDisclosure>
         </section>
       )}
     </main>

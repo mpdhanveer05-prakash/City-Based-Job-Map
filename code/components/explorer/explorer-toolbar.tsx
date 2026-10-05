@@ -81,7 +81,8 @@ export const ExplorerToolbar = forwardRef<HTMLDivElement, ExplorerToolbarProps>(
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex shrink-0 items-baseline gap-x-3 sm:flex-col sm:gap-0">
           <h1 className="text-xl font-bold">{props.cityName}</h1>
-          <Link href="/" className="text-sm">
+          {/* The touch target is 44 px tall (the project rule); the negative margin keeps the toolbar as compact as before. */}
+          <Link href="/" className="-my-3 inline-flex min-h-11 items-center text-sm">
             All cities
           </Link>
         </div>

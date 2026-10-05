@@ -11,6 +11,11 @@ declare global {
 }
 
 async function watchViolations(page: Page) {
+  // The forms load Cloudflare's Turnstile script when they are shown. Stand in for it: the specs must not depend on a
+  // third party, and the policy under test is ours. (The real widget under this policy has not been exercised here.)
+  await page.route("https://challenges.cloudflare.com/turnstile/v0/api.js*", (route) =>
+    route.fulfill({ contentType: "text/javascript", body: "window.turnstile = { render() { return 'w1'; }, remove() {}, reset() {} };" }),
+  );
   await page.addInitScript(() => {
     window.__cspViolations = [];
     document.addEventListener("securitypolicyviolation", (e) => window.__cspViolations!.push(`${e.violatedDirective} ${e.blockedURI} (${e.sourceFile}:${e.lineNumber}, ${e.sample})`));
@@ -36,6 +41,7 @@ for (const path of PAGES) {
 }
 
 test("every page carries a policy with no unsafe-inline for scripts and no wildcard", async ({ page }) => {
+  await watchViolations(page);
   for (const path of PAGES) {
     await page.goto(path);
     const policy = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute("content");

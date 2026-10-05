@@ -201,6 +201,28 @@ export function Explorer({ city, paths }: ExplorerProps) {
 
   return (
     <main className="relative min-h-0 flex-1" data-testid="explorer" data-city={city.slug} data-view={view} data-ready={result ? "true" : "false"}>
+      {/* First in the document, so Tab meets search and filters before the companies. It is positioned and layered, so this does not change how it looks. */}
+      <ExplorerToolbar
+        ref={toolbar}
+        cityName={city.name}
+        query={filters.q}
+        onQuery={onQuery}
+        onSearchFocus={() => setSearchWanted(true)}
+        searchLoading={searchActive && searchFile.isPending}
+        searchFailed={searchFile.isError}
+        suggestions={(text) => (index ? buildSuggestions(index, text) : [])}
+        onSuggestion={onSuggestion}
+        filterModel={filterModel}
+        onClearFilters={onClearFilters}
+        companyCount={result?.companies.length ?? 0}
+        officeCount={result?.offices.length ?? 0}
+        view={view}
+        onView={onView}
+        mapUnavailable={mapUnavailable}
+        notice={mapUnavailable ? WEBGL_NOTICE : undefined}
+        loading={files.isPending}
+      />
+
       {files.data && result && (
         <ExplorerMapView
           active={view === "map"}
@@ -228,27 +250,6 @@ export function Explorer({ city, paths }: ExplorerProps) {
       {result && view === "grid" && (
         <CompanyGrid rows={rows} selectedSlug={state.company} onShowOnMap={onShowOnMap} onClearFilters={onClearFilters} paddingTop={toolbarHeight + 32} />
       )}
-
-      <ExplorerToolbar
-        ref={toolbar}
-        cityName={city.name}
-        query={filters.q}
-        onQuery={onQuery}
-        onSearchFocus={() => setSearchWanted(true)}
-        searchLoading={searchActive && searchFile.isPending}
-        searchFailed={searchFile.isError}
-        suggestions={(text) => (index ? buildSuggestions(index, text) : [])}
-        onSuggestion={onSuggestion}
-        filterModel={filterModel}
-        onClearFilters={onClearFilters}
-        companyCount={result?.companies.length ?? 0}
-        officeCount={result?.offices.length ?? 0}
-        view={view}
-        onView={onView}
-        mapUnavailable={mapUnavailable}
-        notice={mapUnavailable ? WEBGL_NOTICE : undefined}
-        loading={files.isPending}
-      />
 
       {files.isPending && (
         <p role="status" data-testid="explorer-loading" className="absolute inset-x-0 top-1/2 text-center text-lg text-muted-foreground">
