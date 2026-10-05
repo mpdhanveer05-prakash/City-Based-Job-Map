@@ -1,6 +1,6 @@
 // Turns a validated snapshot into the files the build writes (P4-01), and the manifest that names
 // them. Pure: the build script does the reading and writing, so this is easy to test.
-import { splitSnapshot, type CitySnapshot } from "./dataset.ts";
+import { snapshotIsSynthetic, splitSnapshot, type CitySnapshot } from "./dataset.ts";
 
 export const DATASET_FILE_NAMES = ["companies", "offices", "search", "details"] as const;
 export type DatasetFileName = (typeof DATASET_FILE_NAMES)[number];
@@ -13,6 +13,8 @@ export function datasetPath(city: string, dataVersion: number, name: DatasetFile
 export type SerializedDataset = {
   city: string;
   dataVersion: number;
+  /** True when every company is synthetic sample data. */
+  synthetic: boolean;
   counts: { companies: number; offices: number; jobs: number };
   /** The JSON text of each file (compact, in a fixed key order, so equal data gives equal bytes). */
   files: Record<DatasetFileName, string>;
@@ -23,6 +25,7 @@ export function serializeDataset(snapshot: CitySnapshot): SerializedDataset {
   return {
     city: snapshot.city.slug,
     dataVersion: snapshot.city.data_version,
+    synthetic: snapshotIsSynthetic(snapshot),
     counts: {
       companies: snapshot.companies.length,
       offices: snapshot.offices.length,
@@ -43,6 +46,7 @@ export type Manifest = {
     string,
     {
       data_version: number;
+      synthetic: boolean;
       counts: SerializedDataset["counts"];
       files: Record<DatasetFileName, { path: string; bytes: number }>;
     }
@@ -60,7 +64,7 @@ export function buildManifest(sets: readonly SerializedDataset[]): Manifest {
     for (const name of DATASET_FILE_NAMES) {
       files[name] = { path: datasetPath(set.city, set.dataVersion, name), bytes: new TextEncoder().encode(set.files[name]).length };
     }
-    cities[set.city] = { data_version: set.dataVersion, counts: set.counts, files };
+    cities[set.city] = { data_version: set.dataVersion, synthetic: set.synthetic, counts: set.counts, files };
   }
   return { version: 1, cities };
 }

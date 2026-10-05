@@ -1,0 +1,1181 @@
+{
+ "version": 1,
+ "city": {
+  "slug": "chennai",
+  "name": "Chennai",
+  "aliases": [
+   "Madras"
+  ],
+  "status": "beta",
+  "centre": [
+   80.2707,
+   13.0827
+  ],
+  "default_zoom": 11,
+  "data_version": 1,
+  "boundary": {
+   "type": "MultiPolygon",
+   "coordinates": [
+    [
+     [
+      [
+       80.1,
+       12.85
+      ],
+      [
+       80.33,
+       12.85
+      ],
+      [
+       80.33,
+       13.2
+      ],
+      [
+       80.1,
+       13.2
+      ],
+      [
+       80.1,
+       12.85
+      ]
+     ]
+    ]
+   ]
+  }
+ },
+ "synthetic_companies": 24,
+ "neighbourhoods": [
+  {
+   "slug": "adyar",
+   "name": "Adyar"
+  },
+  {
+   "slug": "anna-nagar",
+   "name": "Anna Nagar"
+  },
+  {
+   "slug": "guindy",
+   "name": "Guindy"
+  },
+  {
+   "slug": "mylapore",
+   "name": "Mylapore"
+  },
+  {
+   "slug": "nungambakkam",
+   "name": "Nungambakkam"
+  },
+  {
+   "slug": "perungudi",
+   "name": "Perungudi"
+  },
+  {
+   "slug": "sholinganallur",
+   "name": "Sholinganallur"
+  },
+  {
+   "slug": "t-nagar",
+   "name": "T. Nagar"
+  },
+  {
+   "slug": "velachery",
+   "name": "Velachery"
+  }
+ ],
+ "tech_parks": [
+  {
+   "slug": "ascendas-it-park",
+   "name": "Ascendas IT Park"
+  },
+  {
+   "slug": "dlf-it-park",
+   "name": "DLF IT Park"
+  },
+  {
+   "slug": "olympia-tech-park",
+   "name": "Olympia Tech Park"
+  },
+  {
+   "slug": "tidel-park",
+   "name": "Tidel Park"
+  }
+ ],
+ "sectors": [
+  {
+   "slug": "ai-data",
+   "name": "AI and data"
+  },
+  {
+   "slug": "cloud-devops",
+   "name": "Cloud and DevOps"
+  },
+  {
+   "slug": "e-commerce",
+   "name": "E-commerce"
+  },
+  {
+   "slug": "edtech",
+   "name": "Edtech"
+  },
+  {
+   "slug": "enterprise-software",
+   "name": "Enterprise software"
+  },
+  {
+   "slug": "fintech",
+   "name": "Fintech"
+  },
+  {
+   "slug": "gaming",
+   "name": "Gaming"
+  },
+  {
+   "slug": "healthtech",
+   "name": "Healthtech"
+  },
+  {
+   "slug": "logistics",
+   "name": "Logistics"
+  },
+  {
+   "slug": "mobility",
+   "name": "Mobility"
+  },
+  {
+   "slug": "saas",
+   "name": "SaaS"
+  },
+  {
+   "slug": "semiconductors",
+   "name": "Semiconductors"
+  }
+ ],
+ "companies": [
+  {
+   "id": "f4381ff6-dc4a-8f78-ab4b-ea41c596dbd2",
+   "slug": "amber-cloud-synthetic",
+   "name": "Amber Cloud (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://amber-cloud-synthetic.example",
+   "careers_url": "https://amber-cloud-synthetic.example/careers",
+   "startup_stage": "pre_seed",
+   "last_verified_at": null,
+   "types": [
+    "startup"
+   ],
+   "sectors": [
+    "cloud-devops"
+   ],
+   "founders": []
+  },
+  {
+   "id": "c0a8f488-9cd4-5ea4-3e1e-9256ff8aed7f",
+   "slug": "amber-loop-synthetic",
+   "name": "Amber Loop (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://amber-loop-synthetic.example",
+   "careers_url": "https://amber-loop-synthetic.example/careers",
+   "startup_stage": "series_b",
+   "last_verified_at": null,
+   "types": [
+    "startup"
+   ],
+   "sectors": [
+    "cloud-devops"
+   ],
+   "founders": []
+  },
+  {
+   "id": "8ab9f9b7-c9ec-2757-2551-473ac31cf8a4",
+   "slug": "birch-cloud-synthetic",
+   "name": "Birch Cloud (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://birch-cloud-synthetic.example",
+   "careers_url": "https://birch-cloud-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "mnc",
+    "product"
+   ],
+   "sectors": [
+    "e-commerce"
+   ],
+   "founders": []
+  },
+  {
+   "id": "1d81f504-e676-3d1f-fc49-72c4437686e7",
+   "slug": "birch-loop-synthetic",
+   "name": "Birch Loop (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://birch-loop-synthetic.example",
+   "careers_url": "https://birch-loop-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "mnc",
+    "product"
+   ],
+   "sectors": [
+    "e-commerce"
+   ],
+   "founders": []
+  },
+  {
+   "id": "707d7fdb-d4cc-ccd6-6a64-b5fd1262eebc",
+   "slug": "cobalt-cloud-synthetic",
+   "name": "Cobalt Cloud (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://cobalt-cloud-synthetic.example",
+   "careers_url": "https://cobalt-cloud-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "product"
+   ],
+   "sectors": [
+    "edtech",
+    "gaming"
+   ],
+   "founders": []
+  },
+  {
+   "id": "e8453e6a-7059-34b9-925a-876fc3f4a72c",
+   "slug": "cobalt-loop-synthetic",
+   "name": "Cobalt Loop (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://cobalt-loop-synthetic.example",
+   "careers_url": "https://cobalt-loop-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "product"
+   ],
+   "sectors": [
+    "edtech",
+    "gaming"
+   ],
+   "founders": []
+  },
+  {
+   "id": "b41d7034-0e93-a7df-e4de-53c7197d8c1d",
+   "slug": "delta-cloud-synthetic",
+   "name": "Delta Cloud (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://delta-cloud-synthetic.example",
+   "careers_url": "https://delta-cloud-synthetic.example/careers",
+   "startup_stage": "seed",
+   "last_verified_at": null,
+   "types": [
+    "startup"
+   ],
+   "sectors": [
+    "enterprise-software"
+   ],
+   "founders": []
+  },
+  {
+   "id": "e4658095-e5fd-0be8-beee-73d7eca7190f",
+   "slug": "delta-loop-synthetic",
+   "name": "Delta Loop (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://delta-loop-synthetic.example",
+   "careers_url": "https://delta-loop-synthetic.example/careers",
+   "startup_stage": "series_c",
+   "last_verified_at": null,
+   "types": [
+    "startup"
+   ],
+   "sectors": [
+    "enterprise-software"
+   ],
+   "founders": []
+  },
+  {
+   "id": "f427037d-db26-c940-7e14-ea48449cb2ce",
+   "slug": "ember-cloud-synthetic",
+   "name": "Ember Cloud (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://ember-cloud-synthetic.example",
+   "careers_url": "https://ember-cloud-synthetic.example/careers",
+   "startup_stage": "seed",
+   "last_verified_at": null,
+   "types": [
+    "startup"
+   ],
+   "sectors": [
+    "fintech"
+   ],
+   "founders": []
+  },
+  {
+   "id": "bb048889-09cf-5223-a66b-f8cae3c3d383",
+   "slug": "ember-loop-synthetic",
+   "name": "Ember Loop (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://ember-loop-synthetic.example",
+   "careers_url": "https://ember-loop-synthetic.example/careers",
+   "startup_stage": "series_c_plus",
+   "last_verified_at": null,
+   "types": [
+    "startup"
+   ],
+   "sectors": [
+    "fintech"
+   ],
+   "founders": []
+  },
+  {
+   "id": "1cdb28f7-3a6a-6327-2540-0e5838709c5f",
+   "slug": "fjord-cloud-synthetic",
+   "name": "Fjord Cloud (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://fjord-cloud-synthetic.example",
+   "careers_url": "https://fjord-cloud-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "mnc"
+   ],
+   "sectors": [
+    "gaming",
+    "mobility"
+   ],
+   "founders": []
+  },
+  {
+   "id": "076085bf-fcdb-725a-8c6a-67525d6b5e3c",
+   "slug": "fjord-loop-synthetic",
+   "name": "Fjord Loop (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://fjord-loop-synthetic.example",
+   "careers_url": "https://fjord-loop-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "mnc"
+   ],
+   "sectors": [
+    "gaming",
+    "mobility"
+   ],
+   "founders": []
+  },
+  {
+   "id": "78936062-ac1d-caaf-6cc7-0a3fcb1d26f1",
+   "slug": "garnet-cloud-synthetic",
+   "name": "Garnet Cloud (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://garnet-cloud-synthetic.example",
+   "careers_url": "https://garnet-cloud-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "product"
+   ],
+   "sectors": [
+    "healthtech"
+   ],
+   "founders": []
+  },
+  {
+   "id": "4ca6003b-38e0-581a-3f26-b8e43d374525",
+   "slug": "garnet-loop-synthetic",
+   "name": "Garnet Loop (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://garnet-loop-synthetic.example",
+   "careers_url": "https://garnet-loop-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "product"
+   ],
+   "sectors": [
+    "healthtech"
+   ],
+   "founders": []
+  },
+  {
+   "id": "6cc4bca8-86bc-7549-7cb6-f069090821bc",
+   "slug": "harbor-cloud-synthetic",
+   "name": "Harbor Cloud (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://harbor-cloud-synthetic.example",
+   "careers_url": "https://harbor-cloud-synthetic.example/careers",
+   "startup_stage": "bootstrapped",
+   "last_verified_at": null,
+   "types": [
+    "startup"
+   ],
+   "sectors": [
+    "logistics"
+   ],
+   "founders": []
+  },
+  {
+   "id": "45095248-dc21-ca8f-24cd-a2bd09ff94a3",
+   "slug": "harbor-loop-synthetic",
+   "name": "Harbor Loop (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://harbor-loop-synthetic.example",
+   "careers_url": "https://harbor-loop-synthetic.example/careers",
+   "startup_stage": "public",
+   "last_verified_at": null,
+   "types": [
+    "startup"
+   ],
+   "sectors": [
+    "logistics"
+   ],
+   "founders": []
+  },
+  {
+   "id": "8db05f6b-fbb0-1e01-450c-cb6ec2da76d4",
+   "slug": "indigo-cloud-synthetic",
+   "name": "Indigo Cloud (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://indigo-cloud-synthetic.example",
+   "careers_url": "https://indigo-cloud-synthetic.example/careers",
+   "startup_stage": "series_a",
+   "last_verified_at": null,
+   "types": [
+    "startup",
+    "product"
+   ],
+   "sectors": [
+    "ai-data",
+    "mobility"
+   ],
+   "founders": []
+  },
+  {
+   "id": "b589ae6f-2e5a-432f-f3fb-3d76de7d14f0",
+   "slug": "indigo-systems-synthetic",
+   "name": "Indigo Systems (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://indigo-systems-synthetic.example",
+   "careers_url": "https://indigo-systems-synthetic.example/careers",
+   "startup_stage": "acquired",
+   "last_verified_at": null,
+   "types": [
+    "startup",
+    "product"
+   ],
+   "sectors": [
+    "ai-data",
+    "mobility"
+   ],
+   "founders": []
+  },
+  {
+   "id": "65f77a18-8d60-62ef-5668-ccf27dd0848f",
+   "slug": "juniper-cloud-synthetic",
+   "name": "Juniper Cloud (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://juniper-cloud-synthetic.example",
+   "careers_url": "https://juniper-cloud-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "mnc"
+   ],
+   "sectors": [
+    "saas"
+   ],
+   "founders": []
+  },
+  {
+   "id": "e95549f2-40a7-af31-df94-b0ff916140d9",
+   "slug": "juniper-loop-synthetic",
+   "name": "Juniper Loop (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://juniper-loop-synthetic.example",
+   "careers_url": "https://juniper-loop-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "mnc"
+   ],
+   "sectors": [
+    "saas"
+   ],
+   "founders": []
+  },
+  {
+   "id": "5a003a43-c0f6-9b08-2610-6f13f14d7a06",
+   "slug": "kestrel-cloud-synthetic",
+   "name": "Kestrel Cloud (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://kestrel-cloud-synthetic.example",
+   "careers_url": "https://kestrel-cloud-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "product"
+   ],
+   "sectors": [
+    "semiconductors"
+   ],
+   "founders": []
+  },
+  {
+   "id": "a9db69ba-767e-2059-c995-c65cc5accd46",
+   "slug": "kestrel-systems-synthetic",
+   "name": "Kestrel Systems (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://kestrel-systems-synthetic.example",
+   "careers_url": "https://kestrel-systems-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "product"
+   ],
+   "sectors": [
+    "semiconductors"
+   ],
+   "founders": []
+  },
+  {
+   "id": "fbacbed6-cdf5-7483-8314-6a3756f5b55c",
+   "slug": "lumen-cloud-synthetic",
+   "name": "Lumen Cloud (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://lumen-cloud-synthetic.example",
+   "careers_url": "https://lumen-cloud-synthetic.example/careers",
+   "startup_stage": "series_a",
+   "last_verified_at": null,
+   "types": [
+    "startup",
+    "product"
+   ],
+   "sectors": [
+    "ai-data",
+    "edtech"
+   ],
+   "founders": []
+  },
+  {
+   "id": "9a934f0e-2198-fba8-3832-d30b83239dad",
+   "slug": "lumen-systems-synthetic",
+   "name": "Lumen Systems (synthetic)",
+   "logo_key": null,
+   "description": "Synthetic sample record for development. Not a real company.",
+   "website_url": "https://lumen-systems-synthetic.example",
+   "careers_url": "https://lumen-systems-synthetic.example/careers",
+   "startup_stage": null,
+   "last_verified_at": null,
+   "types": [
+    "startup",
+    "product"
+   ],
+   "sectors": [
+    "ai-data",
+    "edtech"
+   ],
+   "founders": []
+  }
+ ],
+ "offices": [
+  {
+   "id": "02a14b6a-e43c-d051-ef64-d3efae3145e5",
+   "company_id": "e8453e6a-7059-34b9-925a-876fc3f4a72c",
+   "lng": 80.266825,
+   "lat": 13.030525,
+   "accuracy": "street",
+   "address": "Synthetic address 63.1, Mylapore",
+   "neighbourhood": "mylapore",
+   "tech_park": null
+  },
+  {
+   "id": "0743c7d6-64bc-cfd6-eaf5-081253f71ca3",
+   "company_id": "45095248-dc21-ca8f-24cd-a2bd09ff94a3",
+   "lng": 80.212,
+   "lat": 12.986,
+   "accuracy": "building",
+   "address": "Synthetic address 68.1, Velachery",
+   "neighbourhood": "velachery",
+   "tech_park": null
+  },
+  {
+   "id": "092761f0-c62d-ff81-c752-6bbc9d1f30aa",
+   "company_id": "b589ae6f-2e5a-432f-f3fb-3d76de7d14f0",
+   "lng": 80.27195,
+   "lat": 13.037525,
+   "accuracy": "street",
+   "address": "Synthetic address 45.1, Mylapore",
+   "neighbourhood": "mylapore",
+   "tech_park": null
+  },
+  {
+   "id": "13910964-1f71-0cf6-bfd7-b9d323e8792c",
+   "company_id": "b589ae6f-2e5a-432f-f3fb-3d76de7d14f0",
+   "lng": 80.230525,
+   "lat": 12.90675,
+   "accuracy": "street",
+   "address": "Synthetic address 45.2, Sholinganallur",
+   "neighbourhood": "sholinganallur",
+   "tech_park": null
+  },
+  {
+   "id": "14c05c9b-f059-0022-4f34-6ed7c71353c8",
+   "company_id": "fbacbed6-cdf5-7483-8314-6a3756f5b55c",
+   "lng": 80.246,
+   "lat": 13,
+   "accuracy": "campus",
+   "address": "Synthetic address 60.1, Ascendas IT Park",
+   "neighbourhood": null,
+   "tech_park": "ascendas-it-park"
+  },
+  {
+   "id": "20e80b68-6348-b1b2-de7b-5f5370d40195",
+   "company_id": "78936062-ac1d-caaf-6cc7-0a3fcb1d26f1",
+   "lng": 80.2395,
+   "lat": 13.051025,
+   "accuracy": "street",
+   "address": "Synthetic address 55.1, Nungambakkam",
+   "neighbourhood": "nungambakkam",
+   "tech_park": null
+  },
+  {
+   "id": "22012252-0d38-7fbd-229b-adb565f13e32",
+   "company_id": "8db05f6b-fbb0-1e01-450c-cb6ec2da76d4",
+   "lng": 80.23415,
+   "lat": 12.89575,
+   "accuracy": "street",
+   "address": "Synthetic address 57.1, Sholinganallur",
+   "neighbourhood": "sholinganallur",
+   "tech_park": null
+  },
+  {
+   "id": "23065c5d-cc32-4052-e091-e7c3e110233d",
+   "company_id": "e95549f2-40a7-af31-df94-b0ff916140d9",
+   "lng": 80.21335,
+   "lat": 13.090125,
+   "accuracy": "building",
+   "address": "Synthetic address 70.1, Anna Nagar",
+   "neighbourhood": "anna-nagar",
+   "tech_park": null
+  },
+  {
+   "id": "30606362-2d76-efd3-134c-bcabfba3e82c",
+   "company_id": "e4658095-e5fd-0be8-beee-73d7eca7190f",
+   "lng": 80.24325,
+   "lat": 13.06015,
+   "accuracy": "building",
+   "address": "Synthetic address 64.1, Nungambakkam",
+   "neighbourhood": "nungambakkam",
+   "tech_park": null
+  },
+  {
+   "id": "32772a69-c201-da0a-29e6-416ca202cc43",
+   "company_id": "f427037d-db26-c940-7e14-ea48449cb2ce",
+   "lng": 80.220975,
+   "lat": 13.012825,
+   "accuracy": "street",
+   "address": "Synthetic address 53.1, Guindy",
+   "neighbourhood": "guindy",
+   "tech_park": null
+  },
+  {
+   "id": "34464e09-a83c-1056-9ab0-cc4372bfc697",
+   "company_id": "f4381ff6-dc4a-8f78-ab4b-ea41c596dbd2",
+   "lng": 80.2286,
+   "lat": 13.046675,
+   "accuracy": "street",
+   "address": "Synthetic address 49.1, T. Nagar",
+   "neighbourhood": "t-nagar",
+   "tech_park": null
+  },
+  {
+   "id": "35a1120f-4353-0e51-3c91-a20a9a21dafb",
+   "company_id": "5a003a43-c0f6-9b08-2610-6f13f14d7a06",
+   "lng": 80.220875,
+   "lat": 12.976875,
+   "accuracy": "street",
+   "address": "Synthetic address 59.1, Velachery",
+   "neighbourhood": "velachery",
+   "tech_park": null
+  },
+  {
+   "id": "52965b86-dd2d-bbb9-3c71-3b699e23d4a4",
+   "company_id": "1cdb28f7-3a6a-6327-2540-0e5838709c5f",
+   "lng": 80.174,
+   "lat": 13.017,
+   "accuracy": "campus",
+   "address": "Synthetic address 54.1, DLF IT Park",
+   "neighbourhood": null,
+   "tech_park": "dlf-it-park"
+  },
+  {
+   "id": "69bfefc1-eddb-e12d-a78a-47f3c5327c4f",
+   "company_id": "fbacbed6-cdf5-7483-8314-6a3756f5b55c",
+   "lng": 80.26695,
+   "lat": 13.038025,
+   "accuracy": "building",
+   "address": "Synthetic address 60.2, Mylapore",
+   "neighbourhood": "mylapore",
+   "tech_park": null
+  },
+  {
+   "id": "6b08ff7e-7ba6-4849-3068-d142e664a65a",
+   "company_id": "1d81f504-e676-3d1f-fc49-72c4437686e7",
+   "lng": 80.224725,
+   "lat": 13.009325,
+   "accuracy": "building",
+   "address": "Synthetic address 62.1, Guindy",
+   "neighbourhood": "guindy",
+   "tech_park": null
+  },
+  {
+   "id": "7634bfeb-9ef1-0643-10ea-24d88295899d",
+   "company_id": "9a934f0e-2198-fba8-3832-d30b83239dad",
+   "lng": 80.246,
+   "lat": 13,
+   "accuracy": "campus",
+   "address": "Synthetic address 48.1, Ascendas IT Park",
+   "neighbourhood": null,
+   "tech_park": "ascendas-it-park"
+  },
+  {
+   "id": "862f1ee5-dfe9-9343-0caf-bb987c479110",
+   "company_id": "8ab9f9b7-c9ec-2757-2551-473ac31cf8a4",
+   "lng": 80.2211,
+   "lat": 13.0077,
+   "accuracy": "building",
+   "address": "Synthetic address 50.2, Guindy",
+   "neighbourhood": "guindy",
+   "tech_park": null
+  },
+  {
+   "id": "900e1033-44dd-a711-e578-e7d292fe3366",
+   "company_id": "8ab9f9b7-c9ec-2757-2551-473ac31cf8a4",
+   "lng": 80.217125,
+   "lat": 12.980375,
+   "accuracy": "building",
+   "address": "Synthetic address 50.1, Velachery",
+   "neighbourhood": "velachery",
+   "tech_park": null
+  },
+  {
+   "id": "903bcaf0-cdff-be44-85d9-2180233a004b",
+   "company_id": "65f77a18-8d60-62ef-5668-ccf27dd0848f",
+   "lng": 80.23235,
+   "lat": 13.043175,
+   "accuracy": "building",
+   "address": "Synthetic address 58.1, T. Nagar",
+   "neighbourhood": "t-nagar",
+   "tech_park": null
+  },
+  {
+   "id": "ab6e2923-d6e3-d399-4edb-1e150483d9bf",
+   "company_id": "c0a8f488-9cd4-5ea4-3e1e-9256ff8aed7f",
+   "lng": 80.2096,
+   "lat": 13.081,
+   "accuracy": "street",
+   "address": "Synthetic address 61.1, Anna Nagar",
+   "neighbourhood": "anna-nagar",
+   "tech_park": null
+  },
+  {
+   "id": "c81da0d4-9b1e-ccea-13be-ad74489bb053",
+   "company_id": "076085bf-fcdb-725a-8c6a-67525d6b5e3c",
+   "lng": 80.174,
+   "lat": 13.017,
+   "accuracy": "campus",
+   "address": "Synthetic address 66.1, DLF IT Park",
+   "neighbourhood": null,
+   "tech_park": "dlf-it-park"
+  },
+  {
+   "id": "d26fb58d-b23b-a891-c965-8ca033620173",
+   "company_id": "707d7fdb-d4cc-ccd6-6a64-b5fd1262eebc",
+   "lng": 80.26125,
+   "lat": 13.0122,
+   "accuracy": "street",
+   "address": "Synthetic address 51.1, Adyar",
+   "neighbourhood": "adyar",
+   "tech_park": null
+  },
+  {
+   "id": "d93b11c8-31f4-86aa-ebe3-7f50ac855f53",
+   "company_id": "4ca6003b-38e0-581a-3f26-b8e43d374525",
+   "lng": 80.2361,
+   "lat": 13.039675,
+   "accuracy": "street",
+   "address": "Synthetic address 67.1, T. Nagar",
+   "neighbourhood": "t-nagar",
+   "tech_park": null
+  },
+  {
+   "id": "e84cd112-f0fc-2b94-0ced-707cfd2313c3",
+   "company_id": "a9db69ba-767e-2059-c995-c65cc5accd46",
+   "lng": 80.243975,
+   "lat": 12.96955,
+   "accuracy": "street",
+   "address": "Synthetic address 47.1, Perungudi",
+   "neighbourhood": "perungudi",
+   "tech_park": null
+  },
+  {
+   "id": "ed0e3689-2b67-00aa-4b8a-3af4cd953fc4",
+   "company_id": "6cc4bca8-86bc-7549-7cb6-f069090821bc",
+   "lng": 80.247725,
+   "lat": 12.96605,
+   "accuracy": "building",
+   "address": "Synthetic address 56.1, Perungudi",
+   "neighbourhood": "perungudi",
+   "tech_park": null
+  },
+  {
+   "id": "ee173e89-cb73-6734-9d78-1b2f2b13253f",
+   "company_id": "b41d7034-0e93-a7df-e4de-53c7197d8c1d",
+   "lng": 80.20585,
+   "lat": 13.0845,
+   "accuracy": "building",
+   "address": "Synthetic address 52.1, Anna Nagar",
+   "neighbourhood": "anna-nagar",
+   "tech_park": null
+  },
+  {
+   "id": "f25b2086-55b5-61e2-b3b0-964eff519cef",
+   "company_id": "bb048889-09cf-5223-a66b-f8cae3c3d383",
+   "lng": 80.251475,
+   "lat": 12.96255,
+   "accuracy": "street",
+   "address": "Synthetic address 65.1, Perungudi",
+   "neighbourhood": "perungudi",
+   "tech_park": null
+  },
+  {
+   "id": "f969b1e7-a585-5f18-bbae-fa53fafc120d",
+   "company_id": "78936062-ac1d-caaf-6cc7-0a3fcb1d26f1",
+   "lng": 80.232475,
+   "lat": 13.03805,
+   "accuracy": "street",
+   "address": "Synthetic address 55.2, T. Nagar",
+   "neighbourhood": "t-nagar",
+   "tech_park": null
+  }
+ ],
+ "jobs": [
+  {
+   "id": "0c939269-c4b3-7a5c-ece3-8e80620468f7",
+   "company_id": "bb048889-09cf-5223-a66b-f8cae3c3d383",
+   "title": "Product Manager",
+   "apply_url": "https://ember-loop-synthetic.example/careers/3",
+   "status": "suspect",
+   "last_checked_at": null
+  },
+  {
+   "id": "10f416d8-fe0f-8fdf-287b-3bf4973f51b8",
+   "company_id": "e8453e6a-7059-34b9-925a-876fc3f4a72c",
+   "title": "Mobile Engineer",
+   "apply_url": "https://cobalt-loop-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "163760d5-2ead-36a3-0fee-f789342e7bb6",
+   "company_id": "6cc4bca8-86bc-7549-7cb6-f069090821bc",
+   "title": "UX Designer",
+   "apply_url": "https://harbor-cloud-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "16def3c8-8ddb-9ed7-8d17-a0a6126e91d4",
+   "company_id": "45095248-dc21-ca8f-24cd-a2bd09ff94a3",
+   "title": "Product Manager",
+   "apply_url": "https://harbor-loop-synthetic.example/careers/2",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "24a90535-6739-84a8-ff1a-532ede647825",
+   "company_id": "b589ae6f-2e5a-432f-f3fb-3d76de7d14f0",
+   "title": "Site Reliability Engineer",
+   "apply_url": "https://indigo-systems-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "29e087e9-55ef-2846-a862-4913d9d14949",
+   "company_id": "076085bf-fcdb-725a-8c6a-67525d6b5e3c",
+   "title": "UX Designer",
+   "apply_url": "https://fjord-loop-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "2ad175dd-7aa7-be29-5d48-f35dd50a76e9",
+   "company_id": "1d81f504-e676-3d1f-fc49-72c4437686e7",
+   "title": "Site Reliability Engineer",
+   "apply_url": "https://birch-loop-synthetic.example/careers/2",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "2c82e453-2770-82ee-bd1a-c5dbef2253c0",
+   "company_id": "65f77a18-8d60-62ef-5668-ccf27dd0848f",
+   "title": "Product Manager",
+   "apply_url": "https://juniper-cloud-synthetic.example/careers/2",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "2f4f22b2-0b9c-fbf3-2135-5f81471f3ad4",
+   "company_id": "9a934f0e-2198-fba8-3832-d30b83239dad",
+   "title": "Frontend Engineer",
+   "apply_url": "https://lumen-systems-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "2fcd86c5-4262-6837-c92e-770b6214f8a2",
+   "company_id": "a9db69ba-767e-2059-c995-c65cc5accd46",
+   "title": "DevOps Engineer",
+   "apply_url": "https://kestrel-systems-synthetic.example/careers/2",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "306229a5-2265-d710-af72-34da4df6923d",
+   "company_id": "bb048889-09cf-5223-a66b-f8cae3c3d383",
+   "title": "Site Reliability Engineer",
+   "apply_url": "https://ember-loop-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "31e08081-fa22-d9d2-ee7e-a059ae2401c1",
+   "company_id": "1d81f504-e676-3d1f-fc49-72c4437686e7",
+   "title": "QA Engineer",
+   "apply_url": "https://birch-loop-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "31f7cb03-84e4-405d-9766-4c8648b05595",
+   "company_id": "e95549f2-40a7-af31-df94-b0ff916140d9",
+   "title": "Mobile Engineer",
+   "apply_url": "https://juniper-loop-synthetic.example/careers/2",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "50799e97-9d50-849e-d3c3-ba78bb4ca063",
+   "company_id": "a9db69ba-767e-2059-c995-c65cc5accd46",
+   "title": "Mobile Engineer",
+   "apply_url": "https://kestrel-systems-synthetic.example/careers/3",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "5cd7e8d3-4dea-fcaf-54ce-7f31ce75ccc5",
+   "company_id": "bb048889-09cf-5223-a66b-f8cae3c3d383",
+   "title": "Frontend Engineer",
+   "apply_url": "https://ember-loop-synthetic.example/careers/2",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "645ab268-8a42-c531-abbb-90f96f59f8f6",
+   "company_id": "e95549f2-40a7-af31-df94-b0ff916140d9",
+   "title": "DevOps Engineer",
+   "apply_url": "https://juniper-loop-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "6946c048-a239-224c-c87c-8226634676bb",
+   "company_id": "b41d7034-0e93-a7df-e4de-53c7197d8c1d",
+   "title": "Site Reliability Engineer",
+   "apply_url": "https://delta-cloud-synthetic.example/careers/2",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "6e48e03a-722e-9e57-c328-186ad98feb9f",
+   "company_id": "4ca6003b-38e0-581a-3f26-b8e43d374525",
+   "title": "Backend Engineer",
+   "apply_url": "https://garnet-loop-synthetic.example/careers/1",
+   "status": "suspect",
+   "last_checked_at": null
+  },
+  {
+   "id": "813b93cb-0ffd-4687-881e-d109579df9d4",
+   "company_id": "78936062-ac1d-caaf-6cc7-0a3fcb1d26f1",
+   "title": "Site Reliability Engineer",
+   "apply_url": "https://garnet-cloud-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "854fe536-f819-a95d-14a1-252d80b1ed90",
+   "company_id": "6cc4bca8-86bc-7549-7cb6-f069090821bc",
+   "title": "Data Scientist",
+   "apply_url": "https://harbor-cloud-synthetic.example/careers/2",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "90733771-62c3-bece-6b36-afc9e004d264",
+   "company_id": "c0a8f488-9cd4-5ea4-3e1e-9256ff8aed7f",
+   "title": "Security Engineer",
+   "apply_url": "https://amber-loop-synthetic.example/careers/2",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "97b8b382-b829-6585-9845-c66daf1edea3",
+   "company_id": "f427037d-db26-c940-7e14-ea48449cb2ce",
+   "title": "Data Scientist",
+   "apply_url": "https://ember-cloud-synthetic.example/careers/3",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "a4fe3c84-59e3-c376-24fa-d2bfc8d404ef",
+   "company_id": "fbacbed6-cdf5-7483-8314-6a3756f5b55c",
+   "title": "DevOps Engineer",
+   "apply_url": "https://lumen-cloud-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "af76376d-236a-1958-ac0f-3287e448850c",
+   "company_id": "45095248-dc21-ca8f-24cd-a2bd09ff94a3",
+   "title": "Frontend Engineer",
+   "apply_url": "https://harbor-loop-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "b203ceaf-5e29-b5ce-dcc6-5f2c1de1643f",
+   "company_id": "a9db69ba-767e-2059-c995-c65cc5accd46",
+   "title": "Backend Engineer",
+   "apply_url": "https://kestrel-systems-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "b857655f-d799-ed1e-dbb0-8115da27fb1d",
+   "company_id": "78936062-ac1d-caaf-6cc7-0a3fcb1d26f1",
+   "title": "Frontend Engineer",
+   "apply_url": "https://garnet-cloud-synthetic.example/careers/2",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "b971bc3c-a9fe-d9ad-7d85-20ef3b399d5a",
+   "company_id": "f427037d-db26-c940-7e14-ea48449cb2ce",
+   "title": "Mobile Engineer",
+   "apply_url": "https://ember-cloud-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "b99e8473-9a4b-48b3-582e-addc37265eaf",
+   "company_id": "6cc4bca8-86bc-7549-7cb6-f069090821bc",
+   "title": "QA Engineer",
+   "apply_url": "https://harbor-cloud-synthetic.example/careers/3",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "bf2cb7e3-9381-4db0-c0cb-fabcb15d0a31",
+   "company_id": "8ab9f9b7-c9ec-2757-2551-473ac31cf8a4",
+   "title": "DevOps Engineer",
+   "apply_url": "https://birch-cloud-synthetic.example/careers/1",
+   "status": "suspect",
+   "last_checked_at": null
+  },
+  {
+   "id": "d1fb6be7-a814-bcf8-1745-ecae1dd16fe4",
+   "company_id": "65f77a18-8d60-62ef-5668-ccf27dd0848f",
+   "title": "Frontend Engineer",
+   "apply_url": "https://juniper-cloud-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "d5431f78-b497-0c86-a00a-66bfe6834d5b",
+   "company_id": "4ca6003b-38e0-581a-3f26-b8e43d374525",
+   "title": "DevOps Engineer",
+   "apply_url": "https://garnet-loop-synthetic.example/careers/2",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "d8325caa-7df2-7956-c579-32c954b307ef",
+   "company_id": "8ab9f9b7-c9ec-2757-2551-473ac31cf8a4",
+   "title": "UX Designer",
+   "apply_url": "https://birch-cloud-synthetic.example/careers/3",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "dbed6111-e33a-5dc0-c6f3-c05c64256c60",
+   "company_id": "b41d7034-0e93-a7df-e4de-53c7197d8c1d",
+   "title": "QA Engineer",
+   "apply_url": "https://delta-cloud-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "e5f36359-d06d-5e91-87c7-342ecc8db91d",
+   "company_id": "45095248-dc21-ca8f-24cd-a2bd09ff94a3",
+   "title": "Security Engineer",
+   "apply_url": "https://harbor-loop-synthetic.example/careers/3",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "ed2576c7-cd06-3c83-693a-d4705172738d",
+   "company_id": "8db05f6b-fbb0-1e01-450c-cb6ec2da76d4",
+   "title": "Backend Engineer",
+   "apply_url": "https://indigo-cloud-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "f1c8eeb2-6a54-0890-4d07-7ad0a3e23774",
+   "company_id": "c0a8f488-9cd4-5ea4-3e1e-9256ff8aed7f",
+   "title": "Product Manager",
+   "apply_url": "https://amber-loop-synthetic.example/careers/1",
+   "status": "active",
+   "last_checked_at": null
+  },
+  {
+   "id": "f62bfc01-d0af-809a-950a-34ca5fae7084",
+   "company_id": "f427037d-db26-c940-7e14-ea48449cb2ce",
+   "title": "UX Designer",
+   "apply_url": "https://ember-cloud-synthetic.example/careers/2",
+   "status": "active",
+   "last_checked_at": null
+  }
+ ]
+}

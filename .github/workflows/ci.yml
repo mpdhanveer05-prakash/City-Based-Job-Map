@@ -38,7 +38,10 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      # The build reads its data from the committed synthetic sample (ADR-0010).
       - run: npm run build
+        env:
+          DATA_SOURCE: seed
       - name: Dependency audit (fails on high or critical)
         run: npm audit --audit-level=high
 
@@ -98,6 +101,11 @@ jobs:
       - run: npm run data -- --out "$RUNNER_TEMP/data" --require
         env:
           LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+      # The committed synthetic snapshot (what builds without a database read) is the seed's output.
+      - run: npm run data -- --export-seed
+        env:
+          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+      - run: git diff --exit-code -- supabase/seed/snapshots
 
   secret-scan:
     name: Secret scan (gitleaks)

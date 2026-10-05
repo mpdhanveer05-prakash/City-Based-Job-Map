@@ -1,22 +1,30 @@
-// Writes the static per-city datasets the explorer filters in the browser (ADR-0006, P4-01).
+// Writes the static per-city datasets the explorer filters in the browser (ADR-0006, P4-01, P4-02).
 //
-//   node scripts/build-datasets.mts [--out public/data] [--require]
+//   node scripts/build-datasets.mts [--out public/data] [--require] [--seed-fallback] [--export-seed]
 //
 // Reads `city_build_snapshot(city)` once per launch city, validates it, and writes
 //   <out>/<city>/<data_version>/{companies,offices,search,details}.json   and   <out>/manifest.json
 // Older version folders of a city are removed, so the output holds only the current data.
 //
-// Where the snapshot comes from (first match wins):
-//   NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY   a Supabase project, over its REST API,
-//                                                              with the public anon key (RLS applies)
-//   LOCAL_DATABASE_URL                                         a local Postgres, read as the anon role.
-//                                                              Development only: never a hosted database
-// With neither, the script says so and exits 0, unless --require is given (then it exits 1).
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+// Where the snapshot comes from is decided by lib/api/data-source.ts (ADR-0010): a Supabase project,
+// a local database, or, only when asked, the committed synthetic snapshot in supabase/seed/snapshots.
+// `.env.local` is read first, so `npm run build` sees the same settings as `npm run dev`.
+//
+//   --require        exit 1 when there is no data source (the build uses this: no data, no site)
+//   --seed-fallback  allow the committed synthetic snapshot when nothing else is set (`npm run dev`)
+//   --export-seed    read the local database and rewrite supabase/seed/snapshots/<city>.json, then stop
+//
+// Without --require, a missing source is reported and the script exits 0.
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fetchCitySnapshot, parseCitySnapshot } from "../lib/api/snapshot.ts";
+import { assertReleaseData, chooseDataSource, describeDataSource } from "../lib/api/data-source.ts";
 import { buildManifest, DATASET_FILE_NAMES, serializeDataset, type SerializedDataset } from "../lib/filters/dataset-files.ts";
+import type { CitySnapshot } from "../lib/filters/dataset.ts";
+import { snapshotIsSynthetic } from "../lib/filters/dataset.ts";
 import { CITY_SLUGS } from "../lib/filters/schema.ts";
+
+if (existsSync(".env.local")) process.loadEnvFile(".env.local");
 
 const args = process.argv.slice(2);
 const flag = (name: string) => args.includes(name);
@@ -26,9 +34,7 @@ const option = (name: string, fallback: string) => {
 };
 
 const outDir = path.resolve(option("--out", "public/data"));
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const localDatabaseUrl = process.env.LOCAL_DATABASE_URL;
+const seedDir = path.resolve("supabase/seed/snapshots");
 
 async function readFromLocalDatabase(connectionString: string, city: string): Promise<unknown> {
   // Dynamic import: `pg` is a development dependency and is not needed for the REST path.
@@ -46,17 +52,38 @@ async function readFromLocalDatabase(connectionString: string, city: string): Pr
   }
 }
 
-function describeSource(): string | null {
-  if (url && anonKey && !anonKey.startsWith("replace-")) return `Supabase REST (${new URL(url).host})`;
-  if (localDatabaseUrl) return "local database as the anon role";
-  return null;
+function readSeedSnapshot(city: string): CitySnapshot {
+  const file = path.join(seedDir, `${city}.json`);
+  if (!existsSync(file)) {
+    throw new Error(`${file} is missing. Run \`npm run data -- --export-seed\` against the seeded local database.`);
+  }
+  return parseCitySnapshot(JSON.parse(readFileSync(file, "utf8")), city);
 }
 
 async function main() {
-  const source = describeSource();
-  if (!source) {
+  const env = process.env;
+  const source = chooseDataSource(env, { seedFallback: flag("--seed-fallback") });
+
+  if (flag("--export-seed")) {
+    if (source.kind !== "local") {
+      console.error("build-datasets: --export-seed reads the local database. Set LOCAL_DATABASE_URL (and nothing that selects Supabase REST).");
+      process.exit(1);
+    }
+    mkdirSync(seedDir, { recursive: true });
+    for (const city of CITY_SLUGS) {
+      const snapshot = parseCitySnapshot(await readFromLocalDatabase(source.connectionString, city), city);
+      if (!snapshotIsSynthetic(snapshot)) {
+        throw new Error(`${city}: refusing to export a snapshot that is not entirely synthetic as the committed sample`);
+      }
+      writeFileSync(path.join(seedDir, `${city}.json`), JSON.stringify(snapshot, null, 1) + "\n");
+    }
+    console.log(`build-datasets: wrote ${CITY_SLUGS.length} synthetic snapshots to ${path.relative(process.cwd(), seedDir)}`);
+    return;
+  }
+
+  if (source.kind === "none") {
     const message =
-      "build-datasets: no data source. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, or LOCAL_DATABASE_URL for a local database.";
+      "build-datasets: no data source. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, or LOCAL_DATABASE_URL for a local database, or DATA_SOURCE=seed for the committed synthetic sample.";
     if (flag("--require")) {
       console.error(message);
       process.exit(1);
@@ -64,18 +91,29 @@ async function main() {
     console.log(`${message} Skipped.`);
     return;
   }
-  console.log(`build-datasets: reading ${source}, writing ${path.relative(process.cwd(), outDir) || "."}`);
+  console.log(`build-datasets: reading ${describeDataSource(source)}, writing ${path.relative(process.cwd(), outDir) || "."}`);
 
   const sets: SerializedDataset[] = [];
   for (const city of CITY_SLUGS) {
     const snapshot =
-      url && anonKey && !anonKey.startsWith("replace-")
-        ? await fetchCitySnapshot({ url, anonKey }, city)
-        : parseCitySnapshot(await readFromLocalDatabase(localDatabaseUrl!, city), city);
+      source.kind === "rest"
+        ? await fetchCitySnapshot({ url: source.url, anonKey: source.anonKey }, city)
+        : source.kind === "local"
+          ? parseCitySnapshot(await readFromLocalDatabase(source.connectionString, city), city)
+          : readSeedSnapshot(city);
     if (snapshot.companies.length === 0) {
       throw new Error(`${city} has no published companies: refusing to write an empty dataset`);
     }
     sets.push(serializeDataset(snapshot));
+  }
+
+  const releaseProblem = assertReleaseData(
+    env,
+    sets.map((s) => ({ city: s.city, synthetic: s.synthetic })),
+  );
+  if (releaseProblem) {
+    console.error(`build-datasets: ${releaseProblem}`);
+    process.exit(1);
   }
 
   mkdirSync(outDir, { recursive: true });
@@ -95,6 +133,7 @@ async function main() {
   const rows = Object.entries(manifest.cities).map(([city, c]) => ({
     city,
     version: c.data_version,
+    synthetic: c.synthetic,
     companies: c.counts.companies,
     offices: c.counts.offices,
     jobs: c.counts.jobs,

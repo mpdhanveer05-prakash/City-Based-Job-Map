@@ -50,6 +50,16 @@ const jobSchema = z.object({
   last_checked_at: isoOrNull,
 });
 
+const position = z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)]);
+const ring = z.array(position).min(4);
+
+/** The city limit as the build simplified it: GeoJSON, a MultiPolygon in the database. */
+const boundarySchema = z.object({
+  type: z.literal("MultiPolygon"),
+  coordinates: z.array(z.array(ring).min(1)).min(1),
+});
+export type CityBoundary = z.infer<typeof boundarySchema>;
+
 const citySchema = z.object({
   slug: slugSchema,
   name: z.string().min(1),
@@ -58,12 +68,15 @@ const citySchema = z.object({
   centre: z.tuple([z.number(), z.number()]),
   default_zoom: z.number(),
   data_version: z.number().int().positive(),
+  boundary: boundarySchema,
 });
 
 /** What `city_build_snapshot` returns. Validated at build time: it is an external input. */
 export const citySnapshotSchema = z.object({
   version: z.literal(1),
   city: citySchema,
+  /** How many of `companies` are synthetic sample data (`company.is_synthetic`). */
+  synthetic_companies: z.number().int().nonnegative(),
   neighbourhoods: z.array(refSchema),
   tech_parks: z.array(refSchema),
   sectors: z.array(refSchema),
@@ -86,6 +99,8 @@ export type CompanySummary = Pick<
 
 export type CompaniesFile = {
   version: 1;
+  /** True when every company here is synthetic sample data. The pages label it, and a release build refuses it. */
+  synthetic: boolean;
   city: CityInfo;
   neighbourhoods: Ref[];
   tech_parks: Ref[];
@@ -122,6 +137,7 @@ export type CityDatasetFiles = {
 
 /** What the browser filters: the first three files merged. */
 export type CityDataset = {
+  synthetic: boolean;
   city: CityInfo;
   neighbourhoods: Ref[];
   tech_parks: Ref[];
@@ -130,6 +146,19 @@ export type CityDataset = {
   offices: Office[];
   search: SearchEntry[];
 };
+
+/**
+ * Whether a snapshot is synthetic sample data: all of its companies are. A mix of real and synthetic
+ * companies is an error (the sample data must never sit beside real records), so it throws.
+ */
+export function snapshotIsSynthetic(snapshot: CitySnapshot): boolean {
+  const count = snapshot.synthetic_companies;
+  const total = snapshot.companies.length;
+  if (count > 0 && count < total) {
+    throw new Error(`${snapshot.city.slug}: ${count} of ${total} companies are synthetic; real and sample data must not be mixed`);
+  }
+  return total > 0 && count === total;
+}
 
 /** Splits a validated snapshot into the four files. Deterministic: same snapshot, same files. */
 export function splitSnapshot(snapshot: CitySnapshot): CityDatasetFiles {
@@ -150,6 +179,7 @@ export function splitSnapshot(snapshot: CitySnapshot): CityDatasetFiles {
   return {
     companies: {
       version: 1,
+      synthetic: snapshotIsSynthetic(snapshot),
       city: snapshot.city,
       neighbourhoods: snapshot.neighbourhoods,
       tech_parks: snapshot.tech_parks,
@@ -187,6 +217,7 @@ export function splitSnapshot(snapshot: CitySnapshot): CityDatasetFiles {
 /** Merges the files the explorer loads into one dataset. */
 export function mergeDataset(files: Pick<CityDatasetFiles, "companies" | "offices" | "search">): CityDataset {
   return {
+    synthetic: files.companies.synthetic,
     city: files.companies.city,
     neighbourhoods: files.companies.neighbourhoods,
     tech_parks: files.companies.tech_parks,

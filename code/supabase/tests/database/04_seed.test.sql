@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(44);
+select plan(50);
 
 create schema tests;
 grant usage on schema tests to anon;
@@ -104,6 +104,23 @@ select is((select count(*) filter (where company_count > 0)::int from public.com
   'the stage facet has a company at every stage in Bengaluru');
 select cmp_ok((select count(*)::int from public.company_filter('bangalore', '{"types":["startup"],"stages":["seed"]}')), '>=', 1,
   'Startup + Seed returns companies');
+reset role;
+
+-- ---------------------------------------------------------------------------
+-- The build snapshot says it is synthetic and carries the city boundary (P4-02)
+-- ---------------------------------------------------------------------------
+
+select is((select count(*)::int from company where is_synthetic), 70, 'every sample company is flagged is_synthetic');
+select tests.become_anon();
+select is((public.city_build_snapshot('bangalore') -> 'synthetic_companies')::int, 48,
+  'the Bengaluru snapshot counts 48 synthetic companies, all of them');
+select is((public.city_build_snapshot('chennai') -> 'synthetic_companies')::int, 24, 'and Chennai 24');
+select is(public.city_build_snapshot('bangalore') -> 'city' -> 'boundary' ->> 'type', 'MultiPolygon',
+  'the snapshot carries the city boundary as a MultiPolygon');
+select cmp_ok(jsonb_array_length(public.city_build_snapshot('chennai') -> 'city' -> 'boundary' -> 'coordinates' -> 0 -> 0), '>=', 4,
+  'whose outer ring has at least four positions');
+select is((public.city_build_snapshot('bangalore') -> 'companies' -> 0 ->> 'id')::uuid, md5('company:' || (public.city_build_snapshot('bangalore') -> 'companies' -> 0 ->> 'slug'))::uuid,
+  'ids come from the slug, so the committed snapshot is stable across db reset');
 reset role;
 
 select * from finish();

@@ -119,8 +119,11 @@ update seed_company s set stage =
 from (select n, row_number() over (order by n) as rk from seed_company where is_startup) r
 where r.n = s.n;
 
-insert into company (slug, name, domain, description, size_band, startup_stage, website_url, careers_url, status, source_id)
+-- Ids are derived from the slug (md5 as a uuid), so every `db reset` gives the same ids and the
+-- committed dataset snapshot (supabase/seed/snapshots) stays byte-stable.
+insert into company (id, slug, name, domain, description, size_band, startup_stage, website_url, careers_url, status, source_id, is_synthetic)
 select
+  md5('company:' || slug)::uuid,
   slug,
   adj || ' ' || noun || ' (synthetic)',
   slug || '.example',
@@ -130,7 +133,8 @@ select
   'https://' || slug || '.example',
   'https://' || slug || '.example/careers',
   case when n % 23 = 0 then 'draft' else 'published' end,
-  1
+  1,
+  true
 from seed_company;
 
 insert into company_type_tag (company_id, type)
@@ -173,8 +177,9 @@ select b.n, b.city_slug, b.seq,
        case when b.seq = 1 and b.n % 6 = 0 then 'tech_park' else 'neighbourhood' end as kind
 from base b;
 
-insert into office (company_id, city_id, neighbourhood_id, tech_park_id, address, geom, accuracy, verification, status)
+insert into office (id, company_id, city_id, neighbourhood_id, tech_park_id, address, geom, accuracy, verification, status)
 select
+  md5('office:' || s.slug || ':' || o.city_slug || ':' || o.seq)::uuid,
   c.id,
   ci.id,
   case when o.kind = 'neighbourhood' then nb.id end,
@@ -203,8 +208,9 @@ left join tech_park tp on tp.city_id = ci.id and tp.slug = a.slug and o.kind = '
 -- No posting dates and no link checks: none happened.
 -- ---------------------------------------------------------------------------
 
-insert into job (company_id, source_id, title, title_norm, apply_url, dedup_hash, exp_min_years, exp_max_years, work_mode, status)
+insert into job (id, company_id, source_id, title, title_norm, apply_url, dedup_hash, exp_min_years, exp_max_years, work_mode, status)
 select
+  md5('job:' || s.slug || ':' || k)::uuid,
   c.id,
   1,
   t.title,

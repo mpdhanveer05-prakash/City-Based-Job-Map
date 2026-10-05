@@ -45,6 +45,7 @@ export default defineConfig({
         url: `http://localhost:${PORT}`,
         reuseExistingServer: !process.env.CI,
         timeout: 240_000,
-        env: { DEV_ROUTES: "on" },
+        // The build needs a data source (ADR-0010); the e2e suite runs on the committed synthetic sample.
+        env: { DEV_ROUTES: "on", DATA_SOURCE: "seed" },
       },
 });

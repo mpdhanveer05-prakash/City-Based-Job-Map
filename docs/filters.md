@@ -89,7 +89,11 @@ So selecting Startup does not zero the MNC count: the user can still add MNC. Co
 | `<city>/<version>/details.json` | description, links, last verified, and the jobs to list | on a company page |
 | `manifest.json` | each city's current version, counts, file paths, and byte sizes (no timestamp) | first |
 
-The version is `city.data_version`, so a file URL changes when the data does and can be cached for a long time. Older version folders are removed on each run. The data source is Supabase's REST API with the public anon key (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`; Row-Level Security applies), or `LOCAL_DATABASE_URL` for a local database as the anon role (development only). With neither, the script skips with a message; `--require` makes that an error. It is not yet part of `npm run build`: that is decided with the pages that read it (P4-02).
+The version is `city.data_version`, so a file URL changes when the data does and can be cached for a long time. Older version folders are removed on each run.
+
+**Data source** ([ADR-0010](decisions/0010-build-data-source.md), `lib/api/data-source.ts`): a Supabase project over REST with the public anon key (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`; RLS applies), else `LOCAL_DATABASE_URL` (a local database as the anon role, development only), else the committed synthetic snapshot in `supabase/seed/snapshots/` **only** when `DATA_SOURCE=seed` or `--seed-fallback` is given. With nothing, the script skips with a message, and `--require` (what `npm run build` passes) makes that an error. `npm run data -- --export-seed` rewrites the committed snapshots from the seeded local database. `RELEASE_BUILD=1` refuses synthetic data.
+
+**Synthetic data:** `company.is_synthetic` marks sample records; the snapshot's `synthetic_companies` counts them; `companies.json` and the manifest carry `synthetic: true` only when all of a city's companies are (a mix is a build error). `city.boundary` is the simplified city limit (a GeoJSON MultiPolygon).
 
 `lib/filters/filter.ts` is the TypeScript mirror: `prepareIndex(dataset)` once, then `companyFilter`, `cityPoints`, `searchCompanies`, `companyFacets`. Before `search.json` has loaded, pass an empty `search` list: a search then matches names and locations only.
 

@@ -13,5 +13,6 @@ Each ADR is short: context, decision, consequences, status (Proposed · Accepted
 | [0007](0007-workers-static-assets.md) | Serve the static export as Workers static assets, not legacy Pages | Accepted |
 | [0008](0008-basemap.md) | Basemap: Geoapify Positron, re-coloured in MapLibre | Accepted · Open (free allowance vs launch traffic, D-11) |
 | [0009](0009-marker-layer-projection.md) | The marker layer projects on the CPU; the explorer camera is north-up | Accepted (implementation) · Proposed (rotation and tilt off) |
+| [0010](0010-build-data-source.md) | Where the build gets its city data; keeping synthetic data out of production | Accepted (release rule to confirm) |
 
 Open decisions are listed in the [plan.md decision register](../../plan.md#open-decision-register).

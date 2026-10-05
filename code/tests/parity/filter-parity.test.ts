@@ -52,9 +52,9 @@ async function insertTrickyFixtures(): Promise<void> {
     const lng = 77.5 + n * 0.01;
     await client.query(
       `with c as (
-         insert into company (slug, name, domain, website_url, status, startup_stage, source_id)
+         insert into company (slug, name, domain, website_url, status, startup_stage, source_id, is_synthetic)
          values ($1::text, $2::text, $1::text || '.example', 'https://' || $1::text || '.example', 'published', $3::startup_stage,
-                 (select id from source order by id limit 1))
+                 (select id from source order by id limit 1), true)
          returning id
        ), tags as (
          insert into company_type_tag (company_id, type)

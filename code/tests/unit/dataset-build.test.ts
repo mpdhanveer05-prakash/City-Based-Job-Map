@@ -8,7 +8,9 @@ import { DATASET_FILE_NAMES, buildManifest, datasetPath, serializeDataset } from
 const id = (n: number) => `00000000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
 const snapshot: CitySnapshot = citySnapshotSchema.parse({
   version: 1,
-  city: { slug: "chennai", name: "Chennai", aliases: ["Madras"], status: "beta", centre: [80.27, 13.08], default_zoom: 11, data_version: 3 },
+  city: { slug: "chennai", name: "Chennai", aliases: ["Madras"], status: "beta", centre: [80.27, 13.08], default_zoom: 11, data_version: 3,
+    boundary: { type: "MultiPolygon", coordinates: [[[[80.1, 12.85], [80.33, 12.85], [80.33, 13.2], [80.1, 13.2], [80.1, 12.85]]]] } },
+  synthetic_companies: 1,
   neighbourhoods: [{ slug: "adyar", name: "Adyar" }],
   tech_parks: [],
   sectors: [{ slug: "saas", name: "SaaS" }],
@@ -34,6 +36,7 @@ describe("serializeDataset", () => {
     expect(set.city).toBe("chennai");
     expect(set.dataVersion).toBe(3);
     expect(set.counts).toEqual({ companies: 1, offices: 1, jobs: 1 });
+    expect(set.synthetic).toBe(true);
     for (const text of Object.values(set.files)) {
       expect(text).not.toMatch(/\n/);
       expect(() => JSON.parse(text)).not.toThrow();
