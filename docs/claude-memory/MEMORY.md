@@ -5,3 +5,4 @@
 - [Setup and secrets](project-setup-and-secrets.md) — repo URL, where the Geoapify key lives, new-laptop guide
 - [Playwright wipes test-results](feedback-playwright-wipes-test-results.md) — write gate numbers to gate-results/; do not restart a run killed for low memory
 - [Bash tool backslashes](feedback-bash-tool-backslashes.md) — Bash collapses backslashes; write files with Write/Edit when text has escapes
+- [Admin e2e and local stack](feedback-admin-e2e-and-local-stack.md) — db reset first, typegen before builds (stray next dev), Docker DNS 503 flake, one heavy job at a time
