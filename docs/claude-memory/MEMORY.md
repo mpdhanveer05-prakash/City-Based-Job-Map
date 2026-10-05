@@ -1,4 +1,4 @@
-- [Laptops](user-two-laptops.md) — owner uses several laptops and is moving to a Mac (4 Oct 2026); keep code and this memory synced via GitHub
+- [One machine](user-two-laptops.md) — owner works only on this Windows laptop for the whole project (5 Oct 2026); no Mac move
 - [Push only when asked](feedback-push-only-when-asked.md) — local commit per task, push to main on request, then check CI
 - [Stale test server](feedback-stale-test-server.md) — Playwright reuses port 3100 and skips the rebuild; kill wrangler by process name
 - [E2E conventions](feedback-e2e-suite-conventions.md) — workers, timeouts, key and no-key runs, deterministic gates, pixel reading

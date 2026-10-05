@@ -1,14 +1,15 @@
 ---
 name: user-two-laptops
-description: The owner works from more than one laptop and needs code and Claude memory kept in sync through GitHub; from 2026-10-04 the main machine is moving from Windows to a Mac
+description: "The owner works only on this Windows laptop for the whole project (decided 2026-10-05, reversing the 2026-10-04 plan to move to a Mac); no multi-machine sync needed"
 metadata:
+  node_type: memory
   type: user
+  originSessionId: f9750ba0-ad84-41ba-84d7-23087fc63beb
+  modified: 2026-10-05T04:25:28.746Z
 ---
 
-The project owner works on Company Map from **more than one laptop**. All of them must have the same code and the same Claude Code memory, so everything needed to resume lives in the GitHub repository: code, docs, `docs/progress.md` (the hand-off), and a copy of this memory in `docs/claude-memory/`.
+On **2026-10-05** the owner decided to work on **one machine only, this Windows 11 laptop (PowerShell/Git Bash), from the start of the project to the end**. They are **not** moving to a Mac and will not switch between laptops. This reverses the 2026-10-04 note that said they would continue on a Mac.
 
-On 2026-10-04 the owner said they cannot free enough memory on the Windows laptop (the map gate needs about 4 GB free) and will **continue on a Mac** by cloning the repo. Expect macOS paths, zsh or bash, Docker Desktop for Mac, and no PowerShell. The first Mac session should follow `docs/setup-new-machine.md` and then `docs/progress.md` ("Current state").
+**Why:** the owner prefers a single system. The earlier Mac plan came from the Windows laptop having too little free memory (about 4 GB needed) for the map gate run.
 
-**Why:** the Claude Code memory folder sits under the home directory, outside the repo, so it does not sync by itself (the owner asked for this on 2026-10-01).
-
-**How to apply:** when a memory is added, changed, or deleted, update `docs/claude-memory/` too and say so in the commit. Start a session by reading `CLAUDE.md`, `plan.md`, and `docs/progress.md`. See [[project-setup-and-secrets]], [[feedback-push-only-when-asked]], and [[feedback-playwright-wipes-test-results]].
+**How to apply:** assume Windows paths and shells; do not give macOS instructions or ask which machine they are on. The memory-sync and new-laptop material in `docs/claude-memory/` and `docs/setup-new-machine.md` is kept only as a backup, not the working flow. The memory-heavy P2-09 gate run still needs about 4 GB free on this laptop, so close other apps first and run it with nothing else heavy open (see [[feedback-playwright-wipes-test-results]]). Start a session by reading `CLAUDE.md`, `plan.md`, and `docs/progress.md`. See also [[project-setup-and-secrets]] and [[feedback-push-only-when-asked]].
