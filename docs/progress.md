@@ -15,6 +15,13 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-06: Feed governance, classification definitions, prefetch fix (P9-17), approval attribution (Completed locally)
+- **Feeds** (ADR-0022 §7, migration `20261006170000_feed_governance.sql`): only feeds approved through `approve_job_feed` (reviewer, with a note) are read; changing a feed withdraws its approval; an applicant-tracking link must be under this employer's board; a link moved to another domain and a reference listed twice are held, not applied; `feed_event` records inserts, changes (old and new value), holds, suspect, and closure; feed evidence names its feed. Failed fetches still change no job.
+- **Definitions:** the owner's baseline for Startup and MNC is in ADR-0023 and the curation guide (a reverted edit kept ADR-0016 unchanged, per the ADR rule).
+- **P9-17:** the Windows export nests prefetch files (`path.relative` uses backslashes); 156 were moved to their flat names by the new postbuild step, public pages included. `tests/e2e/navigation.spec.ts` shows no failing same-origin request on the journey, and Apply at 44 px or more in every frame from first paint, on a cold cache and Slow-4G emulation, desktop and phone. The earlier 17 px reading did not recur.
+- **Audit approval:** an approver must be on `security/authorized-approvers.json` (owner-maintained, empty); name checks are documented as input validation only. Owner and approver remain pending.
+- **Verified (from `code/`):** lint 0 problems; typecheck clean; `npm test` **621 passed**; `npx supabase test db` **620 passed**; pipeline pytest **84 passed**; `npm run audit`: technical pass, approval 1 not approved; `--release`: exit 1, as designed; `npm run test:admin` **46 passed**; `npm run test:e2e` **272 passed, 0 failed, 52 skipped** (17.1 min).
+
 ### 2026-10-06: Evidence follow-ups (ADR-0022), phone coverage (P9-16), curation guide (Completed locally)
 - **Built:** migration `20261006150000_evidence_jobs_refresh.sql`:
   - job evidence (title, employer, location and work arrangement, application URL), recorded by the pipeline from the job's own posting and required (reviewed) for an admin to publish a job; `job.closed_at`;

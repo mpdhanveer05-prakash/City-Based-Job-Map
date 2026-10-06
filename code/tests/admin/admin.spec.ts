@@ -660,7 +660,7 @@ test.describe("what the open API shows an anonymous caller", () => {
     expect(all.length).toBeGreaterThan(0);
     expect(new Set(all.map((c) => c.status))).toEqual(new Set(["published"]));
 
-    const tables = ["admin_user", "audit_log", "submission", "feedback_rate", "link_click_daily", "heartbeat", "verification_check", "verification_check_default", "job_feed", "source", "site_state", "import_batch", "field_evidence", "publication_approval"];
+    const tables = ["admin_user", "audit_log", "submission", "feedback_rate", "link_click_daily", "heartbeat", "verification_check", "verification_check_default", "job_feed", "source", "site_state", "import_batch", "field_evidence", "publication_approval", "feed_event", "evidence_check", "evidence_refresh_policy"];
     for (const table of tables) {
       const res = await request.get(`${SUPABASE}/rest/v1/${table}?select=*&limit=5`, { headers: anon() });
       // Either the table is not reachable at all, or it is reachable and empty to this caller. Never rows.

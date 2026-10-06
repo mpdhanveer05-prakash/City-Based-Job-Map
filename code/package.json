@@ -10,7 +10,7 @@
     "dev": "next dev",
     "prebuild": "node scripts/copy-maplibre.mts && node scripts/build-datasets.mts --require && node -e \"require('node:fs').rmSync('.next/dev',{recursive:true,force:true})\"",
     "build": "next build",
-    "postbuild": "node scripts/inject-csp.mts out && node scripts/check-static-limits.mts out",
+    "postbuild": "node scripts/fix-segment-files.mts out && node scripts/inject-csp.mts out && node scripts/check-static-limits.mts out",
     "lint": "eslint",
     "pretypecheck": "node -e \"require('node:fs').rmSync('.next/dev',{recursive:true,force:true})\"",
     "typecheck": "next typegen && tsc --noEmit",

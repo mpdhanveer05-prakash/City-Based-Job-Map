@@ -41,7 +41,7 @@ def load_feeds(conn: psycopg.Connection) -> list[FeedConfig]:
         select f.id, f.company_id::text as company_id, c.slug as company_slug, c.domain as company_domain,
                f.source_id, f.provider, f.identifier
         from job_feed f join company c on c.id = f.company_id
-        where f.active and c.status = 'published'
+        where f.active and c.status = 'published' and f.approved_at is not null  -- approved official feeds only (ADR-0022)
         order by f.id
         """
     ).fetchall()
@@ -72,7 +72,13 @@ def existing_jobs(conn: psycopg.Connection, company_id: str, source_id: int) -> 
 def apply_plan(conn: psycopg.Connection, feed: FeedConfig, plan: Plan, cities_for_job, cities: dict[str, tuple[int, list[str]]]) -> dict[str, int]:
     """Writes the plan. Each row is its own savepoint, so one that collides (the same title and link already exists under
     another source) is counted and skipped without losing the rest. `cities_for_job(FeedJob) -> list[slug]`."""
-    done = {"new": 0, "refreshed": 0, "suspect": 0, "expired": 0, "duplicates": 0, "unlisted": 0}
+    done = {"new": 0, "refreshed": 0, "suspect": 0, "expired": 0, "duplicates": 0, "unlisted": 0, "held": 0}
+
+    def event(kind: str, job_id: str | None, ref: str | None, field_name: str | None = None, old: str | None = None, new: str | None = None) -> None:
+        conn.execute(
+            "insert into feed_event (feed_id, job_id, kind, field, old_value, new_value, external_ref) values (%s, %s, %s, %s, %s, %s, %s)",
+            (feed.id, job_id, kind, field_name, old, new, ref),
+        )
 
     def set_cities(job_id: str, job: FeedJob) -> bool:
         slugs = [s for s in cities_for_job(job) if s in cities]
@@ -103,7 +109,8 @@ def apply_plan(conn: psycopg.Connection, feed: FeedConfig, plan: Plan, cities_fo
                     continue
                 set_cities(row["id"], job)
                 # The job's own posting is the evidence for its title, employer, location, and link (ADR-0022).
-                conn.execute("select record_feed_job_evidence(%s)", (row["id"],))
+                conn.execute("select record_feed_job_evidence(%s, %s)", (row["id"], feed.id))
+                event("inserted", row["id"], job.external_ref)
                 done["new"] += 1
         except psycopg.errors.CheckViolation:
             done["unlisted"] += 1
@@ -111,6 +118,9 @@ def apply_plan(conn: psycopg.Connection, feed: FeedConfig, plan: Plan, cities_fo
     for known, job in plan.refresh:
         try:
             with conn.transaction():
+                for name, old, new in (("title", known.title, job.title), ("apply_url", known.apply_url, job.apply_url)):
+                    if old != new:
+                        event("changed", known.id, job.external_ref, name, old, new)
                 conn.execute(
                     """
                     update job set title = %s, apply_url = %s, status = 'active', consecutive_failures = 0,
@@ -121,15 +131,22 @@ def apply_plan(conn: psycopg.Connection, feed: FeedConfig, plan: Plan, cities_fo
                     (job.title, job.apply_url, job.work_mode, job.posted_at, known.id),
                 )
                 set_cities(known.id, job)
-                conn.execute("select record_feed_job_evidence(%s)", (known.id,))
+                conn.execute("select record_feed_job_evidence(%s, %s)", (known.id, feed.id))
                 done["refreshed"] += 1
         except psycopg.errors.UniqueViolation:
             done["duplicates"] += 1
 
+    # Held for review: recorded, not applied; the job keeps its current, evidenced values (ADR-0022).
+    for kind, known, job in plan.held:
+        event(kind, known.id if known else None, job.external_ref, "apply_url", known.apply_url if known else None, job.apply_url)
+        done["held"] += 1
+
     for known in plan.suspect:
+        event("suspect_missing", known.id, known.external_ref)
         conn.execute("update job set status = 'suspect', consecutive_failures = greatest(consecutive_failures, 1), last_checked_at = now() where id = %s", (known.id,))
         done["suspect"] += 1
     for known in plan.expire:
+        event("closed_missing", known.id, known.external_ref)
         conn.execute("update job set status = 'expired', consecutive_failures = 2, last_checked_at = now() where id = %s", (known.id,))
         done["expired"] += 1
     return done

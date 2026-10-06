@@ -51,7 +51,8 @@ def world(db):
         (company, city),
     )
     feed = db.execute(
-        "insert into job_feed (company_id, source_id, provider, identifier) values (%s, %s, 'greenhouse', 'pipeline-test') returning id",
+        # Approved (ADR-0022): the pipeline reads approved feeds only. Recorded here as the owner, not through approve_job_feed.
+        "insert into job_feed (company_id, source_id, provider, identifier, approved_by, approved_at, approval_note) values (%s, %s, 'greenhouse', 'pipeline-test', gen_random_uuid(), now(), 'test fixture') returning id",
         (company, source),
     ).fetchone()["id"]
     return {"source": source, "company": company, "city": city, "feed": feed}

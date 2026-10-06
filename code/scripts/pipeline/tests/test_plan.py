@@ -3,7 +3,7 @@ import hashlib
 
 import pytest
 
-from scripts.pipeline.links import KNOWN_ATS_HOSTS, acceptable_apply_link, company_owns
+from scripts.pipeline.links import KNOWN_ATS_HOSTS, acceptable_apply_link, company_owns, employer_link
 from scripts.pipeline.models import FeedJob
 from scripts.pipeline.plan import ExistingJob, cities_for, dedup_hash, plan_sync, title_norm
 
@@ -20,7 +20,7 @@ def test_new_jobs_are_inserted_and_known_ones_refreshed():
     plan = plan_sync([existing("1"), existing("2")], [feed_job("2"), feed_job("3")])
     assert [j.external_ref for j in plan.inserts] == ["3"]
     assert [(e.external_ref, f.external_ref) for e, f in plan.refresh] == [("2", "2")]
-    assert plan.counts() == {"new": 1, "refreshed": 1, "suspect": 1, "expired": 0}
+    assert plan.counts() == {"new": 1, "refreshed": 1, "suspect": 1, "expired": 0, "held": 0}
 
 
 def test_a_live_job_missing_from_the_feed_is_suspect_the_first_time_and_expired_the_second():
@@ -49,7 +49,7 @@ def test_jobs_with_no_external_ref_are_never_touched_by_a_feed():
 def test_an_empty_feed_is_not_believed_when_the_company_has_live_jobs():
     plan = plan_sync([existing("1"), existing("2", "suspect", 1)], [])
     assert plan.guarded and "not believed" in plan.guarded
-    assert plan.counts() == {"new": 0, "refreshed": 0, "suspect": 0, "expired": 0}
+    assert plan.counts() == {"new": 0, "refreshed": 0, "suspect": 0, "expired": 0, "held": 0}
 
 
 def test_an_empty_feed_for_a_company_with_no_live_jobs_is_just_empty():
@@ -117,3 +117,30 @@ def test_the_ats_list_matches_the_sites():
     ts = pathlib.Path(__file__).resolve().parents[3] / "lib" / "links.ts"
     block = re.search(r"KNOWN_ATS_HOSTS: readonly string\[\] = \[(.*?)\];", ts.read_text(encoding="utf-8"), re.S).group(1)
     assert sorted(re.findall(r'"([^"]+)"', block)) == sorted(KNOWN_ATS_HOSTS)
+
+
+# ADR-0022: held for review instead of applied.
+
+def test_a_link_that_moves_to_another_domain_is_held_and_not_applied():
+    plan = plan_sync([existing("1")], [feed_job("1", url="https://elsewhere.example/jobs/1")])
+    assert plan.refresh == [] and [(k, e.external_ref) for k, e, _ in plan.held] == [("held_domain_change", "1")]
+    assert plan.suspect == [] and plan.expire == []  # held, so not "missing" either
+
+
+def test_a_link_that_changes_path_on_the_same_domain_is_refreshed():
+    plan = plan_sync([existing("1")], [feed_job("1", url="https://acme.example/careers/1-new")])
+    assert len(plan.refresh) == 1 and plan.held == []
+
+
+def test_a_reference_the_feed_lists_twice_is_ambiguous_and_held():
+    plan = plan_sync([existing("1")], [feed_job("1"), feed_job("1", title="Other")])
+    assert [k for k, _, _ in plan.held] == ["held_ambiguous", "held_ambiguous"] and plan.refresh == [] and plan.inserts == []
+    assert plan.suspect == []
+
+
+def test_an_ats_link_must_be_under_this_employers_board():
+    assert employer_link("https://acme.example/jobs/1", "acme.example", "acme")
+    assert employer_link("https://job-boards.greenhouse.io/acme/jobs/123", "acme.example", "acme")
+    assert employer_link("https://acme.recruitee.com/o/engineer", "acme.example", "acme")  # the board as a subdomain
+    assert not employer_link("https://job-boards.greenhouse.io/othercorp/jobs/9", "acme.example", "acme")
+    assert not employer_link("https://evil.example/jobs/1", "acme.example", "acme")

@@ -26,5 +26,6 @@ Each ADR is short: context, decision, consequences, status (Proposed · Accepted
 | [0020](0020-monitoring-analytics-and-owner-choices.md) | Monitoring, analytics, JavaScript budget, basemap evaluation, admin MFA, backups | Accepted |
 | [0021](0021-field-evidence-and-publication-gates.md) | Evidence for every factual field, and publication gates | Accepted; implemented (P9-07) |
 | [0022](0022-evidence-for-jobs-changes-and-refresh.md) | Job evidence, reviewed changes to public facts, refresh checks, launch enforcement, exception approval | Accepted; implemented |
+| [0023](0023-company-classification-definitions.md) | Company classification definitions (Startup, MNC, Product) | Accepted |
 
 Open decisions are listed in the [plan.md decision register](../../plan.md#open-decision-register).

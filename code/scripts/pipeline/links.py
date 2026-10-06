@@ -28,6 +28,25 @@ def _matches(host: str, domain: str) -> bool:
     return host == domain or host.endswith("." + domain)
 
 
+def host_of(url: str) -> str:
+    return (urllib.parse.urlsplit(url).hostname or "").lower()
+
+
+def employer_link(url: str, domain: str, board: str) -> bool:
+    """An apply link a feed may publish (ADR-0022): on the employer's own domain, or on a known applicant-tracking host AND
+    under this employer's board there (the board name in the host or the path), so a feed cannot publish another
+    employer's posting."""
+    if company_owns(url, domain):
+        return True
+    if not acceptable_apply_link(url, domain):
+        return False
+    parts = urllib.parse.urlsplit(url)
+    board = board.strip().lower()
+    labels = (parts.hostname or "").lower().split(".")
+    segments = [s for s in parts.path.lower().split("/") if s]
+    return bool(board) and (board in labels or board in segments)
+
+
 def company_owns(url: str, domain: str) -> bool:
     """True when the https URL's host is the company's domain or one of its subdomains."""
     parts = urllib.parse.urlsplit(url)

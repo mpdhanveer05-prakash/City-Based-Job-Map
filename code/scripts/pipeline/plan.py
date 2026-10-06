@@ -6,7 +6,9 @@ Rules (docs/data-model.md "Pipeline", architecture plan JOB05):
   * a live job (active or suspect) missing from the feed is suspect the first time and expired the second: two checks,
     so one odd response never hides a job that is still open;
   * an EMPTY feed when the company has live jobs is not believed: nothing changes and the run says so (a provider error
-    or a changed page often looks like "no jobs").
+    or a changed page often looks like "no jobs");
+  * ADR-0022: a job whose application link moves to ANOTHER DOMAIN is held for review and not changed, and a reference the
+    feed lists more than once is ambiguous and held (none of its entries is applied). A held job is not marked missing.
 """
 from __future__ import annotations
 
@@ -45,9 +47,11 @@ class Plan:
     expire: list[ExistingJob] = field(default_factory=list)
     #: Set when the feed was refused as an empty answer: the run changes nothing.
     guarded: str | None = None
+    #: Held for review, not applied (ADR-0022): (kind, existing job or None, feed job).
+    held: list[tuple[str, ExistingJob | None, FeedJob]] = field(default_factory=list)
 
     def counts(self) -> dict[str, int]:
-        return {"new": len(self.inserts), "refreshed": len(self.refresh), "suspect": len(self.suspect), "expired": len(self.expire)}
+        return {"new": len(self.inserts), "refreshed": len(self.refresh), "suspect": len(self.suspect), "expired": len(self.expire), "held": len(self.held)}
 
 
 LIVE = ("active", "suspect")
@@ -63,10 +67,17 @@ def plan_sync(existing: list[ExistingJob], feed: list[FeedJob]) -> Plan:
         return plan
 
     in_feed = {j.external_ref for j in feed}
+    seen: dict[str, int] = {}
+    for job in feed:
+        seen[job.external_ref] = seen.get(job.external_ref, 0) + 1
     for job in feed:
         known = by_ref.get(job.external_ref)
-        if known is None:
+        if seen[job.external_ref] > 1:
+            plan.held.append(("held_ambiguous", known, job))
+        elif known is None:
             plan.inserts.append(job)
+        elif _host(known.apply_url) != _host(job.apply_url):
+            plan.held.append(("held_domain_change", known, job))
         else:
             plan.refresh.append((known, job))
     for job in live:
@@ -74,6 +85,10 @@ def plan_sync(existing: list[ExistingJob], feed: list[FeedJob]) -> Plan:
             continue
         (plan.expire if job.status == "suspect" else plan.suspect).append(job)
     return plan
+
+
+def _host(url: str) -> str:
+    return (re.match(r"^https?://([^/:?#]+)", url.strip().lower()) or [None, ""])[1]
 
 
 def cities_for(job: FeedJob, office_cities: dict[str, list[str]]) -> list[str]:

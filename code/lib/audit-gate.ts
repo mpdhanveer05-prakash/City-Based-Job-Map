@@ -46,13 +46,22 @@ export interface AuditGateResult {
 const AI_ASSESSOR = /\b(claude|ai|assistant|llm|gpt|copilot)\b/i;
 
 /** Whether an exception carries a human approval: named, dated, not the assessor, not an AI, and with its owner confirmed. */
-export function approvalOf(e: AuditException, today: string): { approved: boolean; reason: string } {
+/**
+ * Whether an exception carries a human approval. What makes it attributable is that the approver is on the owner's list
+ * of authorised approvers (security/authorized-approvers.json, changed only by reviewed commits). The other checks are
+ * input validation: rejecting a name that looks like an AI, or the assessor's own name, catches a mistake but proves
+ * nothing about who approved.
+ */
+export function approvalOf(e: AuditException, today: string, authorised: readonly string[] = []): { approved: boolean; reason: string } {
   const a = e.approval;
   if (!a || a.status !== "approved") return { approved: false, reason: "no approval recorded (status pending)" };
   if (!a.approvedBy?.trim() || !a.approvedOn || !isDate(a.approvedOn)) return { approved: false, reason: "approval needs approvedBy and approvedOn (YYYY-MM-DD)" };
   if (AI_ASSESSOR.test(a.approvedBy)) return { approved: false, reason: "an AI assessment is not a human approval" };
   if (a.approvedBy.trim().toLowerCase() === e.reviewer.trim().toLowerCase()) return { approved: false, reason: "the approver must not be the assessor" };
   if (a.approvedOn > today || a.approvedOn < e.reviewedOn) return { approved: false, reason: "the approval date must fall between the review and today" };
+  if (!authorised.some((name) => name.trim().toLowerCase() === a.approvedBy!.trim().toLowerCase())) {
+    return { approved: false, reason: `${a.approvedBy.trim()} is not on the owner's list of authorised approvers` };
+  }
   if (e.ownerConfirmed !== true) return { approved: false, reason: "the owner is not confirmed" };
   return { approved: true, reason: `approved by ${a.approvedBy.trim()} on ${a.approvedOn}` };
 }
@@ -63,7 +72,7 @@ const DAY_MS = 86_400_000;
 const isDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
 const advisoryId = (url: string | undefined) => url?.match(/GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}/i)?.[0];
 
-export function evaluateAudit(report: AuditReport, register: ExceptionRegister, today: string): AuditGateResult {
+export function evaluateAudit(report: AuditReport, register: ExceptionRegister, today: string, authorised: readonly string[] = []): AuditGateResult {
   const problems: string[] = [];
   const covered: string[] = [];
   const notices: string[] = [];
@@ -106,6 +115,6 @@ export function evaluateAudit(report: AuditReport, register: ExceptionRegister, 
   for (const e of valid) {
     if (!found.get(e.advisory)?.has(e.package)) problems.push(`exception ${e.advisory} (${e.package}) is stale: the audit no longer reports it. Remove it.`);
   }
-  const approvals = valid.map((e) => ({ advisory: e.advisory, ...approvalOf(e, today) }));
+  const approvals = valid.map((e) => ({ advisory: e.advisory, ...approvalOf(e, today, authorised) }));
   return { problems, covered, notices, approvals };
 }

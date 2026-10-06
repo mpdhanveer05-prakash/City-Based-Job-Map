@@ -3,8 +3,9 @@
 //   TECHNICAL  `npm audit --json` over every dependency: fails on any high or critical finding that
 //              security/audit-exceptions.json does not cover with a current entry, an expired entry, an entry whose
 //              review is more than 90 days before its expiry, and a stale entry that no longer matches any finding.
-//   APPROVAL   each exception the technical result relies on: approved only by a named human who is not the assessor,
-//              with the owner confirmed. An AI assessment is not an approval.
+//   APPROVAL   each exception the technical result relies on: approved only by a person on the owner's list of
+//              authorised approvers (security/authorized-approvers.json), who is not the assessor, with the owner
+//              confirmed. An AI assessment is not an approval.
 //
 // CI runs it without flags: the technical audit decides the exit code, and the approval status is printed. A release
 // (`--release`, used by the production workflow and the release checklist) also fails while any exception is unapproved,
@@ -37,7 +38,9 @@ function readAudit(): AuditReport {
 
 const registerPath = fileURLToPath(new URL("../security/audit-exceptions.json", import.meta.url));
 const register = JSON.parse(readFileSync(registerPath, "utf8")) as ExceptionRegister;
-const result = evaluateAudit(readAudit(), register, arg("--today") ?? new Date().toISOString().slice(0, 10));
+const approversPath = fileURLToPath(new URL("../security/authorized-approvers.json", import.meta.url));
+const authorised = (JSON.parse(readFileSync(approversPath, "utf8")) as { approvers: string[] }).approvers;
+const result = evaluateAudit(readAudit(), register, arg("--today") ?? new Date().toISOString().slice(0, 10), authorised);
 
 console.log("TECHNICAL AUDIT");
 for (const line of result.covered) console.log(`  excepted: ${line}`);

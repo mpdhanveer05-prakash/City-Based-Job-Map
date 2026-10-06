@@ -1,0 +1,4 @@
+{
+  "$comment": "People authorised to approve dependency-audit exceptions (ADR-0019, ADR-0022). Maintained by the project owner; a change to this file is reviewed like any code change, and the commit identifies who made it. An exception's approval.approvedBy must be one of these names. Empty: no exception can be approved yet.",
+  "approvers": []
+}

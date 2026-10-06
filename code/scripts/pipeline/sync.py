@@ -12,7 +12,7 @@ from typing import Callable
 from . import repo
 from .feeds import feed_url, parse
 from .fetch import FetchError, fetch_text
-from .links import acceptable_apply_link, company_owns
+from .links import company_owns, employer_link
 from .models import FeedError
 from .plan import cities_for, plan_sync
 
@@ -43,7 +43,8 @@ def sync_feed(conn, feed: repo.FeedConfig, fetcher: Fetcher = fetch_text) -> Fee
         return base
 
     # A link the site would refuse at build time (docs/security.md) never gets in: the build would fail on it.
-    usable = [j for j in parsed.jobs if acceptable_apply_link(j.apply_url, feed.company_domain)]
+    # ADR-0022: and an applicant-tracking link must be under this employer's board, so a feed cannot publish someone else's job.
+    usable = [j for j in parsed.jobs if employer_link(j.apply_url, feed.company_domain, feed.identifier)]
     parsed_skipped = parsed.skipped + (len(parsed.jobs) - len(usable))
 
     cities = repo.company_cities(conn, feed.company_id)

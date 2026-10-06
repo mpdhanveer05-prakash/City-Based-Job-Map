@@ -84,15 +84,20 @@ describe("exception approval (ADR-0022)", () => {
   });
 
   it("counts only a named, dated human who is not the assessor, with the owner confirmed", () => {
-    expect(approvalOf(approved(), "2026-10-08")).toEqual({ approved: true, reason: "approved by Priya Raman on 2026-10-07" });
+    expect(approvalOf(approved(), "2026-10-08", ["Priya Raman"])).toEqual({ approved: true, reason: "approved by Priya Raman on 2026-10-07" });
     expect(approvalOf(approved({ approvedBy: "Claude Code" }), "2026-10-08").reason).toBe("an AI assessment is not a human approval");
     expect(approvalOf(approved({ approvedBy: "r" }), "2026-10-08").reason).toBe("the approver must not be the assessor");
     expect(approvalOf(approved({ approvedBy: null }), "2026-10-08").reason).toMatch(/needs approvedBy/);
     expect(approvalOf(approved({ approvedOn: "2026-10-09" }), "2026-10-08").reason).toMatch(/between the review and today/);
-    expect(approvalOf(approved({}, { ownerConfirmed: false }), "2026-10-08").reason).toBe("the owner is not confirmed");
+    expect(approvalOf(approved({}, { ownerConfirmed: false }), "2026-10-08", ["Priya Raman"]).reason).toBe("the owner is not confirmed");
+  });
+
+  it("counts only an approver on the owner's list: a plausible human name is not enough", () => {
+    expect(approvalOf(approved(), "2026-10-08").reason).toBe("Priya Raman is not on the owner's list of authorised approvers");
+    expect(approvalOf(approved(), "2026-10-08", ["Someone Else"]).approved).toBe(false);
   });
 
   it("does not mistake a name containing the letters ai for an AI", () => {
-    expect(approvalOf(approved({ approvedBy: "Sai Kailash" }), "2026-10-08").approved).toBe(true);
+    expect(approvalOf(approved({ approvedBy: "Sai Kailash" }), "2026-10-08", ["Sai Kailash"]).approved).toBe(true);
   });
 });

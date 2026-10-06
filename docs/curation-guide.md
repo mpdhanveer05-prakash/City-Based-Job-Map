@@ -21,9 +21,10 @@ How companies, offices, founders, and jobs get into the directory and stay right
 
 ## 2. Classifications
 
-- **Startup** *(proposed wording, for the owner to confirm)*: a young company building a new business, typically venture-funded or bootstrapped and still growing. Use the company's own description; when in doubt, leave the tag off.
-- **MNC** *(proposed wording, for the owner to confirm)*: a company with operations in several countries, headquartered elsewhere or in India.
+- **Startup** (owner baseline, ADR-0023): *"A company founded to develop and scale a repeatable business model under substantial uncertainty. Apply this classification using documented evidence; funding stage alone does not determine it."* A Seed or Series A round is not enough on its own, and neither is the absence of one.
+- **MNC** (owner baseline, ADR-0023): *"A company with established business operations in more than one country. Overseas customers alone do not qualify it."* Look for offices, subsidiaries, or teams in another country, documented on an official source.
 - **Product**: *"A company that develops and sells its own repeatable software or technology product. Companies may also offer services."* (owner's definition, ADR-0016).
+- **Type, stage, and ownership are separate.** Company type (the tags above), funding stage (Startup only), and ownership status (any company) describe different things and are recorded separately; none is inferred from another.
 - **The tags overlap.** A company can be Startup and Product, or MNC and Product. Tag every one that applies.
 - **Startup stage** (only for a company tagged Startup; **enforced**): Pre-seed, Seed, Bootstrapped, Series A, Series B, Series C, Series C+. Use the latest round the company or a reliable report announced.
 - **Ownership status** (any company): Private, Public (listed on an exchange), Acquired (now owned by another company). It is independent of the type tags.
