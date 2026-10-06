@@ -3,6 +3,7 @@
 // in. Pure, so it is unit-tested. The admin sees this as a preview and confirms; only then does `import_commit` run,
 // and the database checks everything again (nothing here is a security boundary).
 import { checkOutboundUrl, companyDomain } from "../links.ts";
+import { OFFICE_EVIDENCE_FIELDS, PER_FIELD_COLUMNS, rowEvidence, type EvidenceEntry, type EvidenceField } from "./import-evidence.ts";
 import { COMPANY_TYPES, OWNERSHIP_STATUSES, STARTUP_STAGES, type CompanyType, type OwnershipStatus, type StartupStage } from "../filters/schema.ts";
 
 export const IMPORT_COLUMNS = [
@@ -22,10 +23,15 @@ export const IMPORT_COLUMNS = [
   "accuracy",
   "neighbourhood",
   "tech_park",
+  // Evidence (P9-07, lib/admin/import-evidence.ts).
+  "source_url",
+  "verified_at",
+  "source_covers",
+  ...PER_FIELD_COLUMNS,
 ] as const;
 export type ImportColumn = (typeof IMPORT_COLUMNS)[number];
 
-export const REQUIRED_COLUMNS: readonly ImportColumn[] = ["name", "domain", "city", "address", "lat", "lng"];
+export const REQUIRED_COLUMNS: readonly ImportColumn[] = ["name", "domain", "city", "address", "lat", "lng", "source_url", "verified_at"];
 
 /** Other names a column may go by in a file from a spreadsheet. */
 const ALIASES: Record<string, ImportColumn> = {
@@ -44,6 +50,13 @@ const ALIASES: Record<string, ImportColumn> = {
   ownership: "ownership_status",
   "ownership status": "ownership_status",
   sector: "sectors",
+  industry: "sectors",
+  "industry source url": "sectors_source_url",
+  "industry verified at": "sectors_verified_at",
+  source: "source_url",
+  "source url": "source_url",
+  "verified on": "verified_at",
+  "verified date": "verified_at",
   latitude: "lat",
   longitude: "lng",
   lon: "lng",
@@ -118,6 +131,8 @@ export type ImportPayloadRow = {
   accuracy: string;
   neighbourhood: string | null;
   tech_park: string | null;
+  /** One entry per filled-in field: the source and the day it was checked (a claim until a reviewer reviews it). */
+  evidence: EvidenceEntry[];
 };
 
 export type ImportStatus = "new" | "attach" | "duplicate-office" | "error";
@@ -161,7 +176,7 @@ function parseStage(raw: string): StartupStage | null {
  * Checks every record. `existingDomains` and `existingOffices` come from the database; rows earlier in the same file
  * count too, so a company listed twice becomes one company with two offices, and a repeated office is flagged.
  */
-export function validateImportRows(records: ImportTable["records"], ref: ImportReference): ImportRowResult[] {
+export function validateImportRows(records: ImportTable["records"], ref: ImportReference, today = new Date().toISOString().slice(0, 10)): ImportRowResult[] {
   const cityBy = new Map<string, string>();
   for (const c of ref.cities) {
     cityBy.set(c.slug, c.slug);
@@ -289,6 +304,30 @@ export function validateImportRows(records: ImportTable["records"], ref: ImportR
       }
     }
 
+    // Evidence: a row that adds an office to a company already listed (or earlier in this file) needs it for the office
+    // only; a new company needs it for every factual field the row fills in.
+    const attaches = DOMAIN.test(domain) && (ref.existingDomains.has(domain) || seenDomains.has(domain));
+    const needed: EvidenceField[] = attaches
+      ? [...OFFICE_EVIDENCE_FIELDS]
+      : [
+          "name",
+          "website",
+          ...(description ? (["description"] as const) : []),
+          ...(types.length > 0 ? (["types"] as const) : []),
+          ...(sectors.length > 0 ? (["sectors"] as const) : []),
+          ...(stage ? (["startup_stage"] as const) : []),
+          ...(ownership ? (["ownership_status"] as const) : []),
+          ...OFFICE_EVIDENCE_FIELDS,
+        ];
+    const ev = rowEvidence({
+      cells: cells as Record<string, string | undefined>,
+      needed,
+      stageMovedToOwnership: legacyStatus === "public" || legacyStatus === "acquired",
+      today,
+    });
+    errors.push(...(attaches ? ev.errors.filter((e) => !/this row leaves it empty/.test(e)) : ev.errors));
+    warnings.push(...ev.warnings);
+
     if (errors.length > 0) return { line, status: "error", errors, warnings, label, payload: null };
 
     const officeKey = `${domain}|${citySlug}|${address.toLowerCase()}`;
@@ -323,6 +362,7 @@ export function validateImportRows(records: ImportTable["records"], ref: ImportR
         accuracy,
         neighbourhood,
         tech_park: techPark,
+        evidence: ev.evidence,
       },
     };
   });

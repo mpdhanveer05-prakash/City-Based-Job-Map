@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { CsvError, parseCsv } from "@/lib/admin/csv";
 import { describeError } from "@/lib/admin/errors";
 import {
-  IMPORT_COLUMNS,
   REQUIRED_COLUMNS,
   readImportTable,
   rowsToCommit,
@@ -21,9 +20,19 @@ import {
   type ImportStatus,
 } from "@/lib/admin/import-rows";
 
+// The template shows the evidence columns (P9-07): one row source covering the company facts it supports, and a separate
+// source for the office's address and location. The other <field>_source_url / <field>_verified_at columns work the same way.
+const TEMPLATE_COLUMNS = [
+  "name", "domain", "website_url", "careers_url", "description", "types", "startup_stage", "ownership_status", "sectors",
+  "city", "address", "lat", "lng", "accuracy", "neighbourhood", "tech_park",
+  "source_url", "verified_at", "source_covers",
+  "address_source_url", "address_verified_at", "location_source_url", "location_verified_at",
+] as const;
 const TEMPLATE = [
-  IMPORT_COLUMNS.join(","),
-  'Example Co,example.com,https://example.com,https://example.com/careers,"Makes examples",startup;product,seed,fintech,Bengaluru,"1 Example Road, Koramangala",12.9352,77.6245,building,koramangala,',
+  TEMPLATE_COLUMNS.join(","),
+  'Example Co,example.com,https://example.com,https://example.com/careers,"Makes examples",startup;product,seed,private,fintech,Bengaluru,"1 Example Road, Koramangala",12.9352,77.6245,building,koramangala,,' +
+    "https://example.com/about,2026-09-01,name;website;description;types;sectors;startup_stage;ownership_status," +
+    "https://example.com/contact,2026-09-01,https://example.com/contact,2026-09-01",
 ].join("\n");
 
 const STATUS_TEXT: Record<ImportStatus, string> = {
@@ -123,8 +132,14 @@ export default function ImportPage() {
         Upload a CSV of companies and their offices. You see what each row would do before anything is saved. Everything imported lands as a <strong>draft</strong>;
         nothing is public until a reviewer publishes it. A row for a domain that already exists adds an office to that company.
       </p>
+      <p className="mt-2 max-w-[72ch] text-sm" data-testid="evidence-help">
+        <strong>Evidence.</strong> Every fact a row fills in needs a source someone checked. <code>source_url</code> and <code>verified_at</code> (the day it was
+        checked, as YYYY-MM-DD) are the row&apos;s source; it counts only for the fields listed in <code>source_covers</code> (for example{" "}
+        <code>name;website;address;location</code>). A field with a different source gets its own <code>&lt;field&gt;_source_url</code> and{" "}
+        <code>&lt;field&gt;_verified_at</code>. Imported dates are claims until a reviewer reviews them.
+      </p>
       <p className="mt-2 text-sm">
-        Required columns: {REQUIRED_COLUMNS.join(", ")}. Optional: website_url, careers_url, description, types (startup, mnc, product, separated by ;), startup_stage, ownership_status (private, public, acquired), sectors, accuracy,
+        Required columns: {REQUIRED_COLUMNS.join(", ")}. Optional: website_url, careers_url, description, types (startup, mnc, product, separated by ;), startup_stage, ownership_status (private, public, acquired), sectors (or industry), accuracy,
         neighbourhood, tech_park.{" "}
         <a href={`data:text/csv;charset=utf-8,${encodeURIComponent(TEMPLATE)}`} download="companies-template.csv" data-testid="template-link">
           Download a template

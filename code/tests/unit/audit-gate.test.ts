@@ -61,6 +61,13 @@ describe("audit gate (ADR-0019)", () => {
     expect(run(report(), [entry({ owner: " ", mitigation: "" })]).problems[0]).toContain("missing mitigation, owner");
   });
 
+  it("passes an unconfirmed owner, but says so", () => {
+    const out = run(report(), [entry()]);
+    expect(out.problems).toEqual([]);
+    expect(out.notices).toEqual([expect.stringContaining("the owner is not confirmed")]);
+    expect(run(report(), [entry({ ownerConfirmed: true })]).notices).toEqual([]);
+  });
+
   it("fails a stale exception", () => {
     expect(run({ vulnerabilities: {} }, [entry()]).problems).toEqual([expect.stringContaining("stale")]);
   });

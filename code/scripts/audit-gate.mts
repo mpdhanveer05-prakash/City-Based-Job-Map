@@ -30,6 +30,7 @@ const register = JSON.parse(readFileSync(registerPath, "utf8")) as ExceptionRegi
 const result = evaluateAudit(readAudit(), register, arg("--today") ?? new Date().toISOString().slice(0, 10));
 
 for (const line of result.covered) console.log(`excepted: ${line}`);
+for (const line of result.notices) console.log(`NOTICE: ${line}`);
 for (const line of result.problems) console.error(`FAIL: ${line}`);
 console.log(result.problems.length === 0 ? "Audit gate: pass." : `Audit gate: ${result.problems.length} problem(s).`);
 process.exit(result.problems.length === 0 ? 0 : 1);

@@ -165,10 +165,22 @@ reset role;
 -- CSV import
 -- ---------------------------------------------------------------------------
 
+-- Evidence for every field the row fills in (P9-07), so these tests keep testing the rest of the import.
+-- 11_ownership_status and 12_evidence test the evidence rules themselves.
+create function tests.with_evidence(r jsonb) returns jsonb
+language sql as $$
+  select r || jsonb_build_object('evidence', coalesce((
+    select jsonb_agg(jsonb_build_object('field', f, 'source_url', 'https://evidence.test/' || f, 'verified_at', '2026-09-01'))
+    from unnest(array['name', 'website', 'address', 'location', 'description', 'types', 'sectors', 'startup_stage', 'ownership_status']) f
+    where f in ('name', 'website', 'address', 'location')
+       or (f = 'description' and nullif(r ->> 'description', '') is not null)
+       or (f in ('types', 'sectors') and jsonb_array_length(coalesce(r -> f, '[]'::jsonb)) > 0)
+       or (f in ('startup_stage', 'ownership_status') and nullif(r ->> f, '') is not null)), '[]'::jsonb));
+$$;
 create function tests.csv_row(p_name text, p_domain text, p_address text, extra jsonb default '{}') returns jsonb
 language sql as $$
-  select jsonb_build_object('name', p_name, 'domain', p_domain, 'city', 'bangalore', 'address', p_address, 'lat', 12.95, 'lng', 77.62,
-                            'types', jsonb_build_array('startup'), 'sectors', jsonb_build_array('fintech')) || extra;
+  select tests.with_evidence(jsonb_build_object('name', p_name, 'domain', p_domain, 'city', 'bangalore', 'address', p_address, 'lat', 12.95, 'lng', 77.62,
+                            'types', jsonb_build_array('startup'), 'sectors', jsonb_build_array('fintech')) || extra);
 $$;
 grant execute on all functions in schema tests to anon, authenticated, service_role;
 

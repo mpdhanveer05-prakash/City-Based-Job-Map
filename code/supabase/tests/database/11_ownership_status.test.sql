@@ -30,6 +30,12 @@ create function tests.slugs(city text, f jsonb) returns text[]
 language sql stable as $$
   select coalesce(array_agg(c.slug order by c.slug), '{}') from public.company_filter(city, f) x join public.company c on c.id = x;
 $$;
+-- A CSV row with evidence for its name, website, address, location, and the listed extra fields (P9-07).
+create function tests.ev(r jsonb, extra text[]) returns jsonb
+language sql as $$
+  select r || jsonb_build_object('evidence', (select jsonb_agg(jsonb_build_object('field', f, 'source_url', 'https://src.test/' || f, 'verified_at', '2026-09-01'))
+                                              from unnest(array['name', 'website', 'address', 'location'] || extra) f));
+$$;
 grant execute on all functions in schema tests to anon, authenticated, service_role;
 
 set local app.skip_audit = 'on';
@@ -104,11 +110,11 @@ select is(tests.sqlstate_of($$select public.admin_save_company(null,
   '{"name":"Bad Co","slug":"bad-co","domain":"bad.example","website_url":"https://bad.example","ownership_status":"listed"}',
   array['mnc'], array[]::text[])$$), '22P02', 'an unknown status is refused');
 
-select is((public.import_commit('t.csv', '[
-  {"name":"Old File Co","domain":"oldfile.example","types":["startup"],"startup_stage":"Acquired","city":"bangalore","address":"1 Road","lat":12.97,"lng":77.6},
-  {"name":"New File Co","domain":"newfile.example","types":["mnc"],"ownership_status":"public","city":"bangalore","address":"2 Road","lat":12.97,"lng":77.6},
-  {"name":"Clash Co","domain":"clash.example","types":["startup"],"startup_stage":"public","ownership_status":"private","city":"bangalore","address":"3 Road","lat":12.97,"lng":77.6}
-]'::jsonb) ->> 'created_companies')::int, 2, 'the import creates the two consistent rows and rejects the clash');
+select is((public.import_commit('t.csv', jsonb_build_array(
+  tests.ev('{"name":"Old File Co","domain":"oldfile.example","types":["startup"],"startup_stage":"Acquired","city":"bangalore","address":"1 Road","lat":12.97,"lng":77.6}', array['types', 'startup_stage']),
+  tests.ev('{"name":"New File Co","domain":"newfile.example","types":["mnc"],"ownership_status":"public","city":"bangalore","address":"2 Road","lat":12.97,"lng":77.6}', array['types', 'ownership_status']),
+  tests.ev('{"name":"Clash Co","domain":"clash.example","types":["startup"],"startup_stage":"public","ownership_status":"private","city":"bangalore","address":"3 Road","lat":12.97,"lng":77.6}', array['types', 'ownership_status'])
+)) ->> 'created_companies')::int, 2, 'the import creates the two consistent rows and rejects the clash');
 select is((select ownership_status::text || '/' || coalesce(startup_stage::text, 'none') from company where slug = 'old-file-co'), 'acquired/none',
   'a stage of Acquired in an old file becomes the ownership status');
 select is((select ownership_status::text from company where slug = 'new-file-co'), 'public', 'the ownership_status column imports');

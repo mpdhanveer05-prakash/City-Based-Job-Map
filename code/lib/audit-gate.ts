@@ -24,6 +24,8 @@ export interface AuditException {
   owner: string;
   reviewedOn: string;
   expires: string;
+  /** False until the named owner has confirmed they own the exception; the gate prints a notice while it is false. */
+  ownerConfirmed?: boolean;
 }
 
 export interface ExceptionRegister {
@@ -33,6 +35,8 @@ export interface ExceptionRegister {
 export interface AuditGateResult {
   problems: string[];
   covered: string[];
+  /** Not failures: things a person still has to do, such as confirming an exception's owner. */
+  notices: string[];
 }
 
 const BLOCKING = new Set(["high", "critical"]);
@@ -44,6 +48,7 @@ const advisoryId = (url: string | undefined) => url?.match(/GHSA-[a-z0-9]{4}-[a-
 export function evaluateAudit(report: AuditReport, register: ExceptionRegister, today: string): AuditGateResult {
   const problems: string[] = [];
   const covered: string[] = [];
+  const notices: string[] = [];
   const valid: AuditException[] = [];
 
   for (const e of register.exceptions) {
@@ -53,7 +58,10 @@ export function evaluateAudit(report: AuditReport, register: ExceptionRegister, 
     else if (!isDate(e.reviewedOn) || !isDate(e.expires)) problems.push(`exception ${label} needs reviewedOn and expires as YYYY-MM-DD.`);
     else if (Date.parse(e.expires) - Date.parse(e.reviewedOn) > MAX_DAYS * DAY_MS) problems.push(`exception ${label} expires more than ${MAX_DAYS} days after its review.`);
     else if (e.expires < today) problems.push(`exception ${label} expired on ${e.expires}; review it again or remove the dependency.`);
-    else valid.push(e);
+    else {
+      valid.push(e);
+      if (e.ownerConfirmed !== true) notices.push(`exception ${label}: the owner is not confirmed (recorded: "${e.owner}"; reviewer: "${e.reviewer}").`);
+    }
   }
 
   // Direct advisories found: advisory id -> package names reporting it directly.
@@ -80,5 +88,5 @@ export function evaluateAudit(report: AuditReport, register: ExceptionRegister, 
   for (const e of valid) {
     if (!found.get(e.advisory)?.has(e.package)) problems.push(`exception ${e.advisory} (${e.package}) is stale: the audit no longer reports it. Remove it.`);
   }
-  return { problems, covered };
+  return { problems, covered, notices };
 }

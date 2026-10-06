@@ -24,5 +24,6 @@ Each ADR is short: context, decision, consequences, status (Proposed · Accepted
 | [0018](0018-spending-policy.md) | Free by default; justified production spending is allowed | Accepted |
 | [0019](0019-dependency-vulnerability-exceptions.md) | Vulnerability exceptions must be documented, reviewed, and time-limited | Accepted; implemented (P9-09) |
 | [0020](0020-monitoring-analytics-and-owner-choices.md) | Monitoring, analytics, JavaScript budget, basemap evaluation, admin MFA, backups | Accepted |
+| [0021](0021-field-evidence-and-publication-gates.md) | Evidence for every factual field, and publication gates | Accepted; implemented (P9-07) |
 
 Open decisions are listed in the [plan.md decision register](../../plan.md#open-decision-register).

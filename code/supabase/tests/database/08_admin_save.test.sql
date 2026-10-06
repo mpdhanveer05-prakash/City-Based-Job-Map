@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(36);
+select plan(38);
 
 truncate public.city, public.source, public.sector, public.company, public.admin_user, public.audit_log restart identity cascade;
 
@@ -115,9 +115,29 @@ reset role;
 select is((select count(*)::int from company where domain in ('bad-stage.test', 'bad-sector.test', 'public-now.test')), 0, 'and none of those left a company behind');
 
 select tests.become('00000000-0000-0000-0000-00000000e002', 'authenticated');
+select is(tests.sqlstate_of($$ select tests.save_company((select id from saved), tests.co('Acme Pay Ltd', 'acme-pay.test', '{"status": "published"}'), array['mnc'], array['fintech']) $$), '23514',
+  'a reviewer cannot publish a company that has no evidence (P9-07)');
+reset role;
+
+-- Reviewed evidence for the name, website, types, and sector, and an office with reviewed address and location evidence
+-- (recorded here as the migration owner; 12_evidence.test.sql tests recording and reviewing as each role).
+select set_config('request.jwt.claims', '', true);
+set local app.skip_audit = 'on';
+insert into office (company_id, city_id, address, geom, accuracy, verification, status)
+values ((select id from saved), 1, '1 Evidence Road', 'SRID=4326;POINT(77.6 12.97)', 'building', 'reviewed', 'draft');
+insert into field_evidence (company_id, office_id, field, source_url, verified_at, reviewed_at, reviewed_by)
+select case when f in ('address', 'location') then null else (select id from saved) end,
+       case when f in ('address', 'location') then (select id from office where address = '1 Evidence Road') end,
+       f, 'https://acme-pay.test/about', date '2026-09-15', now(), '00000000-0000-0000-0000-00000000e002'
+from unnest(array['name', 'website', 'types', 'sectors', 'address', 'location']) f;
+set local app.skip_audit = 'off';
+
+select tests.become('00000000-0000-0000-0000-00000000e002', 'authenticated');
 select lives_ok($$ select tests.save_company((select id from saved), tests.co('Acme Pay Ltd', 'acme-pay.test', '{"status": "published"}'), array['mnc'], array['fintech']) $$, 'a reviewer can publish');
 reset role;
 select is((select status from company where domain = 'acme-pay.test'), 'published', 'the company is published');
+select is((select approved_by::text from publication_approval where company_id = (select id from saved) and action = 'published'),
+  '00000000-0000-0000-0000-00000000e002', 'the approval names the reviewer who published it');
 
 -- ---------------------------------------------------------------------------
 -- Jobs

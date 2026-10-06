@@ -51,6 +51,12 @@ ALTER TABLE company ADD COLUMN ownership_status ownership_status;  -- NULL = unk
 - The stage filter applies only when `startup` is in the type filter. The server **ignores** stage parameters without `type=startup`, and the client normalises the URL to match.
 - D-05 (decided 6 Oct 2026): Public and Acquired moved out of the stages into `ownership_status`, which is independent of the type tags and has its own filter group (P9-06, migration `20261006090000_ownership_status.sql`, existing values moved without loss). "Bootstrapped" stays a stage.
 
+### 2a. Field evidence and publication [Confirmed, ADR-0021, owner decisions 6 Oct 2026; built in P9-07]
+- `field_evidence`: exactly one of company, office, founder, or job; the field; the value it supports (copied from the record when recorded, so it goes stale when the value changes); `source_url` (https); `verified_at` (the date someone checked the source, a claim until reviewed); `recorded_by`/`recorded_at`; `reviewed_at`/`reviewed_by` (set by a reviewer). Immutable; no API delete; admins only.
+- `publication_approval`: who published or unpublished a company, office, or founder, and when. Admins only.
+- Gates at commit for signed-in users: a company needs reviewed name, website, and one office's address and location, plus evidence for every other populated fact; an office needs reviewed address and location; a founder needs reviewed name. The company's `last_verified_at` becomes the oldest checked date among the reviewed core facts.
+- `evidence_report(company)`, `publication_problems(company)`, `evidence_gaps()`, `review_evidence(ids)`.
+
 ### 3. Founder name search [Confirmed in scope, D-03, 3 Oct 2026; built in P3-01]
 The plan has no founder data. Proposed:
 ```sql

@@ -77,6 +77,15 @@ export default function ReviewPage() {
       return { rows: (data ?? []) as SubmissionRow[], total: count ?? 0 };
     },
   });
+  // Published companies whose facts lack reviewed evidence (P9-07): flagged here, not hidden from the site.
+  const gaps = useQuery({
+    queryKey: ["admin", "evidence-gaps"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("evidence_gaps", { p_limit: 100 });
+      if (error) throw error;
+      return (data ?? []) as Array<{ company_id: string; slug: string; name: string; missing: number; stale: number; claimed: number }>;
+    },
+  });
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   async function act(key: string, run: () => PromiseLike<{ error: AnyError | null; count?: number | null }>, done: string) {
@@ -98,6 +107,43 @@ export default function ReviewPage() {
     <>
       <PageHeader title="Review" />
       {message && <Notice kind={message.kind}>{message.text}</Notice>}
+
+      <section aria-labelledby="evidence-gaps" className="mb-8">
+        <h2 id="evidence-gaps" className="text-xl font-bold">
+          Published companies with unsupported facts
+        </h2>
+        <p className="mb-2 text-sm text-muted-foreground">
+          Facts with no evidence, evidence for an older value, or evidence nobody has reviewed yet. They stay public; open the company to record or review evidence.
+        </p>
+        {gaps.isError ? (
+          <Notice kind="error">{describeError(gaps.error as AnyError)}</Notice>
+        ) : (gaps.data ?? []).length === 0 ? (
+          <p className="text-sm">{gaps.isPending ? "Loading…" : "Every published fact has reviewed evidence."}</p>
+        ) : (
+          <DataTable label="Published companies with unsupported facts">
+            <thead>
+              <tr>
+                <th scope="col">Company</th>
+                <th scope="col" className="text-right">No evidence</th>
+                <th scope="col" className="text-right">Older value</th>
+                <th scope="col" className="text-right">Not reviewed</th>
+              </tr>
+            </thead>
+            <tbody data-testid="evidence-gap-rows">
+              {gaps.data!.map((g) => (
+                <tr key={g.company_id} data-company={g.slug}>
+                  <td>
+                    <Link href={`/admin/companies/edit?id=${g.company_id}`}>{g.name}</Link>
+                  </td>
+                  <td className="text-right tabular-nums">{g.missing}</td>
+                  <td className="text-right tabular-nums">{g.stale}</td>
+                  <td className="text-right tabular-nums">{g.claimed}</td>
+                </tr>
+              ))}
+            </tbody>
+          </DataTable>
+        )}
+      </section>
 
       <section aria-labelledby="offices" className="mb-8">
         <h2 id="offices" className="text-xl font-bold">

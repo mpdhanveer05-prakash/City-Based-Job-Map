@@ -68,20 +68,32 @@ const ref: ImportReference = {
 
 const HEADER = "name,domain,city,address,lat,lng";
 const table = (csv: string) => readImportTable(parseCsv(csv));
-const check = (csv: string) => validateImportRows(table(csv).records, ref);
+// Evidence (P9-07) is tested in tests/unit/import-evidence.test.ts and below; these fixtures give every row one source
+// that covers every field, so the other checks are tested on their own.
+const ALL_FIELDS = "name;website;description;types;sectors;startup_stage;ownership_status;address;location";
+const withEvidence = (csv: string) =>
+  csv
+    .split("\n")
+    .map((line, i) => (i === 0 ? `${line},source_url,verified_at,source_covers` : `${line},https://src.test/page,2026-09-01,${ALL_FIELDS}`))
+    .join("\n");
+const check = (csv: string) => validateImportRows(table(withEvidence(csv)).records, ref, "2026-10-06");
 
 describe("readImportTable", () => {
   it("maps headers, ignoring case, spaces, underscores, and common spreadsheet names", () => {
     const t = table("Company Name,Website,Latitude,Longitude,Domain,City,ADDRESS,Neighborhood,Tech Park,Startup Stage,Type,Sector,Whatever\nA,https://a.test,1,2,a.test,Chennai,x,y,z,seed,startup,fintech,q");
     expect(t.columns).toEqual(["name", "website_url", "lat", "lng", "domain", "city", "address", "neighbourhood", "tech_park", "startup_stage", "types", "sectors", null]);
-    expect(t.missingColumns).toEqual([]);
+    expect(t.missingColumns).toEqual(["source_url", "verified_at"]);
     expect(t.unknownColumns).toEqual(["Whatever"]);
+    // Industry is another name for the sector column; Source and Verified on name the evidence columns (P9-07).
+    expect(table("Industry,Source,Verified on,Industry Source URL,Name Verified At\nx,y,z,u,v").columns).toEqual([
+      "sectors", "source_url", "verified_at", "sectors_source_url", "name_verified_at",
+    ]);
     expect(t.records[0]).toEqual({ line: 2, cells: expect.objectContaining({ name: "A", lat: "1", neighbourhood: "y" }) });
   });
 
   it("names the required columns a file lacks", () => {
-    expect(table("name,domain\nA,a.test").missingColumns).toEqual(["city", "address", "lat", "lng"]);
-    expect(readImportTable([]).missingColumns).toHaveLength(6);
+    expect(table("name,domain\nA,a.test").missingColumns).toEqual(["city", "address", "lat", "lng", "source_url", "verified_at"]);
+    expect(readImportTable([]).missingColumns).toHaveLength(8);
   });
 
   it("numbers lines from the header, which is line 1", () => {

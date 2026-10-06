@@ -32,8 +32,20 @@ async function signInAs(page: Page, who: keyof typeof USERS) {
   await expect(page.getByTestId("admin-frame")).toBeVisible({ timeout: 30_000 });
 }
 
+// Records one piece of evidence through the company page's evidence panel (P9-07).
+async function recordEvidence(page: Page, fact: string, source: string, date = "2026-09-01") {
+  const panel = page.getByTestId("evidence-panel");
+  await panel.getByTestId("evidence-target").selectOption({ label: fact });
+  await panel.getByTestId("evidence-source").fill(source);
+  await panel.getByTestId("evidence-date").fill(date);
+  await panel.getByTestId("save-evidence").click();
+  await expect(panel.getByRole("status").filter({ hasText: "Evidence recorded." })).toBeVisible();
+}
+
 // Next.js adds its own role="alert" (the route announcer), so the page's messages are the paragraphs.
 const alertOf = (page: Page) => page.locator('p[role="alert"]');
+
+const parseCsvLine = (line: string): string[] => line.match(/("([^"]|"")*"|[^,]*)(,|$)/g)!.slice(0, -1).map((c) => c.replace(/,$/, ""));
 
 const noSeriousViolations = async (page: Page) => {
   const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
@@ -107,7 +119,7 @@ test.describe("an editor curates a company", () => {
     await page.getByTestId("save-company").click();
     await expect(page).toHaveURL(/\/admin\/companies\/edit\?id=/);
     await expect(page.getByRole("heading", { name: "Edit E2E Test Co" })).toBeVisible();
-    await expect(page.getByLabel("Status")).toHaveValue("draft");
+    await expect(page.getByLabel("Status", { exact: true })).toHaveValue("draft");
     await expect(page.getByLabel("Slug")).toHaveValue("e2e-test-co");
     await noSeriousViolations(page);
   });
@@ -134,7 +146,7 @@ test.describe("an editor curates a company", () => {
     await expect(page.getByLabel("Startup stage")).toBeDisabled();
     await page.getByRole("checkbox", { name: "MNC" }).check();
     await page.getByTestId("save-company").click();
-    await expect(page.getByRole("status")).toHaveText("Saved.");
+    await expect(page.getByRole("status").filter({ hasText: "Saved." })).toBeVisible();
     await page.reload();
     await expect(page.getByRole("checkbox", { name: "MNC" })).toBeChecked();
     await expect(page.getByRole("checkbox", { name: "Startup" })).not.toBeChecked();
@@ -201,11 +213,15 @@ test.describe("an editor curates a company", () => {
     await page.getByLabel("Latitude").fill("20.0");
     await page.getByLabel("Longitude").fill("70.0");
     await page.getByLabel("Location accuracy").selectOption("building");
-    await page.getByLabel("Status").selectOption("published");
+    await page.getByLabel("Status", { exact: true }).selectOption("published");
     await page.getByTestId("save-office").click();
     await expect(alertOf(page)).toContainText("outside the boundary");
     await expect(page.getByText("Tick the box above to accept it")).toBeVisible();
     await page.getByTestId("outside-reviewed").check();
+    await page.getByTestId("save-office").click();
+    // Accepted as outside the boundary, but an office is not published without reviewed evidence (P9-07).
+    await expect(alertOf(page)).toContainText("address and location need reviewed evidence");
+    await page.getByLabel("Status", { exact: true }).selectOption("draft");
     await page.getByTestId("save-office").click();
     await expect(page).toHaveURL(/\/admin\/offices\/edit\?id=/);
   });
@@ -228,21 +244,24 @@ test.describe("an editor curates a company", () => {
     await page.getByLabel("Apply link").fill("https://e2e-test-co.test/careers/qa");
     await page.getByTestId("save-job").click();
     await expect(page).toHaveURL(/\/admin\/jobs\/edit\?id=/);
-    await expect(page.getByLabel("Status")).toHaveValue("draft");
-    await expect(page.getByLabel("Status").locator("option[value=active]")).toBeDisabled();
+    await expect(page.getByLabel("Status", { exact: true })).toHaveValue("draft");
+    await expect(page.getByLabel("Status", { exact: true }).locator("option[value=active]")).toBeDisabled();
   });
 });
 
 test.describe("import", () => {
   const CSV = [
-    "Company Name,Website,Domain,City,Address,Latitude,Longitude,Type,Stage,Sector,Accuracy,Neighborhood",
-    'Imported One,https://imported-one.test,imported-one.test,Bengaluru,"1 Import Road, Indiranagar",12.978,77.640,startup,Series A,fintech,building,indiranagar',
-    "Imported One,,imported-one.test,Bengaluru,2 Import Road,12.97,77.64,startup,,,,",
-    "Imported One,,imported-one.test,Bengaluru,2 import road,12.97,77.64,startup,,,,",
-    "E2E Test Co,,e2e-test-co.test,Bengaluru,9 Attached Road,12.95,77.62,mnc,,,building,",
-    ",,nameless.test,Bengaluru,3 Road,12.9,77.6,startup,,,,",
-    "Atlantis Co,,atlantis.test,Atlantis,4 Road,1,2,startup,,,,",
-    "Stage Co,,stage.test,Chennai,5 Road,13.0,80.2,mnc,Seed,,,",
+    "Company Name,Website,Domain,City,Address,Latitude,Longitude,Type,Stage,Industry,Accuracy,Neighborhood,Source URL,Verified at,Source covers,Address source url,Address verified at",
+    'Imported One,https://imported-one.test,imported-one.test,Bengaluru,"1 Import Road, Indiranagar",12.978,77.640,startup,Series A,fintech,building,indiranagar,https://imported-one.test/about,2026-09-01,name;website;type;stage;industry;location,https://imported-one.test/contact,2026-09-02',
+    "Imported One,,imported-one.test,Bengaluru,2 Import Road,12.97,77.64,startup,,,,,https://imported-one.test/contact,2026-09-02,address;location,,",
+    "Imported One,,imported-one.test,Bengaluru,2 import road,12.97,77.64,startup,,,,,https://imported-one.test/contact,2026-09-02,address;location,,",
+    "E2E Test Co,,e2e-test-co.test,Bengaluru,9 Attached Road,12.95,77.62,mnc,,,building,,https://e2e-test-co.test/offices,2026-09-03,address;location,,",
+    ",,nameless.test,Bengaluru,3 Road,12.9,77.6,startup,,,,,https://nameless.test,2026-09-01,name;website;type;address;location,,",
+    "Atlantis Co,,atlantis.test,Atlantis,4 Road,1,2,startup,,,,,https://atlantis.test,2026-09-01,name;website;type;address;location,,",
+    "Stage Co,,stage.test,Chennai,5 Road,13.0,80.2,mnc,Seed,,,,https://stage.test,2026-09-01,name;website;type;stage;address;location,,",
+    // P9-07: a row source counts only for the fields it lists, and a checked date cannot be in the future.
+    "Thin Co,,thin.test,Chennai,6 Road,13.0,80.2,,,,,,https://thin.test,2026-09-01,name,,",
+    "Future Co,,future.test,Chennai,7 Road,13.0,80.2,,,,,,https://future.test,2999-01-01,name;website;address;location,,",
   ].join("\n");
 
   test("previews what every row would do, then imports only the good ones as drafts", async ({ page }) => {
@@ -250,7 +269,7 @@ test.describe("import", () => {
     await page.goto("/admin/import");
     await page.getByTestId("csv-file").setInputFiles({ name: "companies.csv", mimeType: "text/csv", buffer: Buffer.from(CSV) });
 
-    await expect(page.getByTestId("import-summary")).toContainText("7 rows: 1 new companies, 2 added offices, 1 already listed, 3 that cannot be imported", { timeout: 30_000 });
+    await expect(page.getByTestId("import-summary")).toContainText("9 rows: 1 new companies, 2 added offices, 1 already listed, 5 that cannot be imported", { timeout: 30_000 });
     const rows = page.getByTestId("import-rows").locator("tr");
     await expect(rows.nth(0)).toContainText("New company");
     await expect(rows.nth(1)).toContainText("Adds an office");
@@ -259,6 +278,9 @@ test.describe("import", () => {
     await expect(rows.nth(4)).toContainText("The company name is missing.");
     await expect(rows.nth(5)).toContainText("is not a city this site covers");
     await expect(rows.nth(6)).toContainText("needs the type startup");
+    await expect(rows.nth(7)).toContainText("There is no evidence for the website");
+    await expect(rows.nth(7)).toContainText("There is no evidence for the address");
+    await expect(rows.nth(8)).toContainText("is in the future");
     await noSeriousViolations(page);
 
     await page.getByTestId("import-commit").click();
@@ -269,13 +291,23 @@ test.describe("import", () => {
     await expect(row).toContainText("Draft");
     await expect(row).toContainText("Series A");
     await expect(row).toContainText("2");
+
+    // The evidence came in with the rows, against the right records, as claims: the company cannot be published yet.
+    await page.getByRole("link", { name: "Imported One" }).click();
+    const panel = page.getByTestId("evidence-panel");
+    await expect(panel.locator('tr[data-state="claimed"]', { hasText: "Name" })).toContainText("https://imported-one.test/about");
+    await expect(panel.locator('tr[data-state="claimed"]', { hasText: "Office: 1 Import Road, Indiranagar" }).filter({ hasText: "Address" })).toContainText("https://imported-one.test/contact");
+    await expect(panel.locator('tr[data-state="claimed"]', { hasText: "Sectors" })).toBeVisible();
+    await expect(panel.getByTestId("publication-problems")).toContainText("The name needs reviewed evidence (it is claimed)");
+    // An editor sees no review button.
+    await expect(panel.getByTestId("review-evidence")).toHaveCount(0);
   });
 
   test("importing the same file again adds nothing: every row is recognised", async ({ page }) => {
     await signInAs(page, "editor");
     await page.goto("/admin/import");
     await page.getByTestId("csv-file").setInputFiles({ name: "companies.csv", mimeType: "text/csv", buffer: Buffer.from(CSV) });
-    await expect(page.getByTestId("import-summary")).toContainText("0 new companies, 0 added offices, 4 already listed, 3 that cannot be imported", { timeout: 30_000 });
+    await expect(page.getByTestId("import-summary")).toContainText("0 new companies, 0 added offices, 4 already listed, 5 that cannot be imported", { timeout: 30_000 });
     await expect(page.getByTestId("import-commit")).toBeDisabled();
   });
 
@@ -283,7 +315,7 @@ test.describe("import", () => {
     await signInAs(page, "editor");
     await page.goto("/admin/import");
     await page.getByTestId("csv-file").setInputFiles({ name: "bad.csv", mimeType: "text/csv", buffer: Buffer.from("name,domain\nA,a.test") });
-    await expect(alertOf(page)).toContainText("no column for: city, address, lat, lng");
+    await expect(alertOf(page)).toContainText("no column for: city, address, lat, lng, source_url, verified_at");
     await page.getByTestId("csv-file").setInputFiles({ name: "open.csv", mimeType: "text/csv", buffer: Buffer.from('name,domain\n"never closed,a.test') });
     await expect(alertOf(page)).toContainText("never closed");
   });
@@ -293,7 +325,13 @@ test.describe("import", () => {
     await page.goto("/admin/import");
     const href = await page.getByTestId("template-link").getAttribute("href");
     const text = decodeURIComponent(href!.split(",").slice(1).join(","));
-    expect(text.split("\n")[0]).toBe("name,domain,website_url,careers_url,description,types,startup_stage,sectors,city,address,lat,lng,accuracy,neighbourhood,tech_park");
+    const [header, example] = text.split("\n");
+    expect(header).toBe(
+      "name,domain,website_url,careers_url,description,types,startup_stage,ownership_status,sectors,city,address,lat,lng,accuracy,neighbourhood,tech_park," +
+        "source_url,verified_at,source_covers,address_source_url,address_verified_at,location_source_url,location_verified_at",
+    );
+    // The example row lines up with the header (it did not before P9-07, after ownership_status was added).
+    expect(parseCsvLine(example)).toHaveLength(header.split(",").length);
   });
 });
 
@@ -360,6 +398,96 @@ async function postRebuild(request: APIRequestContext, headers: Record<string, s
   }
 }
 
+test.describe("evidence and publication", () => {
+  test("a reviewer cannot publish a company whose facts have no reviewed evidence, and the page says why", async ({ page }) => {
+    await signInAs(page, "reviewer");
+    await page.goto("/admin/companies?q=e2e-test");
+    await page.getByRole("link", { name: "E2E Test Co" }).click();
+    await expect(page.getByTestId("publication-problems")).toContainText("The name needs reviewed evidence (it is missing)");
+    await page.getByTestId("company-form-status").selectOption("published");
+    await page.getByTestId("save-company").click();
+    await expect(alertOf(page)).toContainText("Publishing needs evidence");
+    await page.reload();
+    await expect(page.getByLabel("Status", { exact: true })).toHaveValue("draft");
+  });
+
+  test("an editor records evidence for each fact; it stays a claim, and the editor cannot review it", async ({ page }) => {
+    await signInAs(page, "editor");
+    await page.goto("/admin/companies?q=e2e-test");
+    await page.getByRole("link", { name: "E2E Test Co" }).click();
+    const panel = page.getByTestId("evidence-panel");
+    // A checked date in the future is refused by the database.
+    await panel.getByTestId("evidence-target").selectOption({ label: "Company: Name" });
+    await panel.getByTestId("evidence-source").fill("https://e2e-test-co.test/about");
+    await panel.getByTestId("evidence-date").fill("2999-01-01");
+    await panel.getByTestId("save-evidence").click();
+    await expect(panel.locator('p[role="alert"]')).toContainText("in the future");
+
+    for (const fact of ["Company: Name", "Company: Website", "Company: Description", "Company: Company type", "Company: Sectors"]) {
+      await recordEvidence(page, fact, "https://e2e-test-co.test/about");
+    }
+    for (const fact of ["Office: Out of town: Address", "Office: Out of town: Location"]) {
+      await recordEvidence(page, fact, "https://e2e-test-co.test/contact", "2026-08-20");
+    }
+    await expect(panel.locator('tr[data-state="claimed"]')).toHaveCount(9); // 7 recorded here, 2 from the imported "9 Attached Road" office
+    await expect(panel.getByTestId("review-evidence")).toHaveCount(0);
+    await expect(panel.getByTestId("publication-problems")).toContainText("The name needs reviewed evidence (it is claimed)");
+  });
+
+  test("the evidence tables and functions are closed to an editor's review and to the open API", async ({ page, request }) => {
+    await signInAs(page, "editor");
+    const token = await page.evaluate(() => {
+      const key = Object.keys(localStorage).find((k) => k.includes("auth-token"));
+      return key ? (JSON.parse(localStorage.getItem(key)!) as { access_token: string }).access_token : "";
+    });
+    expect(token).not.toBe("");
+    const editor = { apikey: process.env.ADMIN_E2E_ANON_KEY!, Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+    const claims = (await (await request.get(`${SUPABASE}/rest/v1/field_evidence?select=id&reviewed_at=is.null`, { headers: editor })).json()) as Array<{ id: number }>;
+    expect(claims.length).toBeGreaterThan(0);
+    const review = await request.post(`${SUPABASE}/rest/v1/rpc/review_evidence`, { headers: editor, data: { p_ids: [claims[0].id] } });
+    expect(review.status()).toBeGreaterThanOrEqual(400);
+    expect(await review.text()).toContain("only a reviewer or admin can review evidence");
+    const patch = await request.patch(`${SUPABASE}/rest/v1/field_evidence?id=eq.${claims[0].id}`, {
+      headers: { ...editor, Prefer: "return=representation" },
+      data: { reviewed_at: new Date().toISOString() },
+    });
+    // Row-level security gives an editor no row to update.
+    if (patch.ok()) expect(await patch.json()).toEqual([]);
+    else expect(patch.status()).toBeGreaterThanOrEqual(400);
+  });
+
+  test("a reviewer reviews the evidence, publishes the office, and the company can be published", async ({ page }) => {
+    await signInAs(page, "reviewer");
+    await page.goto("/admin/companies?q=e2e-test");
+    await page.getByRole("link", { name: "E2E Test Co" }).click();
+    const panel = page.getByTestId("evidence-panel");
+    await expect(panel.locator('tr[data-state="claimed"]')).toHaveCount(9); // 7 recorded here, 2 from the imported "9 Attached Road" office
+    while ((await panel.getByTestId("review-evidence").count()) > 0) {
+      const before = await panel.getByTestId("review-evidence").count();
+      await panel.getByTestId("review-evidence").first().click();
+      await expect(panel.getByTestId("review-evidence")).toHaveCount(before - 1);
+    }
+    await expect(panel.locator('tr[data-state="reviewed"]')).toHaveCount(9);
+    await expect(panel.getByText("The evidence is enough to publish.")).toBeVisible();
+
+    await page.goto("/admin/offices?q=Out%20of%20town");
+    await page.getByRole("table", { name: "Offices" }).getByRole("link", { name: "Out of town" }).click();
+    await expect(page).toHaveURL(/\/admin\/offices\/edit\?id=/);
+    await expect(page.getByTestId("save-office")).toBeVisible();
+    await page.getByLabel("Status", { exact: true }).selectOption("published");
+    await page.getByTestId("save-office").click();
+    await expect(page.getByRole("status").filter({ hasText: "Saved." })).toBeVisible();
+  });
+
+  test("the review page lists published companies whose facts are unsupported", async ({ page }) => {
+    await signInAs(page, "editor");
+    await page.goto("/admin/review");
+    // The synthetic seed was published without evidence: every one of its companies is flagged, and stays public.
+    await expect(page.getByTestId("evidence-gap-rows").locator("tr").first()).toBeVisible();
+    await noSeriousViolations(page);
+  });
+});
+
 test.describe("publish", () => {
   test("a reviewer publishes a company, and Publish now starts one build", async ({ page, request }) => {
     await request.get(github("/__reset"));
@@ -368,7 +496,7 @@ test.describe("publish", () => {
     await page.getByRole("link", { name: "E2E Test Co" }).click();
     await page.getByTestId("company-form-status").selectOption("published");
     await page.getByTestId("save-company").click();
-    await expect(page.getByRole("status")).toHaveText("Saved.");
+    await expect(page.getByRole("status").filter({ hasText: "Saved." })).toBeVisible();
 
     await page.goto("/admin");
     await expect(page.getByTestId("publish-now")).toBeEnabled();
@@ -532,7 +660,7 @@ test.describe("what the open API shows an anonymous caller", () => {
     expect(all.length).toBeGreaterThan(0);
     expect(new Set(all.map((c) => c.status))).toEqual(new Set(["published"]));
 
-    const tables = ["admin_user", "audit_log", "submission", "feedback_rate", "link_click_daily", "heartbeat", "verification_check", "verification_check_default", "job_feed", "source", "site_state", "import_batch"];
+    const tables = ["admin_user", "audit_log", "submission", "feedback_rate", "link_click_daily", "heartbeat", "verification_check", "verification_check_default", "job_feed", "source", "site_state", "import_batch", "field_evidence", "publication_approval"];
     for (const table of tables) {
       const res = await request.get(`${SUPABASE}/rest/v1/${table}?select=*&limit=5`, { headers: anon() });
       // Either the table is not reachable at all, or it is reachable and empty to this caller. Never rows.
@@ -549,6 +677,10 @@ test.describe("what the open API shows an anonymous caller", () => {
       ["import_commit", { p_filename: "x.csv", p_rows: [{}] }],
       ["sweep_stale_jobs", {}],
       ["missed_heartbeats", {}],
+      ["evidence_report", { p_company: "00000000-0000-4000-8000-000000000001" }],
+      ["publication_problems", { p_company: "00000000-0000-4000-8000-000000000001" }],
+      ["review_evidence", { p_ids: [1] }],
+      ["evidence_gaps", {}],
     ];
     for (const [name, args] of calls) {
       const res = await request.post(`${SUPABASE}/rest/v1/rpc/${name}`, { headers: { ...anon(), "Content-Type": "application/json" }, data: args });
