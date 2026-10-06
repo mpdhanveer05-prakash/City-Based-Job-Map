@@ -38,3 +38,9 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Bengaluru pilot: OSM-derived coordinates (ODbL) stay local until the geocoding provider is decided (D-07).
+# Regenerate with python -m scripts.pilot.build_import (data/pilot/bangalore/README.md).
+code/data/pilot/*/geocode-cache.json
+code/data/pilot/*/import-rows.json
+code/data/pilot/*/pilot.csv
