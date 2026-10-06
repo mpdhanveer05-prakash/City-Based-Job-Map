@@ -3,7 +3,7 @@
 // runs for a visitor. Not for client code: it reads the datasets with node:fs.
 import { checkCompanyLinks } from "../links.ts";
 import type { Ref, SnapshotJob } from "../filters/dataset.ts";
-import type { CompanyType, StartupStage } from "../filters/schema.ts";
+import type { CompanyType, OwnershipStatus, StartupStage } from "../filters/schema.ts";
 import { loadAllCities, type CityFiles } from "./city-data.ts";
 
 export type CompanyOffice = {
@@ -23,6 +23,7 @@ export type CompanyPageData = {
   logoKey: string | null;
   types: CompanyType[];
   stage: StartupStage | null;
+  ownershipStatus: OwnershipStatus | null;
   sectors: string[];
   description: string | null;
   websiteUrl: string;
@@ -63,6 +64,7 @@ export function buildCompanyPages(cities: readonly CityFiles[]): Map<string, Com
           logoKey: c.logo_key,
           types: c.types,
           stage: c.startup_stage,
+          ownershipStatus: c.ownership_status,
           sectors: c.sectors.map((s) => sectorNames.get(s) ?? s),
           description: details.description,
           websiteUrl: details.website_url,

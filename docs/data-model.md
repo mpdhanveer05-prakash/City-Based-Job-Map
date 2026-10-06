@@ -37,17 +37,19 @@ CREATE TABLE company_type_tag (
 - The plan's extra values (`services`, `gcc`, `other`) are not in the launch enum. Add them by a migration if a non-filterable tag is wanted.
 - The definition of "Product" (the company builds its own product, as opposed to services) must be written into the curation guide.
 
-### 2. Startup stage [Proposal, D-05; built in P3-01 as proposed]
+### 2. Startup stage and ownership status [Confirmed, D-05 decided 6 Oct 2026, ADR-0017; built in P3-01 and P9-06]
 ```sql
 CREATE TYPE startup_stage AS ENUM
-  ('pre_seed','seed','bootstrapped','series_a','series_b','series_c','series_c_plus','public','acquired');
+  ('pre_seed','seed','bootstrapped','series_a','series_b','series_c','series_c_plus');
 ALTER TABLE company ADD COLUMN startup_stage startup_stage;  -- NULL = unknown, never guessed
+CREATE TYPE ownership_status AS ENUM ('private','public','acquired');
+ALTER TABLE company ADD COLUMN ownership_status ownership_status;  -- NULL = unknown; any type of company
 -- Enforced by a deferred constraint trigger: startup_stage IS NULL OR company has a 'startup' tag.
 -- Deferred so a company and its tags can be written in any order inside one transaction.
 -- The plan's company.funding_stage text column is dropped: startup_stage is the one stage field.
 ```
 - The stage filter applies only when `startup` is in the type filter. The server **ignores** stage parameters without `type=startup`, and the client normalises the URL to match.
-- Open question D-05: "Bootstrapped" is a funding mode, and "Public" and "Acquired" are outcomes rather than stages. They're kept in one list because the brief asks for it.
+- D-05 (decided 6 Oct 2026): Public and Acquired moved out of the stages into `ownership_status`, which is independent of the type tags and has its own filter group (P9-06, migration `20261006090000_ownership_status.sql`, existing values moved without loss). "Bootstrapped" stays a stage.
 
 ### 3. Founder name search [Confirmed in scope, D-03, 3 Oct 2026; built in P3-01]
 The plan has no founder data. Proposed:

@@ -3,6 +3,7 @@ import {
   COMPANY_TYPES,
   EMPTY_FILTERS,
   MAX_QUERY_LENGTH,
+  OWNERSHIP_STATUSES,
   STARTUP_STAGES,
   applyFilterChange,
   filtersSchema,
@@ -77,6 +78,7 @@ describe("parseExplorerSearch: defaults and tolerance", () => {
         neighbourhoods: ["indiranagar"],
         tech_parks: ["etv"],
         sectors: ["fintech"],
+        statuses: [],
       },
       company: "amber-forge-synthetic",
       camera: { lat: 12.9716, lng: 77.5946, zoom: 11.5 },
@@ -169,9 +171,24 @@ describe("stages need Startup (ADR-0004)", () => {
 
   it("a stage change that keeps Startup leaves the other groups alone", () => {
     const before = filters({ types: ["startup"], stages: ["seed"], sectors: ["fintech"] });
-    const after = applyFilterChange(before, { stages: ["seed", "public"] });
-    expect(after.stages).toEqual(["seed", "public"]);
+    const after = applyFilterChange(before, { stages: ["seed", "series_c_plus"] });
+    expect(after.stages).toEqual(["seed", "series_c_plus"]);
     expect(after.sectors).toEqual(["fintech"]);
+  });
+
+  it("reads and writes the ownership status, independent of the types (ADR-0017)", () => {
+    const parsed = parseExplorerSearch(new URLSearchParams("status=public,acquired,bogus"));
+    expect(parsed.filters.statuses).toEqual(["public", "acquired"]);
+    expect(serializeExplorerSearch(parsed)).toBe("status=public%2Cacquired");
+  });
+
+  it("moves Public and Acquired from old stage links to the status group", () => {
+    const parsed = parseExplorerSearch(new URLSearchParams("type=startup&stage=seed,public,acquired"));
+    expect(parsed.filters.stages).toEqual(["seed"]);
+    expect(parsed.filters.statuses).toEqual(["public", "acquired"]);
+    expect(serializeExplorerSearch(parsed)).toBe("type=startup&stage=seed&status=public%2Cacquired");
+    // Without Startup the stages are cleared, but the old status values still carry over.
+    expect(parseExplorerSearch(new URLSearchParams("stage=acquired")).filters).toMatchObject({ stages: [], statuses: ["acquired"] });
   });
 
   it("selecting a type does not invent stages", () => {
@@ -279,6 +296,7 @@ describe("round trip over generated states", () => {
         neighbourhoods: some(SLUGS),
         tech_parks: some(SLUGS),
         sectors: some(SLUGS),
+        statuses: some(OWNERSHIP_STATUSES),
       },
       company: r() < 0.4 ? SLUGS[Math.floor(r() * SLUGS.length)] : null,
       camera:

@@ -3,7 +3,7 @@
 // in. Pure, so it is unit-tested. The admin sees this as a preview and confirms; only then does `import_commit` run,
 // and the database checks everything again (nothing here is a security boundary).
 import { checkOutboundUrl, companyDomain } from "../links.ts";
-import { COMPANY_TYPES, STARTUP_STAGES, type CompanyType, type StartupStage } from "../filters/schema.ts";
+import { COMPANY_TYPES, OWNERSHIP_STATUSES, STARTUP_STAGES, type CompanyType, type OwnershipStatus, type StartupStage } from "../filters/schema.ts";
 
 export const IMPORT_COLUMNS = [
   "name",
@@ -13,6 +13,7 @@ export const IMPORT_COLUMNS = [
   "description",
   "types",
   "startup_stage",
+  "ownership_status",
   "sectors",
   "city",
   "address",
@@ -40,6 +41,8 @@ const ALIASES: Record<string, ImportColumn> = {
   "company type": "types",
   stage: "startup_stage",
   "startup stage": "startup_stage",
+  ownership: "ownership_status",
+  "ownership status": "ownership_status",
   sector: "sectors",
   latitude: "lat",
   longitude: "lng",
@@ -106,6 +109,7 @@ export type ImportPayloadRow = {
   description: string | null;
   types: CompanyType[];
   startup_stage: StartupStage | null;
+  ownership_status: OwnershipStatus | null;
   sectors: string[];
   city: string;
   address: string;
@@ -218,9 +222,25 @@ export function validateImportRows(records: ImportTable["records"], ref: ImportR
     }
     if (types.length === 0 && !errors.some((e) => e.includes("company type"))) warnings.push("No company type: it will not appear under Startup, MNC, or Product.");
 
+    let ownership: OwnershipStatus | null = null;
+    const ownershipRaw = (cells.ownership_status ?? "").trim().toLowerCase();
+    if (ownershipRaw !== "") {
+      if ((OWNERSHIP_STATUSES as readonly string[]).includes(ownershipRaw)) ownership = ownershipRaw as OwnershipStatus;
+      else errors.push(`"${cells.ownership_status}" is not an ownership status (use ${OWNERSHIP_STATUSES.join(", ")}).`);
+    }
+
     let stage: StartupStage | null = null;
-    if ((cells.startup_stage ?? "").trim() !== "") {
-      stage = parseStage(cells.startup_stage ?? "");
+    const stageRaw = (cells.startup_stage ?? "").trim();
+    const legacyStatus = stageRaw.toLowerCase();
+    if (legacyStatus === "public" || legacyStatus === "acquired") {
+      // A file made before ADR-0017: Public and Acquired are an ownership status now (import_commit does the same).
+      if (ownership && ownership !== legacyStatus) errors.push(`The stage "${stageRaw}" and the ownership status "${ownership}" disagree.`);
+      else {
+        ownership = legacyStatus;
+        warnings.push(`"${stageRaw}" is an ownership status now, not a startup stage; it is imported as the ownership status.`);
+      }
+    } else if (stageRaw !== "") {
+      stage = parseStage(stageRaw);
       if (!stage) errors.push(`"${cells.startup_stage}" is not a startup stage.`);
       else if (!types.includes("startup")) errors.push("A startup stage needs the type startup.");
     }
@@ -294,6 +314,7 @@ export function validateImportRows(records: ImportTable["records"], ref: ImportR
         description: description || null,
         types,
         startup_stage: stage,
+        ownership_status: ownership,
         sectors,
         city: citySlug!,
         address,

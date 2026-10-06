@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(53);
+select plan(55);
 
 create schema tests;
 grant usage on schema tests to anon;
@@ -74,7 +74,11 @@ select cmp_ok((select count(*)::int from (select company_id from company_type_ta
 select cmp_ok((select count(*)::int from (select company_id from company_type_tag where type in ('mnc', 'product')
                group by company_id having count(distinct type) = 2) x), '>=', 1,
   'and at least one is both MNC and Product');
-select is((select count(distinct startup_stage)::int from company), 9, 'every startup stage is used');
+select is((select count(distinct startup_stage)::int from company), 7, 'every startup stage is used');
+select is((select count(distinct ownership_status)::int from company), 3, 'every ownership status is used (ADR-0017)');
+select cmp_ok((select count(*)::int from company c where c.ownership_status is not null
+               and not exists (select 1 from company_type_tag t where t.company_id = c.id and t.type = 'startup')), '>=', 1,
+  'an ownership status does not need the Startup type');
 select cmp_ok((select count(*)::int from company c where c.startup_stage is null
                and exists (select 1 from company_type_tag t where t.company_id = c.id and t.type = 'startup')), '>=', 1,
   'some startups have an unknown stage (NULL, never guessed)');
@@ -100,7 +104,7 @@ select is((select count(*)::int from public.company_filter('bangalore')), 48, 'a
 select is((select count(*)::int from public.company_filter('chennai')), 24, 'anon: 24 companies in Chennai');
 select is((select count(*)::int from public.company_filter('bangalore', '{"q":"synthetic"}')), 48,
   'search finds the synthetic marker in every name');
-select is((select count(*) filter (where company_count > 0)::int from public.company_facets('bangalore') where facet = 'stage'), 9,
+select is((select count(*) filter (where company_count > 0)::int from public.company_facets('bangalore') where facet = 'stage'), 7,
   'the stage facet has a company at every stage in Bengaluru');
 select cmp_ok((select count(*)::int from public.company_filter('bangalore', '{"types":["startup"],"stages":["seed"]}')), '>=', 1,
   'Startup + Seed returns companies');

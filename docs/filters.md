@@ -10,12 +10,13 @@ A JSON object. Every key is optional; an absent, `null`, or empty group does not
 | --- | --- | --- |
 | `q` | string | Search text (below) |
 | `types` | string[] of `startup`, `mnc`, `product` | OR within the group |
-| `stages` | string[] of the nine startup stages | Only applies while `startup` is in `types` |
+| `stages` | string[] of the seven startup stages | Only applies while `startup` is in `types` |
+| `statuses` | string[] of `private`, `public`, `acquired` (ownership status, ADR-0017) | OR within the group; independent of `types` |
 | `neighbourhoods` | string[] of neighbourhood slugs | OR within the group |
 | `tech_parks` | string[] of tech-park slugs | OR within the group |
 | `sectors` | string[] of sector slugs | OR within the group |
 
-Groups combine with **AND**. String values are trimmed and lower-cased. An **unknown key, a wrong shape, or an unknown type or stage value is an error** (`22023`), never a silent widening. The TypeScript side parses the URL with its Zod schema first, so only valid objects reach the filter; the database checks again.
+Groups combine with **AND**. String values are trimmed and lower-cased. An **unknown key, a wrong shape, or an unknown type, stage, or status value is an error** (`22023`), never a silent widening. The TypeScript side parses the URL with its Zod schema first, so only valid objects reach the filter; the database checks again.
 
 ## Which companies are candidates [Confirmed from the brief and data rules]
 
@@ -28,6 +29,13 @@ A company is a candidate in a city when it is `published` and has at least one `
 - `stages` are ignored when `startup` is not in `types` (including when `types` is empty).
 - A startup with no recorded stage matches no stage (it is never guessed).
 - A company with several tags appears once.
+
+## Ownership status [Confirmed, ADR-0017, D-05 decided 6 Oct 2026]
+
+- Public and Acquired are an **ownership status**, not a startup stage. The values are `private`, `public`, `acquired`; NULL means unknown and is never guessed.
+- The `statuses` group is OR within the group and AND with every other group. It does not depend on the type group: `statuses=[public]` with `types=[mnc]` is the public MNCs.
+- A company with an unknown status matches no status selection.
+- Migration `20261006090000_ownership_status.sql` moved every company whose stage was `public` or `acquired` to that ownership status (stage now unknown) and rebuilt the `startup_stage` enum without the two values.
 
 ## Locations and sectors [Proposal]
 
@@ -55,7 +63,7 @@ Typo tolerance (trigram similarity) is deliberately **not** part of the filter, 
 | --- | --- |
 | `company_filter(city_slug, filters)` | the matching company IDs, each once: the reference definition |
 | `city_points(city_slug, filters)` | every published office in the city of every matching company: `office_id, company_id, lng, lat, accuracy`, ordered by office ID |
-| `search_companies(city_slug, filters, result_limit, result_offset)` | one row per matching company, in name order: `company_id, slug, name, logo_key, types, startup_stage, office_count, open_job_count` |
+| `search_companies(city_slug, filters, result_limit, result_offset)` | one row per matching company, in name order: `company_id, slug, name, logo_key, types, startup_stage, ownership_status, office_count, open_job_count` |
 | `company_facets(city_slug, filters)` | `facet, value, company_count` rows, below |
 
 - **Points and locations [Proposal].** A location filter selects companies; a matching company keeps all its offices in the city on the map. If the designer would rather show only the matching offices, change `city_points` and the TypeScript mirror together (P4-03).
@@ -71,13 +79,14 @@ A facet's count is the size of `company_filter` **with that group's selection re
 | `total` | the filter as given |
 | `type` | `types = [v]`, `stages` cleared (the Startup count does not shrink when stages are picked) |
 | `stage` | `types = [startup]`, `stages = [v]` |
+| `status` | `statuses = [v]` |
 | `neighbourhood`, `tech_park`, `sector` | that group `= [v]` |
 
 So selecting Startup does not zero the MNC count: the user can still add MNC. Counts can add up to more than the total because types overlap, so the UI shows the unique-company total from the `total` row. Every value is returned, including those with a count of 0. The tests check each facet count against `company_filter` itself, so the two cannot drift apart.
 
 ## City datasets [Confirmed design, ADR-0006; file layout is a Proposal]
 
-`city_build_snapshot(city_slug)` returns, as one JSON document, everything the build needs for a city: the city, its neighbourhoods and tech parks, all sectors, every candidate company (with its types, stage, sectors, and published founders), its published offices in the city, and its active and suspect jobs listed in the city. The candidates are exactly `company_filter(city, '{}')`. It returns `null` for an unknown city or one the caller cannot see. Slug redirects are not in it yet (the table arrives with company merging, P7).
+`city_build_snapshot(city_slug)` returns, as one JSON document, everything the build needs for a city: the city, its neighbourhoods and tech parks, all sectors, every candidate company (with its types, stage, ownership status, sectors, and published founders), its published offices in the city, and its active and suspect jobs listed in the city. The candidates are exactly `company_filter(city, '{}')`. It returns `null` for an unknown city or one the caller cannot see. Slug redirects are not in it yet (the table arrives with company merging, P7).
 
 `npm run data` (`scripts/build-datasets.mts`) reads it once per launch city, validates it with Zod, and writes, under `public/data/` (git-ignored; Next copies it into the static export):
 
@@ -114,12 +123,14 @@ The search box (`components/explorer/explorer-toolbar.tsx`) applies after 200 ms
 | `view` | `map`, `grid`, `list` | `map` |
 | `q` | search text, white space collapsed, at most 100 characters | empty |
 | `type` | comma list of `startup`, `mnc`, `product` | none |
-| `stage` | comma list of the nine stages | none |
+| `stage` | comma list of the seven stages | none |
+| `status` | comma list of `private`, `public`, `acquired` | none |
 | `hood`, `park`, `sector` | comma lists of slugs | none |
 | `company` | the selected company's slug | none |
 | `map` | `lat,lng,zoom` (5, 5, and 2 decimals; zoom 0 to 22) | the city's default view |
 
 - **Parsing is lenient, writing is canonical.** A bad value is dropped (anyone can edit a URL); the result is always normalised. The same state always gives the same string: fixed parameter order, sorted lists, no defaults. Back and Forward therefore compare URLs by value.
+- **Old links keep working.** `stage=public` or `stage=acquired` (links made before ADR-0017) is read as `status=…` and the URL is rewritten.
 - **Stages need Startup.** `?stage=seed` alone, or with only `type=mnc`, is corrected on load; deselecting Startup clears the stages from the state and the URL (`applyFilterChange`).
 - **History.** `historyMode(previous, next)`: a camera-only change replaces the current entry, any other change adds one, no change does nothing. Back and Forward step through what the visitor chose, not through every pan.
 - **Not here:** clearing `company` when a filter hides the selected company depends on the dataset, so the explorer (P4-03, P5-05) does it. The Playwright check of Back and Forward (AC07) needs the explorer shell.

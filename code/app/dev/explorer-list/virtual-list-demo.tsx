@@ -19,6 +19,7 @@ export function VirtualListDemo() {
         logo_key: null,
         types: c.types.filter((t): t is (typeof TYPES)[number] => (TYPES as readonly string[]).includes(t)),
         startup_stage: null,
+        ownership_status: null,
         office_count: 1,
         open_job_count: c.id % 7,
         areas: [],

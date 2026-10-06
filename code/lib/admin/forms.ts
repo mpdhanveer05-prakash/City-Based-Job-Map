@@ -4,7 +4,7 @@
 import "../zod-config.ts";
 import { z } from "zod";
 import { checkOutboundUrl, companyDomain } from "../links.ts";
-import { COMPANY_TYPES, STARTUP_STAGES, slugSchema } from "../filters/schema.ts";
+import { COMPANY_TYPES, OWNERSHIP_STATUSES, STARTUP_STAGES, slugSchema } from "../filters/schema.ts";
 
 export type FieldErrors = Record<string, string>;
 export type Checked<T> = { ok: true; value: T } | { ok: false; errors: FieldErrors };
@@ -68,6 +68,8 @@ const companySchema = z
     careers_url: z.string().trim(),
     description: optionalText("The description", 2000),
     startup_stage: z.string().trim(),
+    // Independent of the types (ADR-0017); empty means unknown.
+    ownership_status: z.string().trim().default(""),
     types: z.array(z.enum(COMPANY_TYPES)),
     sectors: z.array(slugSchema),
     status: z.enum(COMPANY_STATUSES),
@@ -88,6 +90,9 @@ const companySchema = z
       if (!(STARTUP_STAGES as readonly string[]).includes(c.startup_stage)) issue("startup_stage", "That is not a startup stage.");
       else if (!c.types.includes("startup")) issue("startup_stage", "A startup stage needs the type Startup.");
     }
+    if (c.ownership_status !== "" && !(OWNERSHIP_STATUSES as readonly string[]).includes(c.ownership_status)) {
+      issue("ownership_status", "That is not an ownership status.");
+    }
   });
 
 export type CompanyForm = z.input<typeof companySchema>;
@@ -99,6 +104,7 @@ export type CompanyPayload = {
   careers_url: string | null;
   description: string | null;
   startup_stage: string | null;
+  ownership_status: string | null;
   status: (typeof COMPANY_STATUSES)[number];
 };
 
@@ -117,6 +123,7 @@ export function checkCompanyForm(input: CompanyForm): Checked<{ company: Company
         careers_url: c.careers_url || null,
         description: c.description,
         startup_stage: c.startup_stage || null,
+        ownership_status: c.ownership_status || null,
         status: c.status,
       },
       types: [...new Set(c.types)],

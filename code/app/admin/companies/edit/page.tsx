@@ -10,8 +10,8 @@ import { CheckRow, Field, Notice, PageHeader, Select, TextArea, TextInput } from
 import { Button } from "@/components/ui/button";
 import { describeError } from "@/lib/admin/errors";
 import { checkCompanyForm, type CompanyForm, type FieldErrors } from "@/lib/admin/forms";
-import { STAGE_LABELS, TYPE_LABELS } from "@/lib/explorer/labels";
-import { COMPANY_TYPES, STARTUP_STAGES } from "@/lib/filters/schema";
+import { STAGE_LABELS, STATUS_LABELS, TYPE_LABELS } from "@/lib/explorer/labels";
+import { COMPANY_TYPES, OWNERSHIP_STATUSES, STARTUP_STAGES } from "@/lib/filters/schema";
 
 const EMPTY: CompanyForm = {
   name: "",
@@ -21,6 +21,7 @@ const EMPTY: CompanyForm = {
   careers_url: "",
   description: "",
   startup_stage: "",
+  ownership_status: "",
   types: [],
   sectors: [],
   status: "draft",
@@ -40,21 +41,21 @@ function Editor() {
     queryFn: async (): Promise<Loaded> => {
       const { data, error } = await supabase
         .from("company")
-        .select("name, slug, domain, website_url, careers_url, description, startup_stage, status, company_type_tag(type), company_sector(sector(slug)), office(count), job(count)")
+        .select("name, slug, domain, website_url, careers_url, description, startup_stage, ownership_status, status, company_type_tag(type), company_sector(sector(slug)), office(count), job(count)")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
       if (!data) throw { message: "That company does not exist, or you cannot see it." };
       const row = data as unknown as {
         name: string; slug: string; domain: string; website_url: string; careers_url: string | null; description: string | null;
-        startup_stage: string | null; status: CompanyForm["status"];
+        startup_stage: string | null; ownership_status: string | null; status: CompanyForm["status"];
         company_type_tag: Array<{ type: (typeof COMPANY_TYPES)[number] }>; company_sector: Array<{ sector: { slug: string } | null }>;
         office: Array<{ count: number }>; job: Array<{ count: number }>;
       };
       return {
         form: {
           name: row.name, slug: row.slug, domain: row.domain, website_url: row.website_url, careers_url: row.careers_url ?? "",
-          description: row.description ?? "", startup_stage: row.startup_stage ?? "", status: row.status,
+          description: row.description ?? "", startup_stage: row.startup_stage ?? "", ownership_status: row.ownership_status ?? "", status: row.status,
           types: row.company_type_tag.map((t) => t.type), sectors: row.company_sector.flatMap((s) => (s.sector ? [s.sector.slug] : [])),
         },
         offices: row.office[0]?.count ?? 0,
@@ -176,6 +177,19 @@ function CompanyFormView({ id, initial, counts, reference }: { id: string | null
               {STARTUP_STAGES.map((s) => (
                 <option key={s} value={s}>
                   {STAGE_LABELS[s]}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+
+        <Field label="Ownership status" error={errors.ownership_status} hint="Private, public, or acquired, from a source you can cite. Leave it unknown otherwise.">
+          {(p) => (
+            <Select {...p} value={form.ownership_status} onChange={(e) => set("ownership_status", e.target.value)}>
+              <option value="">Not stated</option>
+              {OWNERSHIP_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABELS[s]}
                 </option>
               ))}
             </Select>

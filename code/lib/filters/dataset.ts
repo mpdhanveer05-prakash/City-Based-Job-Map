@@ -10,7 +10,7 @@
 // The browser merges the first three into a `CityDataset` and filters it with `lib/filters/filter.ts`.
 import "../zod-config.ts";
 import { z } from "zod";
-import { COMPANY_TYPES, STARTUP_STAGES, slugSchema } from "./schema.ts";
+import { COMPANY_TYPES, OWNERSHIP_STATUSES, STARTUP_STAGES, slugSchema } from "./schema.ts";
 
 const isoOrNull = z.string().nullable();
 
@@ -25,6 +25,7 @@ const companySchema = z.object({
   website_url: z.string().regex(/^https:\/\//),
   careers_url: z.string().regex(/^https:\/\//).nullable(),
   startup_stage: z.enum(STARTUP_STAGES).nullable(),
+  ownership_status: z.enum(OWNERSHIP_STATUSES).nullable(),
   last_verified_at: isoOrNull,
   types: z.array(z.enum(COMPANY_TYPES)),
   sectors: z.array(slugSchema),
@@ -97,7 +98,7 @@ export type SnapshotJob = z.infer<typeof jobSchema>;
 /** A company as the explorer needs it. */
 export type CompanySummary = Pick<
   z.infer<typeof companySchema>,
-  "id" | "slug" | "name" | "logo_key" | "startup_stage" | "types" | "sectors"
+  "id" | "slug" | "name" | "logo_key" | "startup_stage" | "ownership_status" | "types" | "sectors"
 > & {
   /** Active jobs listed in this city. In the summary, not only in search.json, so the popup and the list are right before a search loads. */
   open_jobs: number;
@@ -196,6 +197,7 @@ export function splitSnapshot(snapshot: CitySnapshot): CityDatasetFiles {
         name: c.name,
         logo_key: c.logo_key,
         startup_stage: c.startup_stage,
+        ownership_status: c.ownership_status,
         types: c.types,
         sectors: c.sectors,
         open_jobs: activeJobs.get(c.id)?.length ?? 0,

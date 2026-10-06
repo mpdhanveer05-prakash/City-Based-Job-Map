@@ -125,9 +125,18 @@ update seed_company s set stage =
 from (select n, row_number() over (order by n) as rk from seed_company where is_startup) r
 where r.n = s.n;
 
+-- Ownership status (ADR-0017). Public and Acquired used to be stages: the startups that drew them in the
+-- rotation above keep the value as their ownership status, with the stage unknown, exactly as the migration
+-- moves real data. MNCs rotate public, private, unknown; every other product company is private. The rest
+-- stay unknown (NULL), which the product never guesses.
+alter table seed_company add column ownership text;
+update seed_company set ownership = stage, stage = null where stage in ('public', 'acquired');
+update seed_company set ownership = (array['public', 'private', null])[1 + (n / 4) % 3] where is_mnc;
+update seed_company set ownership = 'private' where n % 8 = 3;
+
 -- Ids are derived from the slug (md5 as a uuid), so every `db reset` gives the same ids and the
 -- committed dataset snapshot (supabase/seed/snapshots) stays byte-stable.
-insert into company (id, slug, name, domain, description, size_band, startup_stage, website_url, careers_url, status, source_id, is_synthetic)
+insert into company (id, slug, name, domain, description, size_band, startup_stage, ownership_status, website_url, careers_url, status, source_id, is_synthetic)
 select
   md5('company:' || slug)::uuid,
   slug,
@@ -136,6 +145,7 @@ select
   'Synthetic sample record for development. Not a real company.',
   null,
   stage::startup_stage,
+  ownership::ownership_status,
   'https://' || slug || '.example',
   'https://' || slug || '.example/careers',
   case when n % 23 = 0 then 'draft' else 'published' end,

@@ -176,6 +176,23 @@ describe("validateImportRows", () => {
     expect(rows[2].errors).toHaveLength(1);
   });
 
+  it("reads the ownership status, and moves Public or Acquired from an old stage column (ADR-0017)", () => {
+    const [a, b, c, d] = check(
+      "name,domain,city,address,lat,lng,types,startup_stage,ownership_status\n" +
+        "A,a.test,Chennai,1 Road,13,80.2,mnc,,Public\n" +
+        "B,b.test,Chennai,2 Road,13,80.2,startup,Acquired,\n" +
+        "C,c.test,Chennai,3 Road,13,80.2,startup,public,private\n" +
+        "D,d.test,Chennai,4 Road,13,80.2,mnc,,listed",
+    );
+    expect(a.payload).toMatchObject({ ownership_status: "public", startup_stage: null });
+    expect(b.payload).toMatchObject({ ownership_status: "acquired", startup_stage: null });
+    expect(b.warnings.join(" ")).toContain("ownership status now");
+    expect(c.status).toBe("error");
+    expect(c.errors.join(" ")).toContain("disagree");
+    expect(d.errors.join(" ")).toContain("is not an ownership status");
+    expect(table("Name,Domain,City,Address,Lat,Lng,Ownership\nA,a.test,Chennai,x,1,2,private").records[0].cells.ownership_status).toBe("private");
+  });
+
   it("caps long text", () => {
     expect(check(`${HEADER},description\nA,a.test,Chennai,x,13,80,${"x".repeat(2001)}`)[0].errors.join()).toMatch(/longer than 2000/);
     expect(check(`${HEADER}\n${"N".repeat(201)},a.test,Chennai,x,13,80`)[0].errors.join()).toMatch(/longer than 200/);

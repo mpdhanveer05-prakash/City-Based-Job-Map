@@ -7,7 +7,7 @@ export type Drawn = { key: string; kind: string; x: number; y: number; radius: n
 
 type Manifest = { cities: Record<string, { data_version: number; synthetic: boolean; counts: { companies: number; offices: number; jobs: number }; files: Record<string, { path: string }> }> };
 
-export type Company = { id: string; slug: string; name: string; types: string[]; startup_stage: string | null; sectors: string[]; open_jobs: number };
+export type Company = { id: string; slug: string; name: string; types: string[]; startup_stage: string | null; ownership_status: string | null; sectors: string[]; open_jobs: number };
 export type Office = { id: string; company_id: string; lng: number; lat: number; address: string; neighbourhood: string | null; tech_park: string | null };
 export type CityData = {
   companies: Company[];
@@ -98,7 +98,7 @@ export async function shownCounts(page: Page): Promise<{ companies: number; offi
 // The specs compare the page with the dataset the build wrote, using this short re-statement of the rules in
 // docs/filters.md, so a bug in lib/filters/filter.ts cannot hide behind itself.
 
-export type Selection = { q?: string; types?: string[]; stages?: string[]; neighbourhoods?: string[]; techParks?: string[]; sectors?: string[] };
+export type Selection = { q?: string; types?: string[]; stages?: string[]; statuses?: string[]; neighbourhoods?: string[]; techParks?: string[]; sectors?: string[] };
 
 /** The slugs of the companies a filter should show. */
 export function expectedSlugs(data: CityData, f: Selection): string[] {
@@ -115,6 +115,8 @@ export function expectedSlugs(data: CityData, f: Selection): string[] {
         const ok = c.types.some((t) => types.includes(t) && (t !== "startup" || stages.length === 0 || (c.startup_stage !== null && stages.includes(c.startup_stage))));
         if (!ok) return false;
       }
+      // Ownership status is its own group, independent of the types (ADR-0017); an unknown status never matches.
+      if (f.statuses?.length && (c.ownership_status === null || !f.statuses.includes(c.ownership_status))) return false;
       if (f.neighbourhoods?.length && !offices.some((o) => o.neighbourhood && f.neighbourhoods!.includes(o.neighbourhood))) return false;
       if (f.techParks?.length && !offices.some((o) => o.tech_park && f.techParks!.includes(o.tech_park))) return false;
       if (f.sectors?.length && !c.sectors.some((s) => f.sectors!.includes(s))) return false;

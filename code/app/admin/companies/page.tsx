@@ -10,8 +10,8 @@ import { DataTable, Notice, PageHeader, Pager, Select, STATUS_LABELS, TextInput 
 import { Button } from "@/components/ui/button";
 import { describeError } from "@/lib/admin/errors";
 import { pathWith, withParams } from "@/lib/admin/url";
-import { TYPE_LABELS, STAGE_LABELS } from "@/lib/explorer/labels";
-import type { CompanyType, StartupStage } from "@/lib/filters/schema";
+import { TYPE_LABELS, STAGE_LABELS, STATUS_LABELS as OWNERSHIP_LABELS } from "@/lib/explorer/labels";
+import type { CompanyType, OwnershipStatus, StartupStage } from "@/lib/filters/schema";
 
 const PAGE_SIZE = 50;
 
@@ -22,6 +22,7 @@ type Row = {
   domain: string;
   status: string;
   startup_stage: StartupStage | null;
+  ownership_status: OwnershipStatus | null;
   company_type_tag: Array<{ type: CompanyType }>;
   office: Array<{ count: number }>;
 };
@@ -45,7 +46,7 @@ function CompaniesList() {
     queryFn: async () => {
       let query = supabase
         .from("company")
-        .select("id, slug, name, domain, status, startup_stage, company_type_tag(type), office(count)", { count: "exact" })
+        .select("id, slug, name, domain, status, startup_stage, ownership_status, company_type_tag(type), office(count)", { count: "exact" })
         .order("name")
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
       if (status) query = query.eq("status", status);
@@ -104,6 +105,7 @@ function CompaniesList() {
             <th scope="col">Domain</th>
             <th scope="col">Types</th>
             <th scope="col">Stage</th>
+            <th scope="col">Ownership</th>
             <th scope="col" className="text-right">
               Offices
             </th>
@@ -119,6 +121,7 @@ function CompaniesList() {
               <td>{c.domain}</td>
               <td>{c.company_type_tag.map((t) => TYPE_LABELS[t.type]).join(", ") || "None"}</td>
               <td>{c.startup_stage ? STAGE_LABELS[c.startup_stage] : ""}</td>
+              <td>{c.ownership_status ? OWNERSHIP_LABELS[c.ownership_status] : ""}</td>
               <td className="text-right tabular-nums">{c.office[0]?.count ?? 0}</td>
               <td>{STATUS_LABELS[c.status] ?? c.status}</td>
             </tr>

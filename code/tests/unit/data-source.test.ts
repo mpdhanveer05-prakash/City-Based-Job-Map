@@ -56,7 +56,7 @@ describe("snapshotIsSynthetic", () => {
   const id = (n: number) => `00000000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
   const company = (n: number) => ({
     id: id(n), slug: `c-${n}`, name: `C ${n}`, logo_key: null, description: null, website_url: `https://c${n}.example`,
-    careers_url: null, startup_stage: null, last_verified_at: null, types: [], sectors: [], founders: [],
+    careers_url: null, startup_stage: null, ownership_status: null, last_verified_at: null, types: [], sectors: [], founders: [],
   });
   const make = (companies: number, synthetic: number): CitySnapshot =>
     citySnapshotSchema.parse({

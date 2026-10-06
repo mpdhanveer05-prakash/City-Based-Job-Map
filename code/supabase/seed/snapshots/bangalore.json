@@ -176,6 +176,7 @@
    "website_url": "https://amber-forge-synthetic.example",
    "careers_url": "https://amber-forge-synthetic.example/careers",
    "startup_stage": "pre_seed",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -194,6 +195,7 @@
    "website_url": "https://amber-labs-synthetic.example",
    "careers_url": "https://amber-labs-synthetic.example/careers",
    "startup_stage": "series_b",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -212,6 +214,7 @@
    "website_url": "https://amber-systems-synthetic.example",
    "careers_url": "https://amber-systems-synthetic.example/careers",
    "startup_stage": "series_b",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -230,6 +233,7 @@
    "website_url": "https://amber-works-synthetic.example",
    "careers_url": "https://amber-works-synthetic.example/careers",
    "startup_stage": "pre_seed",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -248,6 +252,7 @@
    "website_url": "https://birch-forge-synthetic.example",
    "careers_url": "https://birch-forge-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "public",
    "last_verified_at": null,
    "types": [
     "mnc",
@@ -267,6 +272,7 @@
    "website_url": "https://birch-labs-synthetic.example",
    "careers_url": "https://birch-labs-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "public",
    "last_verified_at": null,
    "types": [
     "mnc",
@@ -286,6 +292,7 @@
    "website_url": "https://birch-systems-synthetic.example",
    "careers_url": "https://birch-systems-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "public",
    "last_verified_at": null,
    "types": [
     "mnc",
@@ -305,6 +312,7 @@
    "website_url": "https://birch-works-synthetic.example",
    "careers_url": "https://birch-works-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "public",
    "last_verified_at": null,
    "types": [
     "mnc",
@@ -324,6 +332,7 @@
    "website_url": "https://cobalt-forge-synthetic.example",
    "careers_url": "https://cobalt-forge-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "private",
    "last_verified_at": null,
    "types": [
     "product"
@@ -343,6 +352,7 @@
    "website_url": "https://cobalt-labs-synthetic.example",
    "careers_url": "https://cobalt-labs-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "product"
@@ -362,6 +372,7 @@
    "website_url": "https://cobalt-systems-synthetic.example",
    "careers_url": "https://cobalt-systems-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "product"
@@ -381,6 +392,7 @@
    "website_url": "https://cobalt-works-synthetic.example",
    "careers_url": "https://cobalt-works-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "private",
    "last_verified_at": null,
    "types": [
     "product"
@@ -400,6 +412,7 @@
    "website_url": "https://delta-forge-synthetic.example",
    "careers_url": "https://delta-forge-synthetic.example/careers",
    "startup_stage": "seed",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -418,6 +431,7 @@
    "website_url": "https://delta-labs-synthetic.example",
    "careers_url": "https://delta-labs-synthetic.example/careers",
    "startup_stage": "series_c",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -436,6 +450,7 @@
    "website_url": "https://delta-systems-synthetic.example",
    "careers_url": "https://delta-systems-synthetic.example/careers",
    "startup_stage": "series_c",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -454,6 +469,7 @@
    "website_url": "https://delta-works-synthetic.example",
    "careers_url": "https://delta-works-synthetic.example/careers",
    "startup_stage": "seed",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -472,6 +488,7 @@
    "website_url": "https://ember-forge-synthetic.example",
    "careers_url": "https://ember-forge-synthetic.example/careers",
    "startup_stage": "seed",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -490,6 +507,7 @@
    "website_url": "https://ember-labs-synthetic.example",
    "careers_url": "https://ember-labs-synthetic.example/careers",
    "startup_stage": "series_c_plus",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -508,6 +526,7 @@
    "website_url": "https://ember-loop-synthetic.example",
    "careers_url": "https://ember-loop-synthetic.example/careers",
    "startup_stage": "series_c_plus",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -526,6 +545,7 @@
    "website_url": "https://ember-systems-synthetic.example",
    "careers_url": "https://ember-systems-synthetic.example/careers",
    "startup_stage": "series_c_plus",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -544,6 +564,7 @@
    "website_url": "https://ember-works-synthetic.example",
    "careers_url": "https://ember-works-synthetic.example/careers",
    "startup_stage": "seed",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -562,6 +583,7 @@
    "website_url": "https://fjord-forge-synthetic.example",
    "careers_url": "https://fjord-forge-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "private",
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -581,6 +603,7 @@
    "website_url": "https://fjord-labs-synthetic.example",
    "careers_url": "https://fjord-labs-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "private",
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -600,6 +623,7 @@
    "website_url": "https://fjord-loop-synthetic.example",
    "careers_url": "https://fjord-loop-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "private",
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -619,6 +643,7 @@
    "website_url": "https://fjord-systems-synthetic.example",
    "careers_url": "https://fjord-systems-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "private",
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -638,6 +663,7 @@
    "website_url": "https://fjord-works-synthetic.example",
    "careers_url": "https://fjord-works-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "private",
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -657,6 +683,7 @@
    "website_url": "https://garnet-forge-synthetic.example",
    "careers_url": "https://garnet-forge-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "product"
@@ -675,6 +702,7 @@
    "website_url": "https://garnet-labs-synthetic.example",
    "careers_url": "https://garnet-labs-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "private",
    "last_verified_at": null,
    "types": [
     "product"
@@ -693,6 +721,7 @@
    "website_url": "https://garnet-loop-synthetic.example",
    "careers_url": "https://garnet-loop-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "private",
    "last_verified_at": null,
    "types": [
     "product"
@@ -711,6 +740,7 @@
    "website_url": "https://garnet-systems-synthetic.example",
    "careers_url": "https://garnet-systems-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "private",
    "last_verified_at": null,
    "types": [
     "product"
@@ -729,6 +759,7 @@
    "website_url": "https://garnet-works-synthetic.example",
    "careers_url": "https://garnet-works-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "product"
@@ -747,6 +778,7 @@
    "website_url": "https://harbor-forge-synthetic.example",
    "careers_url": "https://harbor-forge-synthetic.example/careers",
    "startup_stage": "bootstrapped",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -764,7 +796,8 @@
    "description": "Synthetic sample record for development. Not a real company.",
    "website_url": "https://harbor-labs-synthetic.example",
    "careers_url": "https://harbor-labs-synthetic.example/careers",
-   "startup_stage": "public",
+   "startup_stage": null,
+   "ownership_status": "public",
    "last_verified_at": null,
    "types": [
     "startup"
@@ -782,7 +815,8 @@
    "description": "Synthetic sample record for development. Not a real company.",
    "website_url": "https://harbor-loop-synthetic.example",
    "careers_url": "https://harbor-loop-synthetic.example/careers",
-   "startup_stage": "public",
+   "startup_stage": null,
+   "ownership_status": "public",
    "last_verified_at": null,
    "types": [
     "startup"
@@ -800,7 +834,8 @@
    "description": "Synthetic sample record for development. Not a real company.",
    "website_url": "https://harbor-systems-synthetic.example",
    "careers_url": "https://harbor-systems-synthetic.example/careers",
-   "startup_stage": "public",
+   "startup_stage": null,
+   "ownership_status": "public",
    "last_verified_at": null,
    "types": [
     "startup"
@@ -819,6 +854,7 @@
    "website_url": "https://harbor-works-synthetic.example",
    "careers_url": "https://harbor-works-synthetic.example/careers",
    "startup_stage": "bootstrapped",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -837,6 +873,7 @@
    "website_url": "https://indigo-forge-synthetic.example",
    "careers_url": "https://indigo-forge-synthetic.example/careers",
    "startup_stage": "series_a",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup",
@@ -856,7 +893,8 @@
    "description": "Synthetic sample record for development. Not a real company.",
    "website_url": "https://indigo-labs-synthetic.example",
    "careers_url": "https://indigo-labs-synthetic.example/careers",
-   "startup_stage": "acquired",
+   "startup_stage": null,
+   "ownership_status": "acquired",
    "last_verified_at": null,
    "types": [
     "startup",
@@ -877,6 +915,7 @@
    "website_url": "https://indigo-works-synthetic.example",
    "careers_url": "https://indigo-works-synthetic.example/careers",
    "startup_stage": "series_a",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup",
@@ -897,6 +936,7 @@
    "website_url": "https://juniper-forge-synthetic.example",
    "careers_url": "https://juniper-forge-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -915,6 +955,7 @@
    "website_url": "https://juniper-labs-synthetic.example",
    "careers_url": "https://juniper-labs-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -933,6 +974,7 @@
    "website_url": "https://juniper-loop-synthetic.example",
    "careers_url": "https://juniper-loop-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -951,6 +993,7 @@
    "website_url": "https://juniper-works-synthetic.example",
    "careers_url": "https://juniper-works-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -969,6 +1012,7 @@
    "website_url": "https://kestrel-forge-synthetic.example",
    "careers_url": "https://kestrel-forge-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "private",
    "last_verified_at": null,
    "types": [
     "product"
@@ -987,6 +1031,7 @@
    "website_url": "https://kestrel-works-synthetic.example",
    "careers_url": "https://kestrel-works-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": "private",
    "last_verified_at": null,
    "types": [
     "product"
@@ -1005,6 +1050,7 @@
    "website_url": "https://lumen-forge-synthetic.example",
    "careers_url": "https://lumen-forge-synthetic.example/careers",
    "startup_stage": "series_a",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup",
@@ -1025,6 +1071,7 @@
    "website_url": "https://lumen-labs-synthetic.example",
    "careers_url": "https://lumen-labs-synthetic.example/careers",
    "startup_stage": null,
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup",
@@ -1045,6 +1092,7 @@
    "website_url": "https://lumen-works-synthetic.example",
    "careers_url": "https://lumen-works-synthetic.example/careers",
    "startup_stage": "series_a",
+   "ownership_status": null,
    "last_verified_at": null,
    "types": [
     "startup",

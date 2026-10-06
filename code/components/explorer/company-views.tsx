@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CompanyAvatar } from "@/components/company/company-avatar";
 import { Button } from "@/components/ui/button";
-import { jobs, offices, TYPE_LABELS, STAGE_LABELS } from "@/lib/explorer/labels";
+import { jobs, offices, TYPE_LABELS, STAGE_LABELS, STATUS_LABELS } from "@/lib/explorer/labels";
 import type { ListRow } from "@/lib/filters/filter";
 import { cn } from "@/lib/utils";
 import { VirtualRows } from "./virtual-rows";
@@ -39,11 +39,13 @@ function useWidth(ref: React.RefObject<HTMLElement | null>): number {
 function Meta({ row }: { row: CompanyRowData }) {
   const types = row.types.map((t) => TYPE_LABELS[t]).join(" and ");
   const stage = row.startup_stage ? `, ${STAGE_LABELS[row.startup_stage]}` : "";
+  const status = row.ownership_status ? `, ${STATUS_LABELS[row.ownership_status]}` : "";
   return (
     <>
       <p className="truncate text-sm text-muted-foreground">
         {types}
         {stage}
+        {status}
       </p>
       <p className="truncate text-sm text-muted-foreground tabular-nums">
         {row.areas.length > 0 ? `${row.areas.join(", ")}. ` : ""}

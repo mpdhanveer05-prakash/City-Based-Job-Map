@@ -26,7 +26,7 @@ function city(spec: Spec): CityFiles {
     companies: spec.companies.map((c) => ({
       id: id(c.n), slug: c.slug, name: c.name, logo_key: null, description: `About ${c.name}`,
       website_url: c.website ?? `https://${c.slug}.example`, careers_url: `https://${c.slug}.example/careers`,
-      startup_stage: c.stage ?? null, last_verified_at: null, types: c.types ?? ["startup"], sectors: ["fintech"], founders: [],
+      startup_stage: c.stage ?? null, ownership_status: null, last_verified_at: null, types: c.types ?? ["startup"], sectors: ["fintech"], founders: [],
     })),
     offices: spec.offices.map((o) => ({
       id: id(o.n), company_id: id(o.company), lng: 77.5, lat: 12.5, accuracy: "building", address: o.address, neighbourhood: o.hood, tech_park: null,

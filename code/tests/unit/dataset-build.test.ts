@@ -18,7 +18,7 @@ const snapshot: CitySnapshot = citySnapshotSchema.parse({
   companies: [
     {
       id: id(1), slug: "amber-forge-synthetic", name: "Amber Forge (synthetic)", logo_key: null, description: "Synthetic.",
-      website_url: "https://amber-forge-synthetic.example", careers_url: null, startup_stage: "seed", last_verified_at: null,
+      website_url: "https://amber-forge-synthetic.example", careers_url: null, startup_stage: "seed", ownership_status: null, last_verified_at: null,
       types: ["startup"], sectors: ["saas"], founders: [],
     },
   ],

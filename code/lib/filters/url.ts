@@ -1,7 +1,7 @@
 // URL state for the explorer (P4-04). The one place that reads or writes the explorer's query
 // parameters: components never touch `searchParams` themselves (CLAUDE.md, Conventions).
 //
-//   /bangalore?view=list&type=startup,mnc&stage=seed&hood=indiranagar&park=etv&sector=fintech
+//   /bangalore?view=list&type=startup,mnc&stage=seed&status=public&hood=indiranagar&park=etv&sector=fintech
 //             &q=backend%20engineer&company=amber-forge-synthetic&map=12.97160,77.59460,11.50
 //
 // Parsing is lenient (a bad value is dropped, never an error, because anyone can edit a URL) and the
@@ -14,6 +14,7 @@ import {
   CITY_SLUGS,
   COMPANY_TYPES,
   EMPTY_FILTERS,
+  OWNERSHIP_STATUSES,
   STARTUP_STAGES,
   VIEWS,
   normalizeFilters,
@@ -46,7 +47,10 @@ export const MAX_ZOOM = 22;
 export type SearchInput = URLSearchParams | Record<string, string | readonly string[] | undefined>;
 
 /** Parameter names in the order they are written. */
-export const PARAM_ORDER = ["view", "q", "type", "stage", "hood", "park", "sector", "company", "map"] as const;
+export const PARAM_ORDER = ["view", "q", "type", "stage", "status", "hood", "park", "sector", "company", "map"] as const;
+
+/** Stage values from links made before ADR-0017; they now mean an ownership status. */
+const LEGACY_STAGE_STATUSES: readonly string[] = ["public", "acquired"];
 
 export function parseCity(slug: string | null | undefined): CitySlug | null {
   return (CITY_SLUGS as readonly string[]).includes(slug ?? "") ? (slug as CitySlug) : null;
@@ -107,7 +111,9 @@ export const explorerSearchSchema = z
     view: z.enum(VIEWS).catch(DEFAULT_VIEW),
     q: z.string().optional().transform(normalizeQuery),
     type: csv((v) => (COMPANY_TYPES as readonly string[]).includes(v)),
-    stage: csv((v) => (STARTUP_STAGES as readonly string[]).includes(v)),
+    // Old links may say stage=public or stage=acquired; those are kept here and moved to the status group below.
+    stage: csv((v) => (STARTUP_STAGES as readonly string[]).includes(v) || LEGACY_STAGE_STATUSES.includes(v)),
+    status: csv((v) => (OWNERSHIP_STATUSES as readonly string[]).includes(v)),
     hood: csv((v) => slugSchema.safeParse(v).success),
     park: csv((v) => slugSchema.safeParse(v).success),
     sector: csv((v) => slugSchema.safeParse(v).success),
@@ -124,7 +130,8 @@ export const explorerSearchSchema = z
     filters: normalizeFilters({
       q: p.q,
       types: p.type as Filters["types"],
-      stages: p.stage as Filters["stages"],
+      stages: p.stage.filter((s) => !LEGACY_STAGE_STATUSES.includes(s)) as Filters["stages"],
+      statuses: [...p.status, ...p.stage.filter((s) => LEGACY_STAGE_STATUSES.includes(s))] as Filters["statuses"],
       neighbourhoods: p.hood,
       tech_parks: p.park,
       sectors: p.sector,
@@ -157,6 +164,7 @@ export function serializeExplorerSearch(state: Omit<ExplorerState, "city">): str
   if (filters.q !== "") params.set("q", filters.q);
   if (filters.types.length) params.set("type", filters.types.join(","));
   if (filters.stages.length) params.set("stage", filters.stages.join(","));
+  if (filters.statuses.length) params.set("status", filters.statuses.join(","));
   if (filters.neighbourhoods.length) params.set("hood", filters.neighbourhoods.join(","));
   if (filters.tech_parks.length) params.set("park", filters.tech_parks.join(","));
   if (filters.sectors.length) params.set("sector", filters.sectors.join(","));

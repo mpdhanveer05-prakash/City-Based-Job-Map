@@ -11,7 +11,7 @@ export type CitySlug = (typeof CITY_SLUGS)[number];
 export const COMPANY_TYPES = ["startup", "mnc", "product"] as const;
 export type CompanyType = (typeof COMPANY_TYPES)[number];
 
-/** The nine stages in the brief (D-05 is open on whether Public and Acquired belong here). */
+/** Startup stages. Public and Acquired are an ownership status, not a stage (ADR-0017, D-05). */
 export const STARTUP_STAGES = [
   "pre_seed",
   "seed",
@@ -20,10 +20,12 @@ export const STARTUP_STAGES = [
   "series_b",
   "series_c",
   "series_c_plus",
-  "public",
-  "acquired",
 ] as const;
 export type StartupStage = (typeof STARTUP_STAGES)[number];
+
+/** Ownership status (ADR-0017): independent of the company's type tags. */
+export const OWNERSHIP_STATUSES = ["private", "public", "acquired"] as const;
+export type OwnershipStatus = (typeof OWNERSHIP_STATUSES)[number];
 
 export const VIEWS = ["map", "grid", "list"] as const;
 export type View = (typeof VIEWS)[number];
@@ -57,6 +59,7 @@ export type Filters = {
   neighbourhoods: string[];
   tech_parks: string[];
   sectors: string[];
+  statuses: OwnershipStatus[];
 };
 
 export const EMPTY_FILTERS: Readonly<Filters> = Object.freeze({
@@ -66,6 +69,7 @@ export const EMPTY_FILTERS: Readonly<Filters> = Object.freeze({
   neighbourhoods: [],
   tech_parks: [],
   sectors: [],
+  statuses: [],
 });
 
 /** Strict schema for an already-normalised filter object (the dataset layer and the tests). */
@@ -76,6 +80,7 @@ export const filtersSchema = z.object({
   neighbourhoods: z.array(slugSchema),
   tech_parks: z.array(slugSchema),
   sectors: z.array(slugSchema),
+  statuses: z.array(z.enum(OWNERSHIP_STATUSES)),
 });
 
 /** Trim, collapse runs of white space, and cut to the maximum length. Case is kept as typed. */
@@ -120,6 +125,7 @@ export function normalizeFilters(input: Partial<Filters>): Filters {
     neighbourhoods: slugs(input.neighbourhoods),
     tech_parks: slugs(input.tech_parks),
     sectors: slugs(input.sectors),
+    statuses: pick(input.statuses, OWNERSHIP_STATUSES),
   };
 }
 
@@ -136,7 +142,8 @@ export function isEmptyFilter(filters: Filters): boolean {
     filters.neighbourhoods.length === 0 &&
     filters.tech_parks.length === 0 &&
     filters.sectors.length === 0 &&
-    filters.stages.length === 0
+    filters.stages.length === 0 &&
+    filters.statuses.length === 0
   );
 }
 
@@ -149,5 +156,6 @@ export function toSqlFilters(filters: Filters): Record<string, string | string[]
   if (filters.neighbourhoods.length) out.neighbourhoods = [...filters.neighbourhoods];
   if (filters.tech_parks.length) out.tech_parks = [...filters.tech_parks];
   if (filters.sectors.length) out.sectors = [...filters.sectors];
+  if (filters.statuses.length) out.statuses = [...filters.statuses];
   return out;
 }

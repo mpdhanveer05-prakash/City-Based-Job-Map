@@ -5,7 +5,16 @@
 // A CI parity test (tests/parity) runs this and the SQL functions over the same data and requires
 // identical results. When a rule changes, change the SQL, this file, and docs/filters.md together.
 import type { CityDataset, CompanySummary, Office } from "./dataset.ts";
-import { COMPANY_TYPES, STARTUP_STAGES, WHITESPACE, type CompanyType, type Filters, type StartupStage } from "./schema.ts";
+import {
+  COMPANY_TYPES,
+  OWNERSHIP_STATUSES,
+  STARTUP_STAGES,
+  WHITESPACE,
+  type CompanyType,
+  type Filters,
+  type OwnershipStatus,
+  type StartupStage,
+} from "./schema.ts";
 
 const EDGE_WHITESPACE = new RegExp(`^[${WHITESPACE}]+|[${WHITESPACE}]+$`, "g");
 const WHITESPACE_RUN = new RegExp(`[${WHITESPACE}]+`);
@@ -81,6 +90,10 @@ function matches(p: Prepared, f: Filters, tokens: string[]): boolean {
     );
     if (!ok) return false;
   }
+  // Independent of the type group (ADR-0017). An unknown status never matches a selection.
+  if (f.statuses.length > 0 && (company.ownership_status === null || !f.statuses.includes(company.ownership_status))) {
+    return false;
+  }
   if (f.neighbourhoods.length > 0 && !offices.some((o) => o.neighbourhood !== null && f.neighbourhoods.includes(o.neighbourhood))) {
     return false;
   }
@@ -141,6 +154,7 @@ export type ListRow = {
   logo_key: string | null;
   types: CompanyType[];
   startup_stage: StartupStage | null;
+  ownership_status: OwnershipStatus | null;
   office_count: number;
   open_job_count: number;
 };
@@ -175,6 +189,7 @@ export function listRows(result: FilterResult): ListRow[] {
       logo_key: company.logo_key,
       types: company.types,
       startup_stage: company.startup_stage,
+      ownership_status: company.ownership_status,
       office_count: officeCounts.get(company.id) ?? 0,
       open_job_count: company.open_jobs,
     }));
@@ -185,7 +200,7 @@ export function searchCompanies(index: FilterIndex, filters: Filters, limit = 50
   return listRows(filterResult(index, filters)).slice(Math.max(offset, 0), Math.max(offset, 0) + Math.max(limit, 0));
 }
 
-export type FacetRow = { facet: "total" | "type" | "stage" | "neighbourhood" | "tech_park" | "sector"; value: string; company_count: number };
+export type FacetRow = { facet: "total" | "type" | "stage" | "status" | "neighbourhood" | "tech_park" | "sector"; value: string; company_count: number };
 
 /**
  * Facet counts (mirror of `company_facets`): the size of the filter result with that group's
@@ -199,6 +214,9 @@ export function companyFacets(index: FilterIndex, filters: Filters): FacetRow[] 
   }
   for (const s of STARTUP_STAGES) {
     rows.push({ facet: "stage", value: s, company_count: count({ ...filters, types: ["startup"], stages: [s] }) });
+  }
+  for (const s of OWNERSHIP_STATUSES) {
+    rows.push({ facet: "status", value: s, company_count: count({ ...filters, statuses: [s] }) });
   }
   for (const n of index.dataset.neighbourhoods) {
     rows.push({ facet: "neighbourhood", value: n.slug, company_count: count({ ...filters, neighbourhoods: [n.slug] }) });

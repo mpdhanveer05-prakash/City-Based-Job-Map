@@ -27,7 +27,7 @@ const strict: GateThresholds = { minCompanies: 2, minPreciseShare: 0.9, minFresh
 
 function files(over: { synthetic?: boolean; accuracies?: string[]; points?: Array<[number, number]>; jobChecked?: Array<string | null>; companies?: number } = {}) {
   const n = over.companies ?? 2;
-  const companies = Array.from({ length: n }, (_, i) => ({ id: id(i + 1), slug: `c${i + 1}`, name: `C${i + 1}`, logo_key: null, startup_stage: null, types: [], sectors: [], open_jobs: 0 }));
+  const companies = Array.from({ length: n }, (_, i) => ({ id: id(i + 1), slug: `c${i + 1}`, name: `C${i + 1}`, logo_key: null, startup_stage: null, ownership_status: null, types: [], sectors: [], open_jobs: 0 }));
   const accuracies = over.accuracies ?? Array(n).fill("building");
   const offices = accuracies.map((accuracy, i) => ({
     id: id(100 + i), company_id: id((i % n) + 1), lng: over.points?.[i]?.[0] ?? 5, lat: over.points?.[i]?.[1] ?? 5, accuracy, address: "x", neighbourhood: null, tech_park: null,

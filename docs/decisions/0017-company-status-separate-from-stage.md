@@ -1,6 +1,6 @@
 # ADR-0017: Company status is a separate field from startup stage
 
-- **Status:** Accepted (owner decision, 6 Oct 2026); implementation is P9-06
+- **Status:** Accepted (owner decision, 6 Oct 2026); implemented locally in P9-06 (6 Oct 2026). Names as built: column `company.ownership_status`, filter key `statuses`, URL parameter `status`
 - **Date:** 2026-10-06
 - **Related tasks / decisions:** resolves D-05. Amends [ADR-0004](0004-company-type-filter-model.md) and data-model.md §2.
 

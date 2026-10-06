@@ -181,6 +181,29 @@ test.describe("company type and startup stage", () => {
     await expect(page).not.toHaveURL(/stage=/);
   });
 
+  test("the ownership status filter works on its own, with any type, and old stage links move to it (ADR-0017)", async ({ page, request }) => {
+    const data = await loadCityData(request, "bangalore");
+    await openExplorer(page, "/bangalore?view=list", { map: false });
+    await page.getByTestId("filter-statuses").click();
+    const panel = page.getByTestId("filter-panel-statuses");
+    await expect(option(panel, "Public")).toBeEnabled();
+    await option(panel, "Public").check();
+    await expectList(page, data, { statuses: ["public"] });
+    await expect(page).toHaveURL(/status=public/);
+    await option(panel, "Acquired").check();
+    await expectList(page, data, { statuses: ["public", "acquired"] });
+    await page.keyboard.press("Escape");
+    await page.getByTestId("filter-types").click();
+    await option(page.getByTestId("filter-panel-types"), "MNC").check();
+    await expectList(page, data, { types: ["mnc"], statuses: ["public", "acquired"] });
+    await expect(page).toHaveURL(/status=public(,|%2C)acquired/);
+
+    await openExplorer(page, "/bangalore?view=list&type=startup&stage=acquired", { map: false });
+    await expect(page).not.toHaveURL(/stage=/);
+    await expect(page).toHaveURL(/status=acquired/);
+    await expectList(page, data, { types: ["startup"], statuses: ["acquired"] });
+  });
+
   test("MNC + Startup + Seed shows every MNC company or the Seed startups", async ({ page, request }) => {
     const data = await loadCityData(request, "bangalore");
     await openExplorer(page, "/bangalore?view=list&type=mnc,startup&stage=seed", { map: false });

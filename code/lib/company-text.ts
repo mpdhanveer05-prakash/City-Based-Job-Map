@@ -1,17 +1,18 @@
 // The sentences on a company page (design-system.md §5 and §7). Pure, so they are unit-tested, and they never invent a
 // fact: a value the data does not have is left out or said to be unknown.
-import { STAGE_LABELS, TYPE_LABELS } from "./explorer/labels.ts";
+import { STAGE_LABELS, STATUS_LABELS, TYPE_LABELS } from "./explorer/labels.ts";
 import { formatDate } from "./format-date.ts";
-import type { CompanyType, StartupStage } from "./filters/schema.ts";
+import type { CompanyType, OwnershipStatus, StartupStage } from "./filters/schema.ts";
 
 const join = (parts: readonly string[]): string =>
   parts.length <= 1 ? (parts[0] ?? "") : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
 
-/** "Startup and Product company, Series A". With no type the line is the stage alone, or empty. */
-export function typeSentence(types: readonly CompanyType[], stage: StartupStage | null): string {
+/** "Startup and Product company, Series A, Private". Unknown values are left out; with nothing known the line is empty. */
+export function typeSentence(types: readonly CompanyType[], stage: StartupStage | null, status: OwnershipStatus | null = null): string {
   const kinds = types.length > 0 ? `${join(types.map((t) => TYPE_LABELS[t]))} company` : "";
   const stageText = stage && types.includes("startup") ? STAGE_LABELS[stage] : "";
-  return [kinds, stageText].filter(Boolean).join(", ");
+  const statusText = status ? STATUS_LABELS[status] : "";
+  return [kinds, stageText, statusText].filter(Boolean).join(", ");
 }
 
 type PlaceOffice = { cityName: string; area: string | null; address: string };

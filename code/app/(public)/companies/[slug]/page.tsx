@@ -40,7 +40,7 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[slu
   const company = await find(params);
   if (!company) notFound();
 
-  const kind = typeSentence(company.types, company.stage);
+  const kind = typeSentence(company.types, company.stage, company.ownershipStatus);
   const where = locationLine(company.offices);
   const firstCity = company.cities[0]?.slug ?? "bangalore";
   const jsonLd = {

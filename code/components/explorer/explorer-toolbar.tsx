@@ -72,6 +72,19 @@ export const ExplorerToolbar = forwardRef<HTMLDivElement, ExplorerToolbarProps>(
     typing.current = true;
   };
 
+  // Choosing a suggestion sets the search text itself (an area clears it, a company or job title becomes it), so the
+  // debounced commit of what was typed must not fire afterwards and write the typed text back into the URL.
+  const pick = (suggestion: Suggestion) => {
+    clearTimeout(timer.current);
+    const next = suggestion.kind === "company" || suggestion.kind === "job" ? suggestion.label : "";
+    lastCommitted.current = normalizeQuery(next);
+    typing.current = false;
+    setText(next);
+    props.onSuggestion(suggestion);
+    setOpen(false);
+    setActiveSuggestion(-1);
+  };
+
   const suggestions = open ? props.suggestions(text) : [];
   const listboxId = "search-suggestions";
   const filtersOn = activeFilterCount(filterModel.filters) > 0 || query !== "";
@@ -134,9 +147,7 @@ export const ExplorerToolbar = forwardRef<HTMLDivElement, ExplorerToolbarProps>(
               } else if (event.key === "Enter") {
                 event.preventDefault();
                 if (activeSuggestion >= 0 && suggestions[activeSuggestion]) {
-                  props.onSuggestion(suggestions[activeSuggestion]);
-                  setOpen(false);
-                  setActiveSuggestion(-1);
+                  pick(suggestions[activeSuggestion]);
                 } else {
                   commit(text);
                   setOpen(false);
@@ -169,11 +180,7 @@ export const ExplorerToolbar = forwardRef<HTMLDivElement, ExplorerToolbarProps>(
               id={listboxId}
               suggestions={suggestions}
               activeIndex={activeSuggestion}
-              onPick={(suggestion) => {
-                props.onSuggestion(suggestion);
-                setOpen(false);
-                setActiveSuggestion(-1);
-              }}
+              onPick={pick}
             />
           )}
         </div>

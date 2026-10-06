@@ -20,9 +20,9 @@ Each ADR is short: context, decision, consequences, status (Proposed · Accepted
 | [0014](0014-content-security-policy.md) | Content-Security-Policy as a per-page meta tag with script hashes | Accepted |
 | [0015](0015-dependency-audit-gate.md) | The dependency audit gates production dependencies; tooling findings are reported | Not accepted; superseded by 0019 |
 | [0016](0016-launch-sequence-and-data-policy.md) | Launch sequence, data sourcing, founders, and the "Product" definition | Accepted |
-| [0017](0017-company-status-separate-from-stage.md) | Company status is a separate field from startup stage | Accepted (implementation P9-06) |
+| [0017](0017-company-status-separate-from-stage.md) | Company status is a separate field from startup stage | Accepted; implemented (P9-06) |
 | [0018](0018-spending-policy.md) | Free by default; justified production spending is allowed | Accepted |
-| [0019](0019-dependency-vulnerability-exceptions.md) | Vulnerability exceptions must be documented, reviewed, and time-limited | Accepted (implementation P9-09) |
+| [0019](0019-dependency-vulnerability-exceptions.md) | Vulnerability exceptions must be documented, reviewed, and time-limited | Accepted; implemented (P9-09) |
 | [0020](0020-monitoring-analytics-and-owner-choices.md) | Monitoring, analytics, JavaScript budget, basemap evaluation, admin MFA, backups | Accepted |
 
 Open decisions are listed in the [plan.md decision register](../../plan.md#open-decision-register).

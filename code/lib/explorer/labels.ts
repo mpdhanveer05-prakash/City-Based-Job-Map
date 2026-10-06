@@ -1,5 +1,5 @@
 // The words the explorer uses for the filter values (design-system.md §7: sentence case, the confirmed names).
-import type { CompanyType, StartupStage } from "../filters/schema";
+import type { CompanyType, OwnershipStatus, StartupStage } from "../filters/schema";
 
 export const TYPE_LABELS: Record<CompanyType, string> = { startup: "Startup", mnc: "MNC", product: "Product" };
 
@@ -11,9 +11,10 @@ export const STAGE_LABELS: Record<StartupStage, string> = {
   series_b: "Series B",
   series_c: "Series C",
   series_c_plus: "Series C+",
-  public: "Public",
-  acquired: "Acquired",
 };
+
+/** Ownership status (ADR-0017). */
+export const STATUS_LABELS: Record<OwnershipStatus, string> = { private: "Private", public: "Public", acquired: "Acquired" };
 
 /** How exact an office's position is, as a sentence fragment: "Accurate to the building". */
 export const ACCURACY_LABELS: Record<string, string> = {

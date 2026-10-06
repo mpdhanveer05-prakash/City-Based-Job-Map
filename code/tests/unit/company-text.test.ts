@@ -7,6 +7,8 @@ import { clickEndpoint, sendClick } from "@/lib/beacon";
 describe("typeSentence", () => {
   it("names the types and the stage", () => {
     expect(typeSentence(["startup", "product"], "series_a")).toBe("Startup and Product company, Series A");
+    expect(typeSentence(["mnc"], null, "public")).toBe("MNC company, Public");
+    expect(typeSentence(["startup"], "seed", "acquired")).toBe("Startup company, Seed, Acquired");
     expect(typeSentence(["mnc"], null)).toBe("MNC company");
     expect(typeSentence(["startup", "mnc", "product"], null)).toBe("Startup, MNC and Product company");
   });

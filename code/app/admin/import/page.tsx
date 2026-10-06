@@ -124,7 +124,7 @@ export default function ImportPage() {
         nothing is public until a reviewer publishes it. A row for a domain that already exists adds an office to that company.
       </p>
       <p className="mt-2 text-sm">
-        Required columns: {REQUIRED_COLUMNS.join(", ")}. Optional: website_url, careers_url, description, types (startup, mnc, product, separated by ;), startup_stage, sectors, accuracy,
+        Required columns: {REQUIRED_COLUMNS.join(", ")}. Optional: website_url, careers_url, description, types (startup, mnc, product, separated by ;), startup_stage, ownership_status (private, public, acquired), sectors, accuracy,
         neighbourhood, tech_park.{" "}
         <a href={`data:text/csv;charset=utf-8,${encodeURIComponent(TEMPLATE)}`} download="companies-template.csv" data-testid="template-link">
           Download a template

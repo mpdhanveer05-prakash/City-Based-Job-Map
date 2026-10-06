@@ -19,6 +19,7 @@ import { cityPoints, companyFacets, companyFilter, prepareIndex, searchCompanies
 import {
   COMPANY_TYPES,
   EMPTY_FILTERS,
+  OWNERSHIP_STATUSES,
   STARTUP_STAGES,
   normalizeFilters,
   toSqlFilters,
@@ -171,7 +172,8 @@ function randomFilters(r: () => number, dataset: CityDataset, words: string[]): 
     const parts: string[] = [];
     for (let i = 0; i < n; i++) {
       let w = pickWord();
-      if (r() < 0.3) w = w.slice(0, Math.max(1, Math.ceil(w.length / 2)));
+      // Cut by code point: halving by UTF-16 unit can split an emoji into a lone surrogate, which is not valid JSON text.
+      if (r() < 0.3) w = Array.from(w).slice(0, Math.max(1, Math.ceil(Array.from(w).length / 2))).join("");
       if (r() < 0.2) w = w.toUpperCase();
       parts.push(w);
     }
@@ -185,6 +187,7 @@ function randomFilters(r: () => number, dataset: CityDataset, words: string[]): 
     neighbourhoods: group(dataset.neighbourhoods.map((n) => n.slug)),
     tech_parks: group(dataset.tech_parks.map((t) => t.slug)),
     sectors: group(dataset.sectors.map((s) => s.slug)),
+    statuses: group(OWNERSHIP_STATUSES),
   };
 }
 
@@ -200,7 +203,14 @@ const HANDCRAFTED_FILTERS: Partial<Filters>[] = [
   { types: ["mnc", "startup"], stages: ["seed"] },
   { types: ["mnc"], stages: ["seed"] },
   { stages: ["seed"] },
-  { types: ["startup"], stages: ["acquired"] },
+  { types: ["startup"], stages: ["bootstrapped"] },
+  // Ownership status (ADR-0017): independent of the type group, and an unknown status never matches.
+  { statuses: ["public"] },
+  { statuses: ["acquired"] },
+  { statuses: ["private", "public"] },
+  { statuses: ["public"], types: ["mnc"] },
+  { statuses: ["acquired"], types: ["startup"], stages: ["seed"] },
+  { statuses: ["private"], sectors: ["fintech"], q: "a" },
   { neighbourhoods: ["indiranagar"] },
   { neighbourhoods: ["indiranagar", "koramangala"], types: ["startup"] },
   { tech_parks: ["embassy-tech-village"] },
@@ -306,7 +316,7 @@ describe("filter parity: SQL and TypeScript return the same results", () => {
       const { index } = datasets.get(c.city)!;
       for (const [limit, offset] of [[100000, 0], [7, 3]] as const) {
         const sql = await client.query(
-          "select company_id, slug, name, logo_key, types, startup_stage, office_count, open_job_count from search_companies($1, $2::jsonb, $3, $4)",
+          "select company_id, slug, name, logo_key, types, startup_stage, ownership_status, office_count, open_job_count from search_companies($1, $2::jsonb, $3, $4)",
           [c.city, sqlJson(c.filters), limit, offset],
         );
         const expected = sql.rows.map((r) => ({ ...r }));

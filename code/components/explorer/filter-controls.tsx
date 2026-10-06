@@ -3,8 +3,8 @@
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import type { Ref } from "@/lib/filters/dataset";
 import type { FacetRow } from "@/lib/filters/filter";
-import { COMPANY_TYPES, STARTUP_STAGES, type Filters } from "@/lib/filters/schema";
-import { STAGE_LABELS, TYPE_LABELS } from "@/lib/explorer/labels";
+import { COMPANY_TYPES, OWNERSHIP_STATUSES, STARTUP_STAGES, type Filters } from "@/lib/filters/schema";
+import { STAGE_LABELS, STATUS_LABELS, TYPE_LABELS } from "@/lib/explorer/labels";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -21,7 +21,7 @@ export type FilterModel = {
   onChange(change: Partial<Filters>): void;
 };
 
-type GroupId = "types" | "stages" | "neighbourhoods" | "tech_parks" | "sectors";
+type GroupId = "types" | "stages" | "statuses" | "neighbourhoods" | "tech_parks" | "sectors";
 
 const NEEDS_STARTUP = "Choose Startup to filter by stage.";
 
@@ -52,6 +52,14 @@ export function filterGroups(model: FilterModel): GroupSpec[] {
       selected: filters.stages,
       disabledNote: filters.types.includes("startup") ? undefined : NEEDS_STARTUP,
     },
+    {
+      // Independent of the type group (ADR-0017).
+      id: "statuses",
+      button: "Status",
+      legend: "Ownership status",
+      options: OWNERSHIP_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s], count: count(facets, "status", s) })),
+      selected: filters.statuses,
+    },
     { id: "neighbourhoods", button: "Neighbourhood", legend: "Neighbourhood", options: refOptions(model.neighbourhoods, "neighbourhood"), selected: filters.neighbourhoods },
     { id: "tech_parks", button: "Tech park", legend: "Tech park", options: refOptions(model.techParks, "tech_park"), selected: filters.tech_parks },
     { id: "sectors", button: "Sector", legend: "Sector", options: refOptions(model.sectors, "sector"), selected: filters.sectors },
@@ -60,7 +68,7 @@ export function filterGroups(model: FilterModel): GroupSpec[] {
 
 /** How many filters are on, for the Filters button on a phone. */
 export function activeFilterCount(filters: Filters): number {
-  return filters.types.length + filters.stages.length + filters.neighbourhoods.length + filters.tech_parks.length + filters.sectors.length;
+  return filters.types.length + filters.stages.length + filters.statuses.length + filters.neighbourhoods.length + filters.tech_parks.length + filters.sectors.length;
 }
 
 function groupChange(id: GroupId, next: string[]): Partial<Filters> {
@@ -115,7 +123,7 @@ export function FilterSheet({ model }: { model: FilterModel }) {
         </SheetTrigger>
         <SheetContent data-testid="filters-sheet">
           <SheetTitle className="text-xl font-bold">Filters</SheetTitle>
-          <SheetDescription className="sr-only">Narrow the companies by type, stage, neighbourhood, tech park, and sector.</SheetDescription>
+          <SheetDescription className="sr-only">Narrow the companies by type, stage, ownership status, neighbourhood, tech park, and sector.</SheetDescription>
           {filterGroups(model).map((group) => (
             <FilterGroup
               key={group.id}

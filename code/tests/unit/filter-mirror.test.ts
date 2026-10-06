@@ -21,7 +21,7 @@ import { EMPTY_FILTERS, normalizeFilters, type Filters } from "@/lib/filters/sch
 // The same twelve-company story as supabase/tests/database/03_filter.test.sql, so the browser filter
 // is held to the rules the database tests state. (The parity test compares the two on real data.)
 const id = (n: number) => `00000000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
-const company = (n: number, slug: string, name: string, types: string[], stage: string | null, sectors: string[] = []) => ({
+const company = (n: number, slug: string, name: string, types: string[], stage: string | null, sectors: string[] = [], ownership: string | null = null) => ({
   id: id(n),
   slug,
   name,
@@ -30,6 +30,7 @@ const company = (n: number, slug: string, name: string, types: string[], stage: 
   website_url: `https://${slug}.example`,
   careers_url: null,
   startup_stage: stage,
+  ownership_status: ownership,
   last_verified_at: null,
   types,
   sectors,
@@ -57,11 +58,11 @@ const job = (n: number, companyN: number, title: string, status: "active" | "sus
 const companies = [
   { ...company(1, "alpha-labs", "Alpha Labs", ["startup", "product"], "seed", ["fintech"]), founders: ["Asha Rao"] },
   company(2, "bravo-pay", "Bravo Pay", ["startup"], "series_a", ["fintech", "saas"]),
-  company(3, "charlie-corp", "Charlie Corp", ["mnc"], null),
+  company(3, "charlie-corp", "Charlie Corp", ["mnc"], null, [], "public"),
   company(4, "delta-products", "Delta Products", ["product"], null),
   company(5, "echo-seed", "Echo Seed", ["startup"], "pre_seed"),
-  company(6, "foxtrot-global", "Foxtrot Global", ["mnc", "product"], null),
-  company(9, "india-startup", "India Startup", ["startup"], null),
+  company(6, "foxtrot-global", "Foxtrot Global", ["mnc", "product"], null, [], "private"),
+  company(9, "india-startup", "India Startup", ["startup"], null, [], "acquired"),
   company(11, "kilo-multi", "Kilo Multi", ["mnc"], null),
 ];
 const snapshot: CitySnapshot = citySnapshotSchema.parse({
@@ -126,8 +127,18 @@ describe("filter rules (the same expectations as the pgTAP filter tests)", () =>
   it("stages are ignored without Startup, and a startup counts only at a selected stage", () => {
     expect(slugs(f({ types: ["startup"], stages: ["seed"] }))).toEqual(["alpha-labs"]);
     expect(slugs(f({ types: ["startup"], stages: ["seed", "pre_seed"] }))).toEqual(["alpha-labs", "echo-seed"]);
-    expect(slugs(f({ types: ["startup"], stages: ["acquired"] }))).toEqual([]);
+    expect(slugs(f({ types: ["startup"], stages: ["bootstrapped"] }))).toEqual([]);
     expect(slugs(f({ types: ["startup"], stages: ["series_a"] }))).toEqual(["bravo-pay"]);
+  });
+
+  it("ownership status is its own group: OR within, AND with the others, unknown never matches (ADR-0017)", () => {
+    expect(slugs(f({ statuses: ["public"] }))).toEqual(["charlie-corp"]);
+    expect(slugs(f({ statuses: ["acquired"] }))).toEqual(["india-startup"]);
+    expect(slugs(f({ statuses: ["public", "private"] }))).toEqual(["charlie-corp", "foxtrot-global"]);
+    expect(slugs(f({ statuses: ["acquired"], types: ["startup"] }))).toEqual(["india-startup"]);
+    expect(slugs(f({ statuses: ["public"], types: ["product"] }))).toEqual([]);
+    // Not tied to Startup: selecting a status keeps it when the types change.
+    expect(normalizeFilters({ statuses: ["public"], types: ["mnc"] }).statuses).toEqual(["public"]);
   });
 
   it("MNC + Startup + Seed is every MNC company or the Seed startups (ADR-0004)", () => {
@@ -236,7 +247,11 @@ describe("points, list, facets", () => {
     expect(facets.find((r) => r.facet === "stage" && r.value === "series_a")!.company_count).toBe(
       companyFilter(index, { ...base, types: ["startup"], stages: ["series_a"] }).length,
     );
-    expect(facets.filter((r) => r.facet === "stage")).toHaveLength(9);
+    expect(facets.filter((r) => r.facet === "stage")).toHaveLength(7);
+    expect(facets.filter((r) => r.facet === "status")).toHaveLength(3);
+    expect(facets.find((r) => r.facet === "status" && r.value === "acquired")!.company_count).toBe(
+      companyFilter(index, { ...base, statuses: ["acquired"] }).length,
+    );
     expect(facets.filter((r) => r.facet === "type")).toHaveLength(3);
   });
 
@@ -278,7 +293,7 @@ describe("splitting the snapshot", () => {
 
   it("keeps summaries small: no description or links in companies.json", () => {
     for (const c of files.companies.companies) {
-      expect(Object.keys(c).sort()).toEqual(["id", "logo_key", "name", "open_jobs", "slug", "sectors", "startup_stage", "types"].sort());
+      expect(Object.keys(c).sort()).toEqual(["id", "logo_key", "name", "open_jobs", "ownership_status", "slug", "sectors", "startup_stage", "types"].sort());
     }
   });
 

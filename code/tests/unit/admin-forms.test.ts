@@ -43,6 +43,7 @@ describe("checkCompanyForm", () => {
         careers_url: null,
         description: null,
         startup_stage: null,
+        ownership_status: null,
         status: "draft",
       });
       expect(r.value.types).toEqual(["startup"]);
@@ -71,6 +72,14 @@ describe("checkCompanyForm", () => {
 
   it("lets a careers page sit on a known applicant-tracking host", () => {
     expect(checkCompanyForm(company({ careers_url: "https://boards.greenhouse.io/acme" })).ok).toBe(true);
+  });
+
+  it("takes an ownership status without needing any type (ADR-0017)", () => {
+    const r = checkCompanyForm(company({ types: ["mnc"], ownership_status: "public" }));
+    expect(r.ok && r.value.company.ownership_status).toBe("public");
+    expect(checkCompanyForm(company({ ownership_status: "" })).ok && checkCompanyForm(company({})).ok).toBe(true);
+    expect(errorsOf(checkCompanyForm(company({ ownership_status: "listed" })))).toMatchObject({ ownership_status: "That is not an ownership status." });
+    expect(errorsOf(checkCompanyForm(company({ startup_stage: "acquired" })))).toHaveProperty("startup_stage");
   });
 
   it("needs the type Startup for a startup stage (ADR-0004)", () => {

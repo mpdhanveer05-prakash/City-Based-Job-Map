@@ -37,8 +37,8 @@ select is(
    from pg_enum e join pg_type t on t.oid = e.enumtypid
    where t.typname = 'startup_stage' and t.typnamespace = 'public'::regnamespace),
   array['pre_seed', 'seed', 'bootstrapped', 'series_a', 'series_b',
-        'series_c', 'series_c_plus', 'public', 'acquired'],
-  'startup_stage holds the nine stages in the brief'
+        'series_c', 'series_c_plus'],
+  'startup_stage holds the seven stages; Public and Acquired are an ownership status (ADR-0017)'
 );
 
 -- RLS is on for every table in public, including ones later tasks add.

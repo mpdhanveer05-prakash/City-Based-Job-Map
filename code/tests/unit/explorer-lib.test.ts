@@ -9,7 +9,7 @@ import { companies, jobs, offices, resultSummary } from "@/lib/explorer/labels";
 const id = (n: number) => `00000000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
 const company = (n: number, name: string) => ({
   id: id(n), slug: name.toLowerCase().replace(/\W+/g, "-"), name, logo_key: null, description: null, website_url: `https://c${n}.example`,
-  careers_url: null, startup_stage: null, last_verified_at: null, types: ["startup"], sectors: [], founders: [],
+  careers_url: null, startup_stage: null, ownership_status: null, last_verified_at: null, types: ["startup"], sectors: [], founders: [],
 });
 const snapshot = citySnapshotSchema.parse({
   version: 1,

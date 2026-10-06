@@ -47,6 +47,9 @@ begin
         (select count(*) from public.company_filter(p_city,
           (f - 'types' - 'stages')
           || jsonb_build_object('types', jsonb_build_array('startup'), 'stages', jsonb_build_array(r.value))))
+      when 'status' then
+        (select count(*) from public.company_filter(p_city,
+          (f - 'statuses') || jsonb_build_object('statuses', jsonb_build_array(r.value))))
       when 'neighbourhood' then
         (select count(*) from public.company_filter(p_city,
           (f - 'neighbourhoods') || jsonb_build_object('neighbourhoods', jsonb_build_array(r.value))))
@@ -212,7 +215,7 @@ select is(tests.slugs('bangalore', '{"stages":["seed"]}'), tests.slugs('bangalor
 select is(tests.slugs('bangalore', '{"types":["startup"],"stages":["seed"]}'), array['alpha-labs'], 'Startup + Seed');
 select is(tests.slugs('bangalore', '{"types":["startup"],"stages":["seed","pre_seed"]}'),
   array['alpha-labs', 'echo-seed'], 'stages combine with OR');
-select is(tests.slugs('bangalore', '{"types":["startup"],"stages":["acquired"]}'), '{}'::text[], 'a stage nobody has');
+select is(tests.slugs('bangalore', '{"types":["startup"],"stages":["bootstrapped"]}'), '{}'::text[], 'a stage nobody has');
 select is(tests.slugs('bangalore', '{"types":["mnc","startup"],"stages":["seed"]}'),
   array['alpha-labs', 'charlie-corp', 'foxtrot-global', 'kilo-multi'],
   'MNC + Startup + Seed: every MNC company OR the startups at Seed');
@@ -332,15 +335,16 @@ select is((select startup_stage from public.search_companies('bangalore', '{"q":
 -- company_facets
 -- ---------------------------------------------------------------------------
 
-select is((select count(*)::int from public.company_facets('bangalore')), 19,
-  'facets: total, 3 types, 9 stages, 2 neighbourhoods, 2 tech parks, 2 sectors, every value listed');
+select is((select count(*)::int from public.company_facets('bangalore')), 20,
+  'facets: total, 3 types, 7 stages, 3 ownership statuses, 2 neighbourhoods, 2 tech parks, 2 sectors, every value listed');
 select is(
   (select jsonb_object_agg(facet || ':' || value, company_count) from public.company_facets('bangalore')),
   jsonb_build_object(
     'total:', 8,
     'type:startup', 4, 'type:mnc', 3, 'type:product', 3,
     'stage:pre_seed', 1, 'stage:seed', 1, 'stage:bootstrapped', 0, 'stage:series_a', 1, 'stage:series_b', 0,
-    'stage:series_c', 0, 'stage:series_c_plus', 0, 'stage:public', 0, 'stage:acquired', 0,
+    'stage:series_c', 0, 'stage:series_c_plus', 0,
+    'status:private', 0, 'status:public', 0, 'status:acquired', 0,
     'neighbourhood:indiranagar', 3, 'neighbourhood:koramangala', 4,
     'tech_park:etv', 2, 'tech_park:prestige', 1,
     'sector:fintech', 2, 'sector:saas', 1),
@@ -385,9 +389,11 @@ insert into matrix values
   ('{"q":"road","neighbourhoods":["koramangala"]}'),
   ('{"q":"asha"}'),
   ('{"q":"zzz"}'),
-  ('{"types":["startup"],"stages":["acquired"]}');
+  ('{"types":["startup"],"stages":["bootstrapped"]}'),
+  ('{"statuses":["public"]}'),
+  ('{"statuses":["private","acquired"],"types":["mnc"]}');
 
-select is((select count(*)::int from matrix), 23, 'the filter matrix has 23 filters');
+select is((select count(*)::int from matrix), 25, 'the filter matrix has 25 filters');
 select is(
   (select coalesce(sum(tests.agreement_mismatches(c, m.f)), 0)::int
    from matrix m cross join unnest(array['bangalore', 'chennai']) c),
