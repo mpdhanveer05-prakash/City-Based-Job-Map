@@ -22,7 +22,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${overpass.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {/* A local pilot preview (scripts/pilot/preview-db.mts): the records are unreviewed and this build is never deployed. */}
+        {process.env.PILOT_PREVIEW === "1" && (
+          <p role="note" data-testid="pilot-preview-banner" className="bg-ink px-4 py-2 text-center text-sm text-milky">
+            Pilot preview, not published: source-checked candidates awaiting human review. Map points are approximate and unreviewed.
+          </p>
+        )}
+        {children}
+      </body>
     </html>
   );
 }

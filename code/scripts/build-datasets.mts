@@ -92,6 +92,18 @@ async function main() {
     console.log(`${message} Skipped.`);
     return;
   }
+  // PILOT_PREVIEW=1 (scripts/pilot/preview-db.mts): unreviewed pilot records from a local scratch copy, for looking at only.
+  const pilotPreview = env.PILOT_PREVIEW === "1";
+  if (pilotPreview) {
+    if (env.RELEASE_BUILD === "1") {
+      console.error("build-datasets: RELEASE_BUILD=1 refuses PILOT_PREVIEW=1: the pilot records are unreviewed.");
+      process.exit(1);
+    }
+    if (source.kind !== "local" || !/@(127\.0\.0\.1|localhost)[:/]/.test(source.connectionString)) {
+      console.error("build-datasets: PILOT_PREVIEW=1 reads only the local scratch copy. Set LOCAL_DATABASE_URL as scripts/pilot/preview-db.mts prints.");
+      process.exit(1);
+    }
+  }
   console.log(`build-datasets: reading ${describeDataSource(source)}, writing ${path.relative(process.cwd(), outDir) || "."}`);
 
   const sets: SerializedDataset[] = [];
@@ -102,7 +114,8 @@ async function main() {
         : source.kind === "local"
           ? parseCitySnapshot(await readFromLocalDatabase(source.connectionString, city), city)
           : readSeedSnapshot(city);
-    if (snapshot.companies.length === 0) {
+    // A pilot preview may have a city with no pilot records yet (Chennai follows Bengaluru).
+    if (snapshot.companies.length === 0 && !pilotPreview) {
       throw new Error(`${city} has no published companies: refusing to write an empty dataset`);
     }
     sets.push(serializeDataset(snapshot));
