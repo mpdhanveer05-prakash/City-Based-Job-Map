@@ -15,8 +15,48 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-07: publication rule restored, DEF-1 cause and fix, DEF-2, admin MFA, pilot preview, device tooling, logos
+- **Publication rule restored (regression in the database, not only the docs).** `publication_problems` accepted *claimed* evidence for optional company facts, and `12_evidence.test.sql` asserted that. Migration `20261007090000_reviewed_optional_facts.sql`: every populated public company fact needs **reviewed** evidence for its current value; an optional fact may stay unknown. The change gate already required reviewed evidence. Feed jobs keep ADR-0022's rules (`job_evidence_complete` unchanged). ADR-0021 corrected.
+- **DEF-1 (17 px Apply), cause demonstrated** (`tests/e2e/stylesheet-timing.spec.ts`, 9/9 over 3 repeats):
+  1. Layout read while the stylesheet is pending gives an Apply of 17 px, and 44 px once it loads.
+  2. A context with a route has no HTTP cache: 3 of 3 stylesheet loads hit the server.
+  3. A tap on View jobs before hydration is a full page load.
+
+  The browser never paints the unstyled state, so the fix is in the tests: measure after `stylesheetsLoaded()`.
+- **DEF-2 (map-loading timeouts):**
+  - Measured with per-step timings: 3 workers make each load 2 to 4 times slower ("ready" median 2.4 s and max 9.8 s, against 1.1 s and 4.1 s with 1 worker), and save only 1.3 min. The in-page work after start is under 1 s; the rest is the renderer being busy.
+  - A 90 s stall was not reproduced, so this is measured contention, not a captured hang.
+  - Fix: one map-heavy test at a time (`tests/map-slot.ts`, opt-in `test.use({ mapHeavy: true })`). The first version timed out while waiting for a slot; fixed.
+- **DEF-3, new and open:** `hit-test.spec.ts:191` ("a tap on a cluster flies to the zoom at which it splits") failed in 3 of 3 full runs since the slot, on desktop and mobile. It passes alone (4/4) and in its own file (12/12). Cause not found.
+- **Admin MFA (P9-13):** `is_admin()` requires `aal2`; TOTP set-up and code screens; local `config.toml` enables TOTP. The pilot importer and pipeline tests now send `aal2` (they stand in for a signed-in reviewer locally).
+- **Pilot:** the 51 are **source-checked candidates awaiting human review**, not verified companies. BYJU'S is held until its operating status and office are checked. Every map point needs manual review.
+  - New pilot-only local data source: `scripts/pilot/preview-db.mts`, then a `PILOT_PREVIEW=1` build. It showed 46 Bengaluru companies and an empty Chennai, with the banner on every page and noindex. It refuses `RELEASE_BUILD=1` and any source but the local copy.
+  - The copy also removes `.test` companies left by the admin e2e.
+- **Device tooling:**
+  - P2-09a, Android: `GATE_ANDROID_CDP` attaches the harness to a browser over CDP.
+  - P2-09b, iPhone: the in-page runner at `/dev/map-layer?size=S&runner=1`.
+  - Both were run together once against desktop Chrome attached over CDP (GPU renderer): 0 duplicate-key frames, warm filter latency median 283 ms, hits 4/4 at z17. Neither has run on a phone.
+- **Logos (P9-21, ADR-0024 proposed):** `company-logos` bucket (raster formats only, 1 MB limit), a `logo_asset` provenance record per upload, `review_logo`, the `logo_key` gate, and an admin panel.
+  - The migration and its test skip the storage parts in a Postgres-only database (CI). A bare image was checked: it has no `storage.buckets`.
+  - The permitted-use categories need the owner.
+
+**Verified (commands run 7 Oct 2026, from `code/`):**
+- `npm run lint`: 0 problems. `npm run typecheck`: clean. `npm test`: 633 passed.
+- `npx supabase test db`: 647 passed. The logo test's skip path was checked in a database without storage.
+- Pipeline pytest: 88 passed.
+- `npm run test:admin`: 50 passed, including the 2 new MFA tests.
+- Full `npm run test:e2e`, last run: **273 passed, 2 failed (DEF-3), 55 skipped**. The run before it, with the slot-timeout bug: 271 passed, 4 failed.
+
+**Not verified:**
+- MFA on a hosted project (the owner must enable TOTP).
+- The logo upload panel in a browser (no e2e test yet).
+- Either device tool on a real phone.
+- That DEF-2 cannot recur.
+
+**Release criteria proposed (not approved):** three consecutive green full suites; OSM coordinates replaced before publication; DEF-1 to DEF-3 closed.
+
 ### 2026-10-06 (later): pilot round 3, report corrections, release-criteria proposals
-- **Pilot (P9-20):** research groups J and K added. `verify_research`: 143 researched, **51 with a verified name, website, and Bengaluru address** (pilot target 50 met for verification); 394 evidence items verified. `build_import --import` (local only): 9 more created, **46 draft companies locally**, 0 reviewed, 0 published. Atlassian, BYJU'S, InMobi, ThoughtSpot and Wipro could not be placed by the geocoder. BYJU'S needs a human check of its operating status. Launch coverage (how many companies a city needs) remains **undecided**. Unbox Robotics dropped (no Bengaluru office).
+- **Pilot (P9-20):** research groups J and K added. `verify_research`: 143 researched, **51 source-checked candidates awaiting human review** (name, website, and Bengaluru address found on the company's own pages by the script; none verified by a person; pilot target 50); 394 evidence items verified. `build_import --import` (local only): 9 more created, **46 draft companies locally**, 0 reviewed, 0 published. Atlassian, BYJU'S, InMobi, ThoughtSpot and Wipro could not be placed by the geocoder. BYJU'S needs a human check of its operating status. Launch coverage (how many companies a city needs) remains **undecided**. Unbox Robotics dropped (no Bengaluru office).
 - **Publication rule (superseded the same day; see the 7 Oct entry):** the enforced rule at this point was the following. It was a regression from the agreed rule, and it has been fixed in the database:
   - a company needs **reviewed** name, website, and at least one office with **reviewed** address and location;
   - its other populated facts needed evidence that was claimed or reviewed (the regression);
