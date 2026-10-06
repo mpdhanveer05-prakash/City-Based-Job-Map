@@ -1,7 +1,10 @@
 // P4-03: the explorer shell on the real city data. It loads both cities, draws the markers, and opens a company's
 // popup from a tap; the URL carries the selection, and Back and Forward restore it (AC07).
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../device-test";
 import { clickMap, drawnNow, goTo, loadCityData, mapCounts, openExplorer, shownCounts, type CityData } from "./explorer-helpers";
+
+// Draws WebGL in software: one such test at a time across the workers (tests/map-slot.ts, DEF-2).
+test.use({ mapHeavy: true });
 
 /** Metres between two points. */
 function metres(a: { lng: number; lat: number }, b: { lng: number; lat: number }): number {

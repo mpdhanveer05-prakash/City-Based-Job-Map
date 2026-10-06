@@ -1,5 +1,5 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
-import { waitForMapReady } from "./map-ready";
+import { logMapTiming, waitForMapReady } from "./map-ready";
 
 // Helpers shared by the specs that drive the live scenario of /dev/map-layer (hit-test, popup and keyboard).
 // Markers' positions are read from the layer's own last frame, so a tap lands exactly where a marker was drawn.
@@ -13,7 +13,15 @@ export async function openLive(page: Page) {
   await page.goto("/dev/map-layer");
   await waitForMapReady(page);
   await page.getByRole("button", { name: "Live clusters" }).click();
-  await expect.poll(() => page.evaluate(() => (window.__liveKeys ?? []).length), { timeout: 30_000 }).toBeGreaterThan(20);
+  const started = Date.now();
+  const keys = () => page.evaluate(() => (window.__liveKeys ?? []).length);
+  try {
+    await expect.poll(keys, { timeout: 30_000 }).toBeGreaterThan(20);
+    logMapTiming({ event: "live", waitedMs: Date.now() - started });
+  } catch (error) {
+    logMapTiming({ event: "live-timeout", waitedMs: Date.now() - started, keys: await keys().catch(() => null) });
+    throw error;
+  }
   await settle(page);
   return errors;
 }

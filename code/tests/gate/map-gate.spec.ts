@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "../device-test";
 import { GATE_FILTERS, type GateFilter } from "@/map/fixtures/gate-filters";
 import { CITY_SHAPES } from "@/map/fixtures/hotspots";
 import { drawnNow, events, goTo, mapSize, openLiveSized, settle } from "./gate-helpers";

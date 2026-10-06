@@ -1,5 +1,9 @@
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "../device-test";
 import { waitForMapReady } from "./map-ready";
+
+// Draws WebGL in software: one such test at a time across the workers (tests/map-slot.ts, DEF-2).
+test.use({ mapHeavy: true });
 
 // P2-05. The live scenario clusters 5,000 synthetic offices in the worker and animates every zoom, as the
 // explorer will. These tests watch the layer's own state (the debug hook) frame by frame.

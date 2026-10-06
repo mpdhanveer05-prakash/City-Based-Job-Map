@@ -1,5 +1,9 @@
-import { expect, test, type CDPSession, type Page } from "@playwright/test";
+import type { CDPSession, Page } from "@playwright/test";
+import { expect, test } from "../device-test";
 import { waitForMapReady } from "./map-ready";
+
+// Draws WebGL in software: one such test at a time across the workers (tests/map-slot.ts, DEF-2).
+test.use({ mapHeavy: true });
 
 // P2-08. Mounts the explorer 20 times and unmounts it each time, then checks that nothing is left behind: no worker of
 // ours, no WebGL context, no canvas, no growth in event listeners, DOM nodes, or heap (map-spec §9 and §10).

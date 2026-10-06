@@ -6,6 +6,7 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 import { Button } from "@/components/ui/button";
 import { MapA11yList, type MirrorListEntry } from "@/components/explorer/map-a11y-list";
 import { MapPopup, type PopupCompany, type PopupLayout } from "@/components/explorer/map-popup";
+import { GateRunner } from "./gate-runner";
 import { buildGlyphSheet, cellSizeForDpr } from "@/map/atlas/glyph-sheet";
 import { pageBytes, PAGE_SIZE } from "@/map/atlas/budget";
 import { initialOf, swatchIndex } from "@/map/atlas/fallback";
@@ -88,6 +89,8 @@ declare global {
     __markers?: MarkerHooks;
     /** If set, the layer's animation clock (test hook): a test holds a transition still by returning a fixed time. */
     __layerNow?: () => number;
+    /** Each loading step and when it finished (ms since navigation): a test that times out says where it stopped. */
+    __mapLoadSteps?: [string, number][];
   }
 }
 
@@ -95,6 +98,8 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
   const container = useRef<HTMLDivElement>(null);
   const api = useRef<{ map: MapLibreMap; layer: CompanyLayer; show: (s: Scenario) => void } | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "fallback">("loading");
+  // ?runner=1 shows the in-page gate runner (P2-09b); the dataset is ?size=. Read after hydration: the page is prerendered.
+  const [runnerSize, setRunnerSize] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [scenario, setScenario] = useState<Scenario>("static");
   const [stats, setStats] = useState<LayerStats | null>(null);
@@ -134,7 +139,13 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
     let detachLayer: (() => void) | undefined;
     let theme!: MarkerTheme;
 
+    const steps: [string, number][] = [];
+    window.__mapLoadSteps = steps;
+    const step = (name: string) => steps.push([name, Math.round(performance.now())]);
     (async () => {
+      step("start");
+      const params = new URLSearchParams(location.search);
+      if (params.get("runner") === "1") setRunnerSize(params.get("size") ?? "default");
       // No WebGL2, no map: land on the list with a notice (map-spec §9).
       if (!checkWebGl2().ok) {
         setStatus("fallback");
@@ -161,10 +172,12 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
         return;
       }
       map = created;
+      step("basemap");
       tileWatcher.current = watchTileFailures(map, { onFailing: () => setTilesFailing(true), onRecovered: () => setTilesFailing(false) });
       const fontFamily = getComputedStyle(document.body).fontFamily;
       const glyphs = await buildGlyphSheet(fontFamily, cellSizeForDpr(window.devicePixelRatio));
       if (abort.signal.aborted) return;
+      step("glyphs");
 
       // Test controls, from the query string: ?delay=<ms> slows every logo load, ?pagePx=<n> shrinks the atlas
       // pages, and ?pages=<n> caps the memory budget at n pages, so paging and eviction show with few logos.
@@ -235,7 +248,9 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
       // Ready means the layer has drawn a frame. It does not wait for basemap tiles (`idle`), which depend on
       // the network and are not what this page checks.
       map.on("idle", () => setStats({ ...layer.stats }));
+      step("layer");
       map.once("render", () => {
+        step("first-render");
         setStats({ ...layer.stats });
         setStatus("ready");
       });
@@ -363,6 +378,7 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
           </Button>
         </div>
         {status === "loading" && <p className="text-sm text-muted-foreground">Loading the map…</p>}
+        {runnerSize && status === "ready" && <GateRunner size={runnerSize} />}
         {stats && (
           <p className="text-sm tabular-nums" data-testid="layer-stats">
             {stats.drawn} drawn, {stats.culled} culled, {stats.drawCalls} draw call

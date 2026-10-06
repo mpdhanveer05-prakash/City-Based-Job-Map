@@ -1,6 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "../device-test";
 import { drawnNow, events, goTo, groups, mapSize, markerState, openLive, settle, tap, type Drawn } from "./live-helpers";
+
+// Draws WebGL in software: one such test at a time across the workers (tests/map-slot.ts, DEF-2).
+test.use({ mapHeavy: true });
 
 // P2-07. The company popup, the keyboard route through the markers, reduced motion, and the failure fallbacks
 // (no WebGL2, tiles that will not load). Taps and keys go through the same code paths a person's would.

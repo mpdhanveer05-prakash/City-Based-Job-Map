@@ -1,5 +1,9 @@
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "../device-test";
 import { waitForMapReady } from "./map-ready";
+
+// Draws WebGL in software: one such test at a time across the workers (tests/map-slot.ts, DEF-2).
+test.use({ mapHeavy: true });
 
 // P2-04. Synthetic logos (Ink tiles drawn in the page, served as blob: URLs) go through the real fetch, decode,
 // upload, and shader path. The page can slow every load (?delay=ms) and shrink the atlas (?pagePx=, ?pages=).

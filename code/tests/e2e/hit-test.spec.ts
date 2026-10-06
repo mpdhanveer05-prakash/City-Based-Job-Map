@@ -1,5 +1,9 @@
-import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import type { Page, TestInfo } from "@playwright/test";
+import { expect, test } from "../device-test";
 import { drawnNow, events, goTo, groups, mapSize, markerState, nearestTo, openLive, settle, tap, updates, type Group } from "./live-helpers";
+
+// Draws WebGL in software: one such test at a time across the workers (tests/map-slot.ts, DEF-2).
+test.use({ mapHeavy: true });
 
 // P2-06. Taps and clicks on the live scenario: what a tap selects while markers move, how stacks open into a
 // circle, a spiral, or the list, how a cluster flies to its expansion zoom, and what closes a spider. The
