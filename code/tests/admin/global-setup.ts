@@ -5,6 +5,7 @@ import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import pg from "pg";
+import { totp } from "./totp";
 
 export const FAKE_GITHUB_PORT = 4099;
 export const PASSWORD = "Test-password-1!";
@@ -13,7 +14,32 @@ export const USERS = {
   reviewer: "reviewer@admin.test",
   admin: "admin@admin.test",
   plain: "plain@admin.test",
+  // An editor with no second factor yet: signs in to the set-up screen (P9-13).
+  newcomer: "newcomer@admin.test",
 } as const;
+
+/** Where global setup leaves each enrolled administrator's TOTP secret for the specs (they play the authenticator app). */
+export const TOTP_SECRETS_FILE = path.join(tmpdir(), "admin-e2e-totp.json");
+
+/** Enrols and verifies a TOTP factor for a user, through Supabase Auth's own API, and returns its secret. */
+async function enrolTotp(url: string, anon: string, email: string): Promise<string> {
+  const json = { apikey: anon, "Content-Type": "application/json" };
+  const tokenRes = await fetch(`${url}/auth/v1/token?grant_type=password`, { method: "POST", headers: json, body: JSON.stringify({ email, password: PASSWORD }) });
+  const token = ((await tokenRes.json()) as { access_token?: string }).access_token;
+  if (!token) throw new Error(`Could not sign in ${email} to enrol a second factor`);
+  const auth = { ...json, Authorization: `Bearer ${token}` };
+  const factorRes = await fetch(`${url}/auth/v1/factors`, { method: "POST", headers: auth, body: JSON.stringify({ factor_type: "totp", friendly_name: "e2e" }) });
+  if (!factorRes.ok) throw new Error(`Could not enrol a factor for ${email}: HTTP ${factorRes.status} ${await factorRes.text()}`);
+  const factor = (await factorRes.json()) as { id: string; totp: { secret: string } };
+  const challenge = (await (await fetch(`${url}/auth/v1/factors/${factor.id}/challenge`, { method: "POST", headers: auth, body: "{}" })).json()) as { id: string };
+  const verify = await fetch(`${url}/auth/v1/factors/${factor.id}/verify`, {
+    method: "POST",
+    headers: auth,
+    body: JSON.stringify({ challenge_id: challenge.id, code: totp(factor.totp.secret) }),
+  });
+  if (!verify.ok) throw new Error(`Could not verify the factor for ${email}: HTTP ${verify.status} ${await verify.text()}`);
+  return factor.totp.secret;
+}
 
 const DB_URL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 
@@ -65,17 +91,23 @@ export default async function globalSetup() {
     reviewer: await ensureUser(url, serviceKey, USERS.reviewer),
     admin: await ensureUser(url, serviceKey, USERS.admin),
     plain: await ensureUser(url, serviceKey, USERS.plain),
+    newcomer: await ensureUser(url, serviceKey, USERS.newcomer),
   };
   const client = new pg.Client({ connectionString: DB_URL });
   await client.connect();
   try {
     await client.query("delete from admin_user");
     for (const role of ["editor", "reviewer", "admin"] as const) await client.query("insert into admin_user (user_id, role) values ($1, $2)", [ids[role], role]);
+    await client.query("insert into admin_user (user_id, role) values ($1, 'editor')", [ids.newcomer]);
     // A fresh debounce: the first Publish now of the run must start a build.
     await client.query("update site_state set last_rebuild_requested_at = null");
   } finally {
     await client.end();
   }
+  // Each administrator except the newcomer has a verified second factor (P9-13).
+  const secrets: Record<string, string> = {};
+  for (const role of ["editor", "reviewer", "admin"] as const) secrets[USERS[role]] = await enrolTotp(url, process.env.ADMIN_E2E_ANON_KEY!, USERS[role]);
+  writeFileSync(TOTP_SECRETS_FILE, JSON.stringify(secrets));
 
   // 2. A stand-in for GitHub's repository_dispatch, which records what it is asked.
   const requests: Array<{ method: string; url: string; authorization: string | undefined; body: string }> = [];

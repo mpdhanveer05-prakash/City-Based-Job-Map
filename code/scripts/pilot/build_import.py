@@ -140,7 +140,8 @@ def import_local(out: list[dict]) -> None:
     with psycopg.connect(dsn, row_factory=dict_row) as conn:
         conn.execute("insert into auth.users (id, email) values (%s, 'pilot-editor@local.test') on conflict do nothing", (PILOT_EDITOR,))
         conn.execute("insert into admin_user (user_id, role) values (%s, 'editor') on conflict do nothing", (PILOT_EDITOR,))
-        conn.execute("select set_config('request.jwt.claims', %s, true)", (json.dumps({"sub": PILOT_EDITOR, "role": "authenticated"}),))
+        # A local stand-in for a signed-in editor who passed the second factor (P9-13); --import refuses a non-local database.
+        conn.execute("select set_config('request.jwt.claims', %s, true)", (json.dumps({"sub": PILOT_EDITOR, "role": "authenticated", "aal": "aal2"}),))
         conn.execute("set local role authenticated")
         payload = [{k: v for k, v in r.items() if not k.startswith("_")} for r in out]
         result = conn.execute("select import_commit('bengaluru-pilot.json', %s::jsonb) as r", (json.dumps(payload),)).fetchone()["r"]

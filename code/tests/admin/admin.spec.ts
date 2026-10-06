@@ -3,7 +3,9 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import pg from "pg";
-import { FAKE_GITHUB_PORT, PASSWORD, USERS } from "./global-setup";
+import { readFileSync } from "node:fs";
+import { FAKE_GITHUB_PORT, PASSWORD, TOTP_SECRETS_FILE, USERS } from "./global-setup";
+import { totp } from "./totp";
 
 test.describe.configure({ mode: "serial" });
 
@@ -28,8 +30,15 @@ async function signIn(page: Page, email: string, password = PASSWORD) {
   await page.getByTestId("sign-in").click();
 }
 
-async function signInAs(page: Page, who: keyof typeof USERS) {
+/** The code an administrator's authenticator app would show now (global setup enrolled the factor). */
+const codeFor = (email: string) => totp((JSON.parse(readFileSync(TOTP_SECRETS_FILE, "utf8")) as Record<string, string>)[email]);
+
+async function signInAs(page: Page, who: "editor" | "reviewer" | "admin") {
   await signIn(page, USERS[who]);
+  // The password alone is not enough (P9-13): the second factor's code comes next.
+  await expect(page.getByTestId("mfa-verify")).toBeVisible({ timeout: 30_000 });
+  await page.getByTestId("mfa-code").fill(codeFor(USERS[who]));
+  await page.getByTestId("mfa-submit").click();
   await expect(page.getByTestId("admin-frame")).toBeVisible({ timeout: 30_000 });
 }
 
@@ -77,6 +86,39 @@ test.describe("sign-in and roles", () => {
     await expect(page.getByRole("navigation", { name: "Admin" })).toHaveCount(0);
     await page.getByRole("button", { name: "Sign out" }).click();
     await expect(page.getByRole("heading", { name: "Admin sign in" })).toBeVisible();
+  });
+
+  test("a password alone is not enough: a wrong code is refused, and the database refuses the password-only session", async ({ page, request }) => {
+    await signIn(page, USERS.editor);
+    await expect(page.getByTestId("mfa-verify")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("admin-frame")).toHaveCount(0);
+    const right = codeFor(USERS.editor);
+    await page.getByTestId("mfa-code").fill(right === "000000" ? "111111" : "000000");
+    await page.getByTestId("mfa-submit").click();
+    await expect(alertOf(page)).toHaveText("That code is wrong or has expired. Enter the current code.");
+    await expect(page.getByTestId("admin-frame")).toHaveCount(0);
+    await noSeriousViolations(page);
+
+    // The page is only the front door: with the same password-only (aal1) token, the database says no.
+    const anon = process.env.ADMIN_E2E_ANON_KEY!;
+    const token = (await (await request.post(`${SUPABASE}/auth/v1/token?grant_type=password`, { headers: { apikey: anon }, data: { email: USERS.editor, password: PASSWORD } })).json()).access_token as string;
+    const rpc = await request.post(`${SUPABASE}/rest/v1/rpc/is_admin`, { headers: { apikey: anon, Authorization: `Bearer ${token}` }, data: {} });
+    expect(await rpc.json()).toBe(false);
+    const drafts = await request.get(`${SUPABASE}/rest/v1/company?select=id&status=eq.draft`, { headers: { apikey: anon, Authorization: `Bearer ${token}` } });
+    expect(await drafts.json()).toEqual([]);
+  });
+
+  test("an administrator without a second factor must set one up before seeing anything", async ({ page }) => {
+    await signIn(page, USERS.newcomer);
+    await expect(page.getByTestId("mfa-enrol")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("admin-frame")).toHaveCount(0);
+    await expect(page.getByRole("img", { name: "QR code for your authenticator app" })).toBeVisible();
+    const secret = (await page.getByTestId("mfa-secret").textContent())!.trim();
+    await noSeriousViolations(page);
+    await page.getByTestId("mfa-code").fill(totp(secret));
+    await page.getByTestId("mfa-submit").click();
+    await expect(page.getByTestId("admin-frame")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("admin-who")).toHaveText(`${USERS.newcomer} (editor)`);
   });
 
   test("an editor sees the editor's pages, and Publish now is off", async ({ page }) => {

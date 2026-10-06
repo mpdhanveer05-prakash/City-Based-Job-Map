@@ -89,7 +89,7 @@ create function tests.become(uid uuid, r text default 'authenticated') returns v
 language plpgsql as $$
 begin
   perform set_config('request.jwt.claims',
-    case when uid is null then '' else json_build_object('sub', uid, 'role', r)::text end, true);
+    case when uid is null then '' else json_build_object('sub', uid, 'role', r, 'aal', 'aal2')::text end, true);
   perform set_config('role', r, true);
 end;
 $$;
