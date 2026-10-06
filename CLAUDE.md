@@ -28,7 +28,8 @@ Primary instruction file for Claude Code. Keep it short; details live in the lin
 This is a map-first company discovery portal. Visitors find companies by where their offices are, look at verified open jobs, and apply on the employer's own site. It is **not** a job-application portal: it stores no applicant data.
 
 **Launch scope (confirmed by the project owner, 30 Sep 2026)**
-- Cities: **Bengaluru (`/bangalore`) and Chennai (`/chennai`)**. The architecture plan proposed launching Bengaluru alone and adding Chennai in R2. That conflict is recorded in ADR-0002 and is still open for the launch-date question.
+- Cities: **Bengaluru (`/bangalore`) and Chennai (`/chennai`)**, both built and tested from the start. **Bengaluru goes live first; Chennai is released after it** ([ADR-0016](docs/decisions/0016-launch-sequence-and-data-policy.md)). Domain: **officemap.tech**.
+- Data is real and verified with evidence per field; AI may extract and organise but never invents companies, founders, locations, or jobs (ADR-0016).
 - **No public login.** Supabase Auth is used only by allowlisted administrators.
 
 **User journey:** city selection → company explorer → company details → company jobs → external application (a direct link to the employer's site; a beacon counts the click, [ADR-0006](docs/decisions/0006-free-tier-static-hosting.md)).
@@ -37,7 +38,7 @@ This is a map-first company discovery portal. Visitors find companies by where t
 - A full-screen map with an overlay toolbar that holds search, filters, and the Map/Grid/List switch.
 - Search covers **job title, company name, location** (neighbourhood, tech park, area), and **founder name**. Founder data isn't in the plan's schema yet; it's a proposal in data-model.md.
 - Company-type filter: **Startup, MNC, Product**. These categories **overlap** (a company can be both a Startup and a Product company), so the type is a multi-valued tag, not a single column. Values combine with OR inside the group and AND across groups (proposal, see [ADR-0004](docs/decisions/0004-company-type-filter-model.md)).
-- The startup-stage filter is enabled **only while Startup is selected**. Stages: Pre-seed, Seed, Bootstrapped, Series A, Series B, Series C, Series C+, Public, Acquired. Deselecting Startup clears any selected stages from the state and the URL. Whenever a selection changes, clear any filter it makes incompatible.
+- The startup-stage filter is enabled **only while Startup is selected**. Stages: Pre-seed, Seed, Bootstrapped, Series A, Series B, Series C, Series C+. Public/Acquired are a separate **company status** field ([ADR-0017](docs/decisions/0017-company-status-separate-from-stage.md), P9-06). Deselecting Startup clears any selected stages from the state and the URL. Whenever a selection changes, clear any filter it makes incompatible.
 - **Map, Grid, and List show the same result set and the same counts.** They are produced by one shared SQL filter and one URL state.
 - Clicking a company logo on the map opens a popup with **View company**.
 - The company details page has **Visit website** and **View jobs**.
@@ -58,8 +59,8 @@ Next.js App Router · React · TypeScript · Tailwind CSS · shadcn/ui · MapLib
 
 **Don't add** FastAPI, Celery, Redis, AWS, Kubernetes, or any other service unless an ADR documents a concrete requirement for it.
 
-### Free tiers only ([ADR-0006](docs/decisions/0006-free-tier-static-hosting.md), owner decision, 30 Sep 2026)
-- **No paid plans.** Anything that would need one (Workers Paid, Supabase Pro, a paid add-on) must be raised with the owner first.
+### Free by default, static hosting ([ADR-0006](docs/decisions/0006-free-tier-static-hosting.md), amended by [ADR-0018](docs/decisions/0018-spending-policy.md), 6 Oct 2026)
+- **Free services where suitable; justified production spending is allowed.** Never buy or upgrade anything without a written proposal (service, plan, monthly cost, requirement met, free alternative considered) approved by the owner. Don't let cost force weaker reliability, map quality, or recovery.
 - **Nothing renders on a server at request time.** Every public page is prerendered at build. The Next.js code must not use request-reading Route Handlers, Server Actions, `proxy`, cookies, ISR, `next.config` redirects/rewrites/headers, or default-loader image optimisation (all unsupported by static export). Redirects go in `_redirects`, headers in `public/_headers`.
 - **The Next.js app holds no secrets.** Server-side work (Turnstile, feedback, click counting, rebuild requests) runs in Supabase Edge Functions. Reads and admin writes go through RLS-protected tables and RPCs.
 - Keep the build within the Workers static assets Free limits: 20,000 files, 25 MiB per file, 2,000 static + 100 dynamic redirects, 100 header rules. `postbuild` enforces this. Each prerendered page costs **5 files**, so budget routes with that in mind (ADR-0007). Company jobs have their own page (D-10 Option A). If the build warns above 15,000 files, switch to Option B (P6-04).

@@ -1,6 +1,6 @@
 # ADR-0015: The dependency audit gates production dependencies; tooling findings are reported
 
-- **Status:** Proposed (engineering change to a CI gate; the owner confirms or reverts it)
+- **Status:** Not accepted by the owner (6 Oct 2026); superseded by [ADR-0019](0019-dependency-vulnerability-exceptions.md). The move of `shadcn` to `devDependencies` is kept.
 - **Date:** 2026-10-05
 - **Related tasks / decisions:** P9-02, `docs/testing.md` (CI), `docs/security.md` (Secrets)
 

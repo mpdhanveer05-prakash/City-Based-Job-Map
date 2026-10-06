@@ -15,6 +15,14 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-06: Owner decisions recorded (ADR-0016 to ADR-0020)
+- **Decided by the owner:** D-01 (Bengaluru first, Chennai prepared in parallel and released after), D-02 definition of "Product", D-03 (verified professional founder information with a correction/removal process), D-04 sourcing and evidence policy (coverage targets still open; proposal: a pilot of 50 per city), D-05 (separate company status field), D-06 (device classes), D-07 (Sentry and Cloudflare Web Analytics, no PII), D-08 domain **officemap.tech**, D-11 (prototype Protomaps on R2 now and compare), D-12 (keep MapLibre, 650 KB provisional), admin MFA, automated off-site backups, and spending (free by default, justified production spending allowed, ADR-0018 amends ADR-0006). **ADR-0015 was not accepted**; replaced by ADR-0019 (time-limited, reviewed audit exceptions).
+- **Changed:** new ADRs 0016 to 0020; ADR index; ADR-0015 status; plan.md decision register; new tasks P9-06 to P9-15; CLAUDE.md (launch sequence, data rule, spending rule, stages).
+- **Verification:** documentation only; no code or tests run.
+- **Consequence for CI:** under ADR-0019 the full audit blocks again, so CI stays red on the `braces` finding until P9-09 lands with a reviewed exception or the tooling changes.
+- **Still needs the owner:** coverage targets; product name and designer sign-off; device access for P2-09; a Sentry DSN and the analytics token (P9-10); an R2 bucket (P9-11); the hosted Supabase projects and a backup storage target (P9-14); explicit authorization for push and the staging deploy; production approval of an exact commit.
+- **Next action:** P9-06 (company status), P9-09 (audit register), P9-13 (MFA), P9-12 (budget) can start now without owner input.
+
 ### 2026-10-05: P9-01, P9-03, P9-04, P9-05 (in progress) and the dependency-audit change (ADR-0015)
 - **Built (`code/`):**
   - `tests/a11y/keyboard.spec.ts`: axe on the company, jobs and suggest pages with their report forms open; keyboard-only journeys (company page, jobs page, the suggest form, the explorer toolbar); visible focus; and a 44 px rule for every control on five pages, on desktop and the phone profile.
