@@ -15,6 +15,25 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-07 (later, in progress): DEF-3 resolved, DEF-1 user-side proof, logo provenance and privacy, MFA beyond the UI
+- **DEF-3 resolved: the test was wrong, not the map.** A per-frame recording (camera zoom, `isMoving`, animation state, worker trace, tap point, expansion zoom) showed the sequence. After the camera stops, the map asks the worker for the new zoom on `moveend` (about 100 ms later), and the answer is applied 100 to 200 ms after that. In between, the old clusters are drawn and nothing is animating, so `settle()` could return on that frame.
+  - Proof: with `window.__clusterDelayMs` slowing the worker, `settle()` returns while the tapped cluster is still drawn. The new `settleOnView()` waits for the answer for the current zoom, and then the cluster has split.
+  - The split assertion is kept. Desktop and mobile both pass.
+- **DEF-1, the user's side** (`stylesheet-timing.spec.ts`; cold load, cache off, Slow 4G, 4× CPU, stylesheet held back):
+  - nothing is painted (0 paint entries) and no rendering step runs (0 rAF frames);
+  - a tap is held and does not complete, and no click reaches the page;
+  - after the stylesheet arrives, every painted frame has a 44 px Apply, and the held tap landed on `MAIN`, not Apply.
+- **Logos:**
+  - Uploads now wait in a private bucket, `company-logos-pending`. Approving copies the file to the public bucket; `review_logo` approves only once the public copy exists, and a rejected file never becomes public. Migration `20261007130000`.
+  - Every upload must record the wording that grants the use (at least 20 characters) and confirm that the terms allow storage, display, and atlas use. Migration `20261007120000`. The three categories are kept as proposals.
+- **MFA beyond the UI** (migration `20261007140000`): `is_admin()` also requires a live aal2 session row (sign-out deletes it; `not_after` is checked) and a verified factor (removing it ends access at once). Pipeline functions are no longer executable by `anon` or `authenticated`; partition maintenance is left to the cron owner. The pipeline keeps its own functions.
+- **Map serialization** (`tests/map-slot.ts`) is a mitigation of test resources only. It says nothing about real-device performance.
+- **Checks run:**
+  - `npx supabase test db`: 664 passed. The logo tests skip without a storage schema, as in Postgres-only CI.
+  - Pipeline pytest: 88 passed. The pilot import works with the session fixtures.
+  - The hit-test and stylesheet specs: 18 of 18 passed.
+  - Admin e2e: the previous run had 54 passed and 1 failed, a row-selection bug in my new logo test (now fixed). Of the new tests, the sign-out and expired-token ones passed and the factor-removal one was corrected. **The final admin run and the final full e2e suite are not yet done.**
+
 ### 2026-10-07: publication rule restored, DEF-1 cause and fix, DEF-2, admin MFA, pilot preview, device tooling, logos
 - **Publication rule restored (regression in the database, not only the docs).** `publication_problems` accepted *claimed* evidence for optional company facts, and `12_evidence.test.sql` asserted that. Migration `20261007090000_reviewed_optional_facts.sql`: every populated public company fact needs **reviewed** evidence for its current value; an optional fact may stay unknown. The change gate already required reviewed evidence. Feed jobs keep ADR-0022's rules (`job_evidence_complete` unchanged). ADR-0021 corrected.
 - **DEF-1 (17 px Apply), cause demonstrated** (`tests/e2e/stylesheet-timing.spec.ts`, 9/9 over 3 repeats):

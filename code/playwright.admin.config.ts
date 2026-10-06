@@ -13,11 +13,11 @@ import { defineConfig, devices } from "@playwright/test";
 // the two Edge Functions, and stands in for GitHub.
 const PORT = 3100;
 
-function localKeys(): { url: string; anonKey: string; serviceKey: string } {
+function localKeys(): { url: string; anonKey: string; serviceKey: string; jwtSecret: string } {
   try {
     const out = execFileSync("npx", ["supabase", "status", "-o", "json"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], shell: true });
     const json = JSON.parse(out.slice(out.indexOf("{")));
-    return { url: json.API_URL, anonKey: json.ANON_KEY, serviceKey: json.SERVICE_ROLE_KEY };
+    return { url: json.API_URL, anonKey: json.ANON_KEY, serviceKey: json.SERVICE_ROLE_KEY, jwtSecret: json.JWT_SECRET };
   } catch {
     throw new Error("The local Supabase stack is not running. Start it with `npx supabase start`, then `npx supabase db reset`.");
   }
@@ -28,6 +28,8 @@ const keys = localKeys();
 process.env.ADMIN_E2E_SUPABASE_URL = keys.url;
 process.env.ADMIN_E2E_SERVICE_KEY = keys.serviceKey;
 process.env.ADMIN_E2E_ANON_KEY = keys.anonKey;
+// The local stack's published development secret: the MFA spec signs an expired copy of a real token with it.
+process.env.ADMIN_E2E_JWT_SECRET = keys.jwtSecret;
 
 export default defineConfig({
   testDir: "./tests/admin",

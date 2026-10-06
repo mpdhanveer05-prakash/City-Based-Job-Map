@@ -91,6 +91,10 @@ declare global {
     __layerNow?: () => number;
     /** Each loading step and when it finished (ms since navigation): a test that times out says where it stopped. */
     __mapLoadSteps?: [string, number][];
+    /** DEF-3: if set, every cluster request waits this long before it is sent (test hook: a slow worker under load). */
+    __clusterDelayMs?: number;
+    /** DEF-3: moveend, worker requests and the responses applied, in order (test hook). */
+    __liveTrace?: Array<{ t: number; what: string; zoom: number; level?: number; generation?: number; applied?: boolean; keys?: number }>;
   }
 }
 
@@ -600,7 +604,15 @@ function startLive(
   };
 
   // ---- the worker ------------------------------------------------------------------------------------------
+  const trace = (window.__liveTrace = [] as NonNullable<Window["__liveTrace"]>);
+  const note = (entry: Omit<(typeof trace)[number], "t">) => {
+    trace.push({ t: Math.round(performance.now()), ...entry });
+    if (trace.length > 200) trace.splice(0, trace.length - 200);
+  };
   const refresh = async () => {
+    const requestedZoom = map.getZoom();
+    note({ what: "request", zoom: requestedZoom });
+    if (window.__clusterDelayMs) await new Promise((resolve) => setTimeout(resolve, window.__clusterDelayMs));
     const b = map.getBounds();
     const padLng = (b.getEast() - b.getWest()) * 0.2;
     const padLat = (b.getNorth() - b.getSouth()) * 0.2;
@@ -608,7 +620,10 @@ function startLive(
       [b.getWest() - padLng, b.getSouth() - padLat, b.getEast() + padLng, b.getNorth() + padLat],
       map.getZoom(),
     );
-    if (!response || cancelled) return; // null: a newer request superseded this one
+    if (!response || cancelled) {
+      note({ what: "superseded", zoom: requestedZoom });
+      return; // null: a newer request superseded this one
+    }
     const makeItem = (i: number): LayerItem => {
       const key = response.keys[i];
       const lng = response.lngLat[2 * i];
@@ -636,6 +651,7 @@ function startLive(
       namespace: `synthetic:${filterHash}`,
       generation: response.generation,
     });
+    note({ what: "response", zoom: requestedZoom, level: response.level, generation: response.generation, applied, keys: response.keys.length });
     if (applied) {
       liveItems.clear();
       for (const t of targets) liveItems.set(t.item.key, t.item);

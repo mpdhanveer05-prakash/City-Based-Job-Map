@@ -121,6 +121,75 @@ test.describe("sign-in and roles", () => {
     await expect(page.getByTestId("admin-who")).toHaveText(`${USERS.newcomer} (editor)`);
   });
 
+  // Past the page, on the real Auth service: a token outlives its session and its factor, so the database checks both.
+  const isAdminWith = async (request: APIRequestContext, token: string) => {
+    const anon = process.env.ADMIN_E2E_ANON_KEY!;
+    const res = await request.post(`${SUPABASE}/rest/v1/rpc/is_admin`, { headers: { apikey: anon, Authorization: `Bearer ${token}` }, data: {} });
+    return { status: res.status(), body: await res.text() };
+  };
+  const sessionToken = (page: Page) =>
+    page.evaluate(() => {
+      const k = Object.keys(localStorage).find((x) => x.startsWith("sb-") && x.endsWith("-auth-token"))!;
+      return (JSON.parse(localStorage.getItem(k)!) as { access_token: string }).access_token;
+    });
+
+  test("after signing out, the same unexpired aal2 token is no longer an administrator's", async ({ page, request }) => {
+    await signInAs(page, "editor");
+    const token = await sessionToken(page);
+    expect(JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString()).aal).toBe("aal2");
+    expect((await isAdminWith(request, token)).body).toBe("true");
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await expect(page.getByRole("heading", { name: "Admin sign in" })).toBeVisible();
+    expect((await isAdminWith(request, token)).body, "the session is gone, so the token is refused").toBe("false");
+  });
+
+  test("an expired token is refused by the API before the database sees it", async ({ page, request }) => {
+    await signInAs(page, "reviewer");
+    const token = await sessionToken(page);
+    const { createHmac } = await import("node:crypto");
+    const sign = (claims: Record<string, unknown>) => {
+      const head = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+      const body = Buffer.from(JSON.stringify(claims)).toString("base64url");
+      return `${head}.${body}.${createHmac("sha256", process.env.ADMIN_E2E_JWT_SECRET!).update(`${head}.${body}`).digest("base64url")}`;
+    };
+    const claims = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString()) as Record<string, unknown>;
+    // The same claims re-signed with the local secret and a later expiry work, which proves the signing is right...
+    expect((await isAdminWith(request, sign({ ...claims, exp: Math.floor(Date.now() / 1000) + 600 }))).body).toBe("true");
+    // ...and expired a minute ago they are refused.
+    const expired = await isAdminWith(request, sign({ ...claims, exp: Math.floor(Date.now() / 1000) - 60 }));
+    expect(expired.status).toBe(401);
+    expect(expired.body).toMatch(/expired/i);
+  });
+
+  test("removing an administrator's factor ends their access at once, even with an unexpired aal2 token", async ({ page, request }) => {
+    // The newcomer set up a factor in the test above.
+    const service = process.env.ADMIN_E2E_SERVICE_KEY!;
+    const admin = { apikey: service, Authorization: `Bearer ${service}` };
+    // Its verified factor and secret, read from Supabase Auth's table (the admin users list does not include factors).
+    const db = new pg.Client({ connectionString: "postgresql://postgres:postgres@127.0.0.1:54322/postgres" });
+    await db.connect();
+    const row = (await db.query(
+      "select f.id, f.secret, u.id as user_id from auth.mfa_factors f join auth.users u on u.id = f.user_id where u.email = $1 and f.status = 'verified'",
+      [USERS.newcomer],
+    )).rows[0] as { id: string; secret: string; user_id: string } | undefined;
+    await db.end();
+    expect(row, "the newcomer has a verified factor").toBeTruthy();
+    const secret = row!.secret;
+    const newcomer = { id: row!.user_id };
+    const factor = { id: row!.id };
+    await signIn(page, USERS.newcomer);
+    await expect(page.getByTestId("mfa-verify")).toBeVisible({ timeout: 30_000 });
+    await page.getByTestId("mfa-code").fill(totp(secret));
+    await page.getByTestId("mfa-submit").click();
+    await expect(page.getByTestId("admin-frame")).toBeVisible({ timeout: 30_000 });
+    const token = await sessionToken(page);
+    expect((await isAdminWith(request, token)).body).toBe("true");
+
+    const removed = await request.delete(`${SUPABASE}/auth/v1/admin/users/${newcomer.id}/factors/${factor.id}`, { headers: admin });
+    expect(removed.ok()).toBe(true);
+    expect((await isAdminWith(request, token)).body, "no verified factor, so the old token is refused").toBe("false");
+  });
+
   test("an editor sees the editor's pages, and Publish now is off", async ({ page }) => {
     await signInAs(page, "editor");
     await expect(page.getByTestId("admin-who")).toHaveText(`${USERS.editor} (editor)`);
@@ -843,6 +912,153 @@ test.describe("employer feeds", () => {
     await expect(page.getByTestId("no-held")).toHaveText("Nothing is waiting.");
     await expect(page.getByTestId("history-rows")).toContainText("Applied");
     await expect(page.getByTestId("history-rows")).toContainText("The careers page now links this board");
+  });
+});
+
+test.describe("logos", () => {
+  // P9-21 / ADR-0024 on the real local stack: uploads wait in a private bucket, a reviewer approves, and only then is the
+  // file public. Three small valid PNGs (the third has bytes after IEND, so it is a different file with a different hash).
+  const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+  const PNG_A = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==", "base64");
+  const PNG_B = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
+  const PNG_C = Buffer.concat([PNG_A, Buffer.from("third")]);
+  const TERMS = "Partners and press may use our logo, unaltered, to refer to us";
+  let companyId = "";
+  const sha = async (b: Buffer) => (await import("node:crypto")).createHash("sha256").update(b).digest("hex");
+  const publicUrl = (key: string) => `${SUPABASE}/storage/v1/object/public/company-logos/${key}`;
+  const logoKey = async () => {
+    const db = new pg.Client({ connectionString: DB });
+    await db.connect();
+    const key = (await db.query("select logo_key from company where id = $1", [companyId])).rows[0].logo_key as string | null;
+    await db.end();
+    return key;
+  };
+  /** The signed-in user's access token, as the admin page holds it. */
+  const tokenOf = (page: Page) =>
+    page.evaluate(() => {
+      const k = Object.keys(localStorage).find((x) => x.startsWith("sb-") && x.endsWith("-auth-token"))!;
+      return (JSON.parse(localStorage.getItem(k)!) as { access_token: string }).access_token;
+    });
+
+  async function fillUpload(page: Page, file: { name: string; mimeType: string; buffer: Buffer } | null, opts: { terms?: string; atlas?: boolean } = {}) {
+    const panel = page.getByTestId("logo-panel");
+    if (file) await panel.getByTestId("logo-file").setInputFiles(file);
+    await panel.getByTestId("logo-source").fill("https://e2e-test-co.test/brand/logo.png");
+    await panel.getByTestId("logo-use").selectOption("company_brand_assets");
+    await panel.getByTestId("logo-permission-url").fill("https://e2e-test-co.test/brand");
+    await panel.getByTestId("logo-note").fill("Brand guidelines page, section Logo use");
+    await panel.getByTestId("logo-obtained").fill("2026-10-01");
+    await panel.getByTestId("logo-terms").fill(opts.terms ?? TERMS);
+    await panel.getByTestId("logo-allows-storage").check();
+    await panel.getByTestId("logo-allows-display").check();
+    if (opts.atlas ?? true) await panel.getByTestId("logo-allows-atlas").check();
+    else await panel.getByTestId("logo-allows-atlas").uncheck();
+    await panel.getByTestId("upload-logo").click();
+  }
+  const openCompany = (page: Page) => page.goto(`/admin/companies/edit?id=${companyId}`);
+
+  test.beforeAll(async () => {
+    const db = new pg.Client({ connectionString: DB });
+    await db.connect();
+    companyId = (await db.query("select id from company where domain = 'e2e-test-co.test'")).rows[0].id;
+    await db.end();
+  });
+
+  test("an editor's upload is checked, recorded, kept private, and cannot be approved by the editor", async ({ page, request }) => {
+    await signInAs(page, "editor");
+    await openCompany(page);
+    const panel = page.getByTestId("logo-panel");
+    await expect(panel.getByTestId("current-logo")).toHaveText("No logo: the site shows the first letter of the name.");
+    await panel.getByTestId("upload-logo").click();
+    await expect(panel.getByRole("alert").or(panel.locator('[role="status"]')).first()).toContainText("Choose the logo file.");
+    await fillUpload(page, { name: "logo.svg", mimeType: "image/svg+xml", buffer: Buffer.from("<svg/>") });
+    await expect(panel).toContainText("SVG is not accepted");
+    await fillUpload(page, { name: "big.png", mimeType: "image/png", buffer: Buffer.alloc(1_048_577, 1) });
+    await expect(panel).toContainText("at most 1 MB");
+    await fillUpload(page, { name: "a.png", mimeType: "image/png", buffer: PNG_A }, { terms: "official logo" });
+    await expect(panel).toContainText("Being the official logo is not permission by itself");
+    await fillUpload(page, { name: "a.png", mimeType: "image/png", buffer: PNG_A }, { atlas: false });
+    await expect(panel).toContainText("The terms must allow all three uses");
+    await fillUpload(page, { name: "a.png", mimeType: "image/png", buffer: PNG_A });
+    await expect(panel).toContainText("Uploaded. A reviewer approves it before it becomes the logo.");
+    const row = panel.locator('[data-decision="pending"]');
+    await expect(row).toHaveCount(1);
+    await expect(row).toContainText(TERMS);
+    await expect(row.getByTestId("approve-logo")).toBeDisabled();
+    await noSeriousViolations(page);
+
+    const keyA = `${companyId}/${await sha(PNG_A)}.png`;
+    expect((await request.get(publicUrl(keyA))).status(), "an unapproved logo is not public").toBeGreaterThanOrEqual(400);
+    // Past the page, with the editor's own (aal2) token: no approving, and no writing to the public bucket.
+    const token = await tokenOf(page);
+    const anon = process.env.ADMIN_E2E_ANON_KEY!;
+    const auth = { apikey: anon, Authorization: `Bearer ${token}` };
+    const id = (await request.get(`${SUPABASE}/rest/v1/logo_asset?select=id&company_id=eq.${companyId}`, { headers: auth }).then((r) => r.json()))[0].id;
+    const approve = await request.post(`${SUPABASE}/rest/v1/rpc/review_logo`, { headers: auth, data: { p_id: id, p_decision: "approved", p_note: "mine" } });
+    expect(approve.status()).toBe(403);
+    const sneak = await request.post(`${SUPABASE}/storage/v1/object/company-logos/${keyA}`, { headers: { ...auth, "Content-Type": "image/png" }, data: PNG_A });
+    expect(sneak.status(), "an editor cannot write to the public bucket").toBeGreaterThanOrEqual(400);
+    expect(await logoKey()).toBeNull();
+  });
+
+  test("a reviewer approves it, and only then is it the logo and public", async ({ page, request }) => {
+    await signInAs(page, "reviewer");
+    await openCompany(page);
+    const panel = page.getByTestId("logo-panel");
+    const row = panel.locator('[data-decision="pending"]');
+    await row.getByTestId("approve-logo").click();
+    await expect(panel).toContainText("Write a note saying why.");
+    await row.getByRole("textbox", { name: "Reason for the decision" }).fill("Brand guidelines allow partner use; current logo");
+    await row.getByTestId("approve-logo").click();
+    await expect(panel).toContainText("Approved: it is now the logo.");
+    const keyA = `${companyId}/${await sha(PNG_A)}.png`;
+    await expect(panel.getByTestId("current-logo")).toContainText(keyA);
+    expect(await logoKey()).toBe(keyA);
+    const pub = await request.get(publicUrl(keyA));
+    expect(pub.status()).toBe(200);
+    expect(pub.headers()["content-type"]).toContain("image/png");
+    await expect(panel.locator('[data-decision="approved"]')).toContainText("Approved: Brand guidelines allow partner use");
+  });
+
+  test("a replacement is approved in its place, and a rejected upload never becomes public or the logo", async ({ page, request }) => {
+    await signInAs(page, "editor");
+    await openCompany(page);
+    await fillUpload(page, { name: "b.png", mimeType: "image/png", buffer: PNG_B });
+    await expect(page.getByTestId("logo-panel")).toContainText("Uploaded.");
+    await fillUpload(page, { name: "c.png", mimeType: "image/png", buffer: PNG_C });
+    await expect(page.getByTestId("logo-panel").locator('[data-decision="pending"]')).toHaveCount(2);
+    await page.getByRole("button", { name: "Sign out" }).click();
+
+    await signInAs(page, "reviewer");
+    await openCompany(page);
+    const panel = page.getByTestId("logo-panel");
+    const keyB = `${companyId}/${await sha(PNG_B)}.png`;
+    const keyC = `${companyId}/${await sha(PNG_C)}.png`;
+    // Rows are newest first: C, then B. Once C is rejected, B is the only pending row.
+    const pending = panel.locator('[data-decision="pending"]');
+    const rowC = pending.first();
+    const rowB = pending.first();
+    await rowC.getByRole("textbox", { name: "Reason for the decision" }).fill("Not the current logo");
+    await rowC.getByTestId("reject-logo").click();
+    await expect(panel).toContainText("Rejected.");
+    await expect(pending).toHaveCount(1);
+    await rowB.getByRole("textbox", { name: "Reason for the decision" }).fill("New brand mark, guidelines checked");
+    await rowB.getByTestId("approve-logo").click();
+    await expect(panel).toContainText("Approved: it is now the logo.");
+    expect(await logoKey()).toBe(keyB);
+    expect((await request.get(publicUrl(keyB))).status()).toBe(200);
+    expect((await request.get(publicUrl(keyC))).status(), "a rejected upload is never public").toBeGreaterThanOrEqual(400);
+  });
+
+  test("a password-only session cannot read, upload, or approve logos", async ({ request }) => {
+    const anon = process.env.ADMIN_E2E_ANON_KEY!;
+    const token = (await (await request.post(`${SUPABASE}/auth/v1/token?grant_type=password`, { headers: { apikey: anon }, data: { email: USERS.reviewer, password: PASSWORD } })).json()).access_token as string;
+    const auth = { apikey: anon, Authorization: `Bearer ${token}` };
+    expect(await (await request.get(`${SUPABASE}/rest/v1/logo_asset?select=id`, { headers: auth })).json()).toEqual([]);
+    const up = await request.post(`${SUPABASE}/storage/v1/object/company-logos-pending/${companyId}/${"0".repeat(64)}.png`, { headers: { ...auth, "Content-Type": "image/png" }, data: PNG_A });
+    expect(up.status()).toBeGreaterThanOrEqual(400);
+    const approve = await request.post(`${SUPABASE}/rest/v1/rpc/review_logo`, { headers: auth, data: { p_id: 1, p_decision: "approved", p_note: "x" } });
+    expect(approve.status()).toBe(403);
   });
 });
 

@@ -5,7 +5,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useAdmin } from "@/components/admin/admin-root";
-import { DataTable, Field, Notice, Select, TextArea, TextInput } from "@/components/admin/ui";
+import { CheckRow, DataTable, Field, Notice, Select, TextArea, TextInput } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { describeError } from "@/lib/admin/errors";
 import { logoUrl } from "@/lib/data/logo";
@@ -28,6 +28,7 @@ type Asset = {
   permission_url: string;
   permission_note: string;
   obtained_on: string;
+  terms_quote: string | null;
   uploaded_at: string;
   decision: "approved" | "rejected" | null;
   decision_note: string | null;
@@ -51,6 +52,8 @@ export function LogoPanel({ companyId }: { companyId: string }) {
   const [permissionUrl, setPermissionUrl] = useState("");
   const [note, setNote] = useState("");
   const [obtainedOn, setObtainedOn] = useState("");
+  const [termsQuote, setTermsQuote] = useState("");
+  const [allows, setAllows] = useState({ storage: false, display: false, atlas: false });
   const [notes, setNotes] = useState<Record<number, string>>({});
   const [message, setMessage] = useState<{ kind: "error" | "success"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -92,12 +95,17 @@ export function LogoPanel({ companyId }: { companyId: string }) {
                   ? "Write a note of at least ten characters: who allows it, and on what terms."
                   : !obtainedOn || obtainedOn > today()
                     ? "Give the date the file was obtained (not in the future)."
-                    : null;
+                    : termsQuote.trim().length < 20
+                      ? "Quote the wording in the brand guidelines, permission, or licence that allows this use (at least 20 characters). Being the official logo is not permission by itself."
+                      : !(allows.storage && allows.display && allows.atlas)
+                        ? "The terms must allow all three uses: storing the file, showing it on the site, and resizing it for the map. If they do not, do not upload it."
+                        : null;
     if (problem) return setMessage({ kind: "error", text: problem });
     setBusy(true);
     try {
       const key = `${companyId}/${await sha256Hex(file!)}.${TYPES[file!.type]}`;
-      const stored = await supabase.storage.from("company-logos").upload(key, file!, { contentType: file!.type, upsert: false, cacheControl: "31536000" });
+      // Uploads wait in the private bucket until a reviewer approves them (migration 20261007130000).
+      const stored = await supabase.storage.from("company-logos-pending").upload(key, file!, { contentType: file!.type, upsert: false, cacheControl: "31536000" });
       // The same file uploaded again already has its key: record it anyway.
       if (stored.error && !/exists|duplicate/i.test(stored.error.message)) throw new Error(`The file could not be uploaded: ${stored.error.message}`);
       const { error } = await supabase.from("logo_asset").insert({
@@ -110,11 +118,17 @@ export function LogoPanel({ companyId }: { companyId: string }) {
         permission_url: permissionUrl.trim(),
         permission_note: note.trim(),
         obtained_on: obtainedOn,
+        terms_quote: termsQuote.trim(),
+        allows_storage: allows.storage,
+        allows_display: allows.display,
+        allows_atlas: allows.atlas,
       });
       if (error) throw new Error(describeError(error));
       setMessage({ kind: "success", text: "Uploaded. A reviewer approves it before it becomes the logo." });
       setFile(null);
       setNote("");
+      setTermsQuote("");
+      setAllows({ storage: false, display: false, atlas: false });
       refresh();
     } catch (error) {
       setMessage({ kind: "error", text: error instanceof Error ? error.message : "The logo could not be uploaded." });
@@ -127,6 +141,13 @@ export function LogoPanel({ companyId }: { companyId: string }) {
     setMessage(null);
     const why = (notes[id] ?? "").trim();
     if (!why) return setMessage({ kind: "error", text: "Write a note saying why." });
+    if (decision === "approved") {
+      // The public copy first: review_logo approves only a file that is already in the public bucket.
+      const key = assets.data?.find((x) => x.id === id)?.storage_key;
+      if (!key) return setMessage({ kind: "error", text: "That upload is no longer listed. Reload the page." });
+      const copied = await supabase.storage.from("company-logos-pending").copy(key, key, { destinationBucket: "company-logos" });
+      if (copied.error && !/exists|duplicate/i.test(copied.error.message)) return setMessage({ kind: "error", text: `The file could not be published: ${copied.error.message}` });
+    }
     const { error } = await supabase.rpc("review_logo", { p_id: id, p_decision: decision, p_note: why });
     if (error) return setMessage({ kind: "error", text: describeError(error) });
     setMessage({ kind: "success", text: decision === "approved" ? "Approved: it is now the logo." : "Rejected." });
@@ -172,7 +193,7 @@ export function LogoPanel({ companyId }: { companyId: string }) {
             </Select>
           )}
         </Field>
-        <Field label="Page that shows this (https)">
+        <Field label="Brand guidelines, permission, or licence page (https)">
           {(p) => <TextInput {...p} type="url" value={permissionUrl} onChange={(e) => setPermissionUrl(e.target.value)} data-testid="logo-permission-url" />}
         </Field>
         <Field label="Note: who allows it, and on what terms">
@@ -181,6 +202,15 @@ export function LogoPanel({ companyId }: { companyId: string }) {
         <Field label="Date obtained">
           {(p) => <TextInput {...p} type="date" max={today()} value={obtainedOn} onChange={(e) => setObtainedOn(e.target.value)} data-testid="logo-obtained" />}
         </Field>
+        <Field label="The wording that allows this use" hint="Quote it exactly from that page or the permission.">
+          {(p) => <TextArea {...p} value={termsQuote} onChange={(e) => setTermsQuote(e.target.value)} data-testid="logo-terms" />}
+        </Field>
+        <fieldset className="flex flex-col gap-1">
+          <legend className="text-sm font-semibold">The terms allow us to</legend>
+          <CheckRow label="Store the file in our storage" checked={allows.storage} onChange={(e) => setAllows({ ...allows, storage: e.target.checked })} data-testid="logo-allows-storage" />
+          <CheckRow label="Show it on the site" checked={allows.display} onChange={(e) => setAllows({ ...allows, display: e.target.checked })} data-testid="logo-allows-display" />
+          <CheckRow label="Resize it for the map's logo atlas" checked={allows.atlas} onChange={(e) => setAllows({ ...allows, atlas: e.target.checked })} data-testid="logo-allows-atlas" />
+        </fieldset>
       </div>
       <Button className="mt-4" onClick={() => void upload()} disabled={busy || !can("editor")} data-testid="upload-logo">
         {busy ? "Uploading…" : "Upload logo"}
@@ -220,6 +250,7 @@ export function LogoPanel({ companyId }: { companyId: string }) {
                     </a>
                     <br />
                     {a.permission_note}
+                    {a.terms_quote && <q className="mt-1 block italic">{a.terms_quote}</q>}
                   </td>
                   <td>
                     {a.decision ? (

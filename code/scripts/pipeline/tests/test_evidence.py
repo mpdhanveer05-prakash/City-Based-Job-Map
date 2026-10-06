@@ -96,7 +96,10 @@ def test_a_signed_in_editor_cannot_approve_a_feed_and_a_reviewer_must_say_why(db
     db.execute("update job_feed set approved_by = null, approved_at = null where id = %s", (world["feed"],))
     uid = db.execute("insert into auth.users (id) values (gen_random_uuid()) returning id::text as id").fetchone()["id"]
     db.execute("insert into admin_user (user_id, role) values (%s, 'editor')", (uid,))
-    db.execute("select set_config('request.jwt.claims', %s, true)", (json.dumps({"sub": uid, "role": "authenticated", "aal": "aal2"}),))
+    # A live aal2 session and a verified factor, as Supabase Auth holds them (P9-13); the session id is the user id.
+    db.execute("insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status, created_at, updated_at) values (%s, %s, 'test', 'totp', 'verified', now(), now())", (uid, uid))
+    db.execute("insert into auth.sessions (id, user_id, aal, created_at) values (%s, %s, 'aal2', now())", (uid, uid))
+    db.execute("select set_config('request.jwt.claims', %s, true)", (json.dumps({"sub": uid, "role": "authenticated", "aal": "aal2", "session_id": uid}),))
     db.execute("savepoint s1")
     with pytest.raises(psycopg.errors.InsufficientPrivilege):
         db.execute("update job_feed set approved_by = %s, approved_at = now() where id = %s", (uid, world["feed"]))
@@ -151,7 +154,10 @@ def _signed_in(db, role):
     db.execute("set constraints all deferred")
     uid = db.execute("insert into auth.users (id) values (gen_random_uuid()) returning id::text as id").fetchone()["id"]
     db.execute("insert into admin_user (user_id, role) values (%s, %s)", (uid, role))
-    db.execute("select set_config('request.jwt.claims', %s, true)", (json.dumps({"sub": uid, "role": "authenticated", "aal": "aal2"}),))
+    # A live aal2 session and a verified factor, as Supabase Auth holds them (P9-13); the session id is the user id.
+    db.execute("insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status, created_at, updated_at) values (%s, %s, 'test', 'totp', 'verified', now(), now())", (uid, uid))
+    db.execute("insert into auth.sessions (id, user_id, aal, created_at) values (%s, %s, 'aal2', now())", (uid, uid))
+    db.execute("select set_config('request.jwt.claims', %s, true)", (json.dumps({"sub": uid, "role": "authenticated", "aal": "aal2", "session_id": uid}),))
     return uid
 
 

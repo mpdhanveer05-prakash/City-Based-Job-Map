@@ -40,11 +40,28 @@ end;
 $$;
 
 -- Become anon (uid null) or a signed-in user. `reset role` returns to the owner.
+-- P9-13: an administrator's session needs a live aal2 session row and a verified factor in Supabase Auth's tables. Both are
+-- created here for the test users (as the owner; rolled back with the transaction). The session id is the user id.
+create function tests.mfa_session(uid uuid, aal text default 'aal2') returns void
+language plpgsql as $mfa$
+begin
+  if uid is null or current_user <> 'postgres' then
+    return;
+  end if;
+  insert into auth.users (id) values (uid) on conflict do nothing;
+  insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status, created_at, updated_at)
+  values (uid, uid, 'test', 'totp', 'verified', now(), now()) on conflict do nothing;
+  insert into auth.sessions (id, user_id, aal, created_at) values (uid, uid, aal::auth.aal_level, now())
+  on conflict (id) do update set aal = excluded.aal;
+end;
+$mfa$;
+
 create function tests.become(uid uuid, r text default 'authenticated') returns void
 language plpgsql as $$
 begin
+  perform tests.mfa_session(uid);
   perform set_config('request.jwt.claims',
-    case when uid is null then '' else json_build_object('sub', uid, 'role', r, 'aal', 'aal2')::text end, true);
+    case when uid is null then '' else json_build_object('sub', uid, 'role', r, 'aal', 'aal2', 'session_id', uid)::text end, true);
   perform set_config('role', r, true);
 end;
 $$;

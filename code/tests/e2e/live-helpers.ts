@@ -33,6 +33,33 @@ export async function settle(page: Page) {
     .toBe(true);
 }
 
+/**
+ * DEF-3: waits until the worker has answered for where the camera is now, then for the animation to end. After a camera
+ * move the map asks the worker for the new view on `moveend`; until that answer is applied the old markers are still drawn
+ * and nothing is animating, so `settle` alone can return on that stale frame (about 100 to 300 ms after the camera stops,
+ * longer under load). Use this after any camera move the test did not make with goTo.
+ */
+export async function settleOnView(page: Page) {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const { map } = window.__mapLayer!;
+          if (map.isMoving()) return false;
+          const trace = window.__liveTrace ?? [];
+          // The latest request, and an applied answer to it (or to a later one) for this zoom.
+          let lastRequest = -1;
+          trace.forEach((e, i) => {
+            if (e.what === "request") lastRequest = i;
+          });
+          return lastRequest >= 0 && trace.slice(lastRequest).some((e) => e.what === "response" && !!e.applied && Math.abs(e.zoom - map.getZoom()) < 1e-6);
+        }),
+      { timeout: 30_000 },
+    )
+    .toBe(true);
+  await settle(page);
+}
+
 export const updates = (page: Page) => page.evaluate(() => window.__mapLayer!.layer.animation.updates);
 
 /** Jumps the camera, then waits for the worker's answer for the new view and for the animation to end. */

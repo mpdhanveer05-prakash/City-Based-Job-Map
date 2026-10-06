@@ -1,6 +1,7 @@
 import type { Page, TestInfo } from "@playwright/test";
 import { expect, test } from "../device-test";
-import { drawnNow, events, goTo, groups, mapSize, markerState, nearestTo, openLive, settle, tap, updates, type Group } from "./live-helpers";
+import { logMapTiming } from "./map-ready";
+import { drawnNow, events, goTo, groups, mapSize, markerState, nearestTo, openLive, settle, settleOnView, tap, updates, type Group } from "./live-helpers";
 
 // Draws WebGL in software: one such test at a time across the workers (tests/map-slot.ts, DEF-2).
 test.use({ mapHeavy: true });
@@ -188,6 +189,26 @@ test("once settled, a tap is answered by the index, which is built once per fram
   expect(testInfo.project.name.length).toBeGreaterThan(0);
 });
 
+test("DEF-3: with a slow worker, settle alone reads the stale frame; settleOnView waits for the split", async ({ page }, testInfo) => {
+  await openLive(page);
+  const building = (await groups(page)).find((g) => g.kind === "building")!;
+  await goTo(page, building.lng, building.lat, 12);
+  const { w, h } = await mapSize(page);
+  const clusters = (await drawnNow(page)).filter((d) => d.kind === "cluster" && d.x > 80 && d.x < w - 80 && d.y > 80 && d.y < h - 80);
+  const target = clusters.reduce((a, b) => (b.radius > a.radius ? b : a));
+  await page.evaluate(() => (window.__clusterDelayMs = 3_000));
+  await tap(page, testInfo, target.x, target.y);
+  await expect.poll(async () => (await events(page)).filter((e) => e.type === "cluster").length, { timeout: 15_000 }).toBe(1);
+  const event = (await events(page)).find((e) => e.type === "cluster")!;
+  await expect.poll(() => page.evaluate(() => window.__mapLayer!.map.getZoom()), { timeout: 15_000 }).toBeCloseTo(Math.min(event.zoom!, 19), 3);
+  await settle(page);
+  // The old test's check, made here: nothing is animating, yet the tapped cluster is still drawn (the answer is not back).
+  expect((await drawnNow(page)).map((d) => d.key), "settle returns before the worker's answer, on the stale frame").toContain(target.key);
+  await settleOnView(page);
+  expect((await drawnNow(page)).map((d) => d.key), "once the answer for the new zoom is applied, the cluster has split").not.toContain(target.key);
+  await page.evaluate(() => (window.__clusterDelayMs = 0));
+});
+
 test("a tap on a cluster flies to the zoom at which it splits", async ({ page }, testInfo) => {
   await openLive(page);
   const building = (await groups(page)).find((g) => g.kind === "building")!;
@@ -196,6 +217,19 @@ test("a tap on a cluster flies to the zoom at which it splits", async ({ page },
   const clusters = (await drawnNow(page)).filter((d) => d.kind === "cluster" && d.x > 80 && d.x < w - 80 && d.y > 80 && d.y < h - 80);
   expect(clusters.length).toBeGreaterThan(0);
   const target = clusters.reduce((a, b) => (b.radius > a.radius ? b : a));
+  // DEF-3: a record of every frame from the tap on (camera zoom, animation state, whether the target is drawn), the
+  // worker's requests and responses, and what is drawn after settle, written to gate-results/def3.jsonl.
+  await page.evaluate((key) => {
+    const w = window as unknown as { __def3: Array<{ t: number; zoom: number; animating: boolean; targetDrawn: boolean; moving: boolean }> };
+    w.__def3 = [];
+    const { map, layer } = window.__mapLayer!;
+    const loop = () => {
+      w.__def3.push({ t: Math.round(performance.now()), zoom: map.getZoom(), animating: layer.stats.animating, targetDrawn: layer.getDrawn().some((d) => d.key === key), moving: map.isMoving() });
+      if (w.__def3.length < 3000) requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }, target.key);
+  const tapAt = await page.evaluate(() => Math.round(performance.now()));
   await tap(page, testInfo, target.x, target.y);
 
   await expect.poll(async () => (await events(page)).filter((e) => e.type === "cluster").length, { timeout: 15_000 }).toBe(1);
@@ -203,6 +237,37 @@ test("a tap on a cluster flies to the zoom at which it splits", async ({ page },
   expect(event.key).toBe(target.key);
   expect(event.zoom).toBeGreaterThan(12);
   await expect.poll(() => page.evaluate(() => window.__mapLayer!.map.getZoom()), { timeout: 15_000 }).toBeCloseTo(Math.min(event.zoom!, 19), 3);
-  await settle(page);
-  expect((await drawnNow(page)).map((d) => d.key), "the tapped cluster has split").not.toContain(target.key);
+  // DEF-3: settle alone could return on the frame between the camera stopping and the worker's answer for the new zoom.
+  await settleOnView(page);
+  const settledAt = await page.evaluate(() => Math.round(performance.now()));
+  const drawnAtSettle = (await drawnNow(page)).map((d) => d.key);
+  // Does the target go away later on its own (a stale frame read too early), or stay (the map is wrong)?
+  let goneAfterMs: number | null = null;
+  const waitFrom = Date.now();
+  while (Date.now() - waitFrom < 10_000) {
+    if (!(await drawnNow(page)).some((d) => d.key === target.key)) {
+      goneAfterMs = Date.now() - waitFrom;
+      break;
+    }
+    await page.waitForTimeout(100);
+  }
+  const record = await page.evaluate(() => ({
+    frames: (window as unknown as { __def3: unknown[] }).__def3,
+    trace: window.__liveTrace ?? [],
+    finalZoom: window.__mapLayer!.map.getZoom(),
+  }));
+  logMapTiming({
+    event: "def3",
+    project: testInfo.project.name,
+    target: { key: target.key, x: Math.round(target.x), y: Math.round(target.y), radius: target.radius },
+    expansionZoom: event.zoom,
+    tapAt,
+    settledAt,
+    targetDrawnAtSettle: drawnAtSettle.includes(target.key),
+    goneAfterMsPastSettle: goneAfterMs,
+    finalZoom: record.finalZoom,
+    trace: record.trace.filter((e) => e.t >= tapAt - 50),
+    frames: record.frames.filter((_, i, all) => i === 0 || i === all.length - 1 || i % 5 === 0),
+  });
+  expect(drawnAtSettle, "the tapped cluster has split").not.toContain(target.key);
 });
