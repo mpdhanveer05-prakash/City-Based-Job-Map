@@ -142,3 +142,83 @@ def test_another_employers_ats_posting_is_not_published(db, world):
     assert report.counts.get("new", 0) == 0
     as_owner(db)
     assert db.execute("select count(*) as n from job where external_ref = 'x1'").fetchone()["n"] == 0
+
+
+def _signed_in(db, role):
+    # Run the fixture's deferred checks first, as the owner (its own commit would), not as the user signed in next.
+    db.execute("select set_config('request.jwt.claims', '', true)")
+    db.execute("set constraints all immediate")
+    db.execute("set constraints all deferred")
+    uid = db.execute("insert into auth.users (id) values (gen_random_uuid()) returning id::text as id").fetchone()["id"]
+    db.execute("insert into admin_user (user_id, role) values (%s, %s)", (uid, role))
+    db.execute("select set_config('request.jwt.claims', %s, true)", (json.dumps({"sub": uid, "role": "authenticated"}),))
+    return uid
+
+
+def _held_link_change(db, world, ref="h1"):
+    as_pipeline(db)
+    (feed,) = repo.load_feeds(db)
+    sync_feed(db, feed, lambda url: greenhouse((ref, "Data Engineer")))
+    moved = json.dumps({"jobs": [{"id": ref, "title": "Data Engineer", "absolute_url": f"https://job-boards.greenhouse.io/pipeline-test/jobs/{ref}", "location": {"name": "Bengaluru"}}]})
+    sync_feed(db, feed, lambda url: moved)
+    sync_feed(db, feed, lambda url: moved)  # the next run sees the same change
+    as_owner(db)
+    return feed, moved
+
+
+def test_a_held_change_is_raised_once_however_often_the_feed_repeats_it(db, world):
+    _held_link_change(db, world)
+    assert db.execute("select count(*) as n from feed_event where kind = 'held_domain_change' and external_ref = 'h1'").fetchone()["n"] == 1
+
+
+def test_a_reviewer_applies_a_held_link_through_reviewed_evidence(db, world):
+    _held_link_change(db, world)
+    event = db.execute("select id from feed_event where kind = 'held_domain_change' and external_ref = 'h1'").fetchone()["id"]
+    uid = _signed_in(db, "reviewer")
+    db.execute("select resolve_feed_event(%s, 'apply', 'The employer moved its board to Greenhouse (careers page links it)')", (event,))
+    db.execute("set constraints all immediate")
+    db.execute("select set_config('request.jwt.claims', '', true)")
+    job = db.execute("select apply_url from job where external_ref = 'h1'").fetchone()
+    assert job["apply_url"] == "https://job-boards.greenhouse.io/pipeline-test/jobs/h1"
+    ev = db.execute("select decision, resolved_by::text as by, decision_note from feed_event where id = %s", (event,)).fetchone()
+    assert ev["decision"] == "applied" and ev["by"] == uid
+    proof = db.execute(
+        "select reviewed_by::text as by, self_reviewed from field_evidence e join job j on j.id = e.job_id where j.external_ref = 'h1' and field = 'apply_url' and value = %s",
+        ("https://job-boards.greenhouse.io/pipeline-test/jobs/h1",),
+    ).fetchone()
+    assert proof == {"by": uid, "self_reviewed": True}
+
+
+def test_a_rejected_change_stays_rejected_on_later_runs(db, world):
+    feed, moved = _held_link_change(db, world)
+    event = db.execute("select id from feed_event where kind = 'held_domain_change' and external_ref = 'h1'").fetchone()["id"]
+    _signed_in(db, "reviewer")
+    db.execute("select resolve_feed_event(%s, 'reject', 'Not on the employer''s careers page')", (event,))
+    db.execute("select set_config('request.jwt.claims', '', true)")
+    as_pipeline(db)
+    sync_feed(db, feed, lambda url: moved)
+    as_owner(db)
+    assert db.execute("select count(*) as n from feed_event where kind = 'held_domain_change' and external_ref = 'h1'").fetchone()["n"] == 1
+    assert db.execute("select apply_url from job where external_ref = 'h1'").fetchone()["apply_url"] == "https://pipeline-test.example/jobs/h1"
+
+
+def test_an_editor_cannot_resolve_and_an_ambiguous_entry_cannot_be_applied(db, world):
+    _held_link_change(db, world)
+    event = db.execute("select id from feed_event where kind = 'held_domain_change' and external_ref = 'h1'").fetchone()["id"]
+    _signed_in(db, "editor")
+    db.execute("savepoint e1")
+    with pytest.raises(psycopg.errors.InsufficientPrivilege):
+        db.execute("select resolve_feed_event(%s, 'apply', 'trying')", (event,))
+    db.execute("rollback to savepoint e1")
+    db.execute("insert into feed_event (feed_id, kind, external_ref, new_value) values (%s, 'held_ambiguous', 'dup', 'https://x.example/1') ", (world["feed"],))
+    amb = db.execute("select id from feed_event where external_ref = 'dup'").fetchone()["id"]
+    _signed_in(db, "reviewer")
+    db.execute("savepoint e2")
+    with pytest.raises(psycopg.errors.InvalidParameterValue):
+        db.execute("select resolve_feed_event(%s, 'apply', 'trying')", (amb,))
+    db.execute("rollback to savepoint e2")
+    db.execute("rollback to savepoint e2")
+    with pytest.raises(psycopg.errors.CheckViolation):
+        db.execute("select resolve_feed_event(%s, 'reject', '')", (amb,))
+    db.execute("rollback to savepoint e2")
+    db.execute("select set_config('request.jwt.claims', '', true)")

@@ -15,6 +15,22 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-06: Bengaluru pilot (research, verification, local draft import), feed admin, device procedure, export-repair proof
+- **Pilot (P9-20, in progress):** 119 candidates researched by AI agents. Every quote was re-checked against the raw page by `scripts/pilot/verify_research.py`: 306 evidence items verified, 43 quotes not found, 9 pages unreadable. **41 companies have a verified name, website, and full Bengaluru address (target 50).** 37 were geocoded and imported **locally** as drafts with 205 evidence claims: 0 reviewed, 0 published. Coordinates are from Nominatim for local review only (ODbL; provider is D-07), and 36 of 37 matched at locality level, so all sit in the review queue. Details, caveats, and the reviewer's to-do list: `code/data/pilot/bangalore/README.md`. Chennai has not started.
+- **Feed admin (P9-19):** `/admin/feeds`.
+  - Reviewers approve or withdraw a feed, and apply or reject a held change; each needs a written note.
+  - Editors see feeds, held changes, and history, but cannot act.
+  - Applying a held link records it as evidence reviewed by that reviewer (recorded as a self-review), then changes the job.
+  - The pipeline raises a held change only once, and never again after a rejection.
+  - Migration `20261006190000_feed_review_actions.sql`.
+- **Device procedure:** [real-device-test-procedure.md](real-device-test-procedure.md), with pilot and S/M/L synthetic data. Two tooling gaps are recorded: P2-09a (Android over USB) and P2-09b (in-page runner for iOS).
+- **Export repair proof:** unit tests on real folders show a Windows layout repaired into exactly the Linux layout, a Linux layout untouched (same bytes and times), and a second run changing nothing; it refuses to overwrite. A real build in a `node:24-bookworm` container gave 0 nested folders and 151 flat prefetch files, and the repair moved nothing on either run.
+- **Audit:** a new advisory, GHSA-wq5f-xc86-pv6w (sharp < 0.35.5, published 6 Oct 2026 13:43 UTC), reached through wrangler > miniflare, which pins sharp 0.35.4. It is fixed with an npm override to sharp 0.35.5 (a patch release), not an exception. Technical audit: pass. Exception approval: blocked (owner and approver pending), so `--release` fails.
+- **Verified (from `code/`):** lint 0; typecheck clean; `npm test` **625 passed**; `npx supabase test db` **620 passed**; pipeline pytest **88 passed**; `npm run test:admin` **48 passed** (2 new feed tests); full `npm run test:e2e` **269 passed, 3 failed, 52 skipped**. The 3 failures all passed in an isolated rerun, and a 32-test stress rerun passed:
+  - two map hit-tests that timed out while loading under load;
+  - one phone journey whose Apply link measured **17 px for 10 s** with no failed request.
+- **Open finding:** the 17 px Apply link appeared 3 times across full and stress runs, never in isolation, and every request succeeded each time. Cause unknown. The phone spec now records the element's classes, computed styles, and stylesheets on failure.
+
 ### 2026-10-06: Feed governance, classification definitions, prefetch fix (P9-17), approval attribution (Completed locally)
 - **Feeds** (ADR-0022 §7, migration `20261006170000_feed_governance.sql`): only feeds approved through `approve_job_feed` (reviewer, with a note) are read; changing a feed withdraws its approval; an applicant-tracking link must be under this employer's board; a link moved to another domain and a reference listed twice are held, not applied; `feed_event` records inserts, changes (old and new value), holds, suspect, and closure; feed evidence names its feed. Failed fetches still change no job.
 - **Definitions:** the owner's baseline for Startup and MNC is in ADR-0023 and the curation guide (a reverted edit kept ADR-0016 unchanged, per the ADR rule).

@@ -101,6 +101,14 @@ for (const city of CITIES) {
       expect(company, `${city.name} has a company with an open job`).toBeTruthy();
       const job = jobsOf(company!.id)[0];
       await fakeEmployerSites(context);
+      // Any same-origin request that fails is reported with the size check below, so an unstyled page says why.
+      const failures: string[] = [];
+      page.on("requestfailed", (r) => {
+        if (r.url().startsWith("http://localhost") && !(r.failure()?.errorText ?? "").includes("ERR_ABORTED")) failures.push(`${r.failure()?.errorText} ${r.url()}`);
+      });
+      page.on("response", (r) => {
+        if (r.url().startsWith("http://localhost") && r.status() >= 400) failures.push(`${r.status()} ${r.url()}`);
+      });
 
       await openExplorer(page, `/${city.slug}?company=${company!.slug}`);
       const popup = page.getByTestId("map-popup");
@@ -113,7 +121,25 @@ for (const city of CITIES) {
       await expect(page).toHaveURL(new RegExp(`/companies/${company!.slug}/jobs$`), { timeout: 30_000 });
       await expect(page.getByTestId("job-row")).toHaveCount(jobsOf(company!.id).length);
       const apply = page.locator(`[data-job="${job.id}"]`).getByRole("link");
-      await expect.poll(heightOf(apply), { message: "Apply is a 44 px target", timeout: 10_000 }).toBeGreaterThanOrEqual(44);
+      const state = () =>
+        apply.evaluate((a) => {
+          const cs = getComputedStyle(a);
+          return {
+            className: a.className,
+            height: a.getBoundingClientRect().height,
+            computed: { display: cs.display, height: cs.height, minHeight: cs.minHeight, paddingTop: cs.paddingTop },
+            sheets: document.styleSheets.length,
+            links: [...document.querySelectorAll('link[rel="stylesheet"]')].map((l) => (l as HTMLLinkElement).href.split("/").pop()),
+            hrefCount: document.querySelectorAll(`[data-testid="apply-link"]`).length,
+          };
+        });
+      await expect
+        .poll(heightOf(apply), { message: `Apply is a 44 px target (failed same-origin requests: ${JSON.stringify(failures)})`, timeout: 10_000 })
+        .toBeGreaterThanOrEqual(44)
+        .catch(async (e) => {
+          throw new Error(`${(e as Error).message}
+Apply element state: ${JSON.stringify(await state())}`);
+        });
       const opened = page.waitForEvent("popup");
       await apply.tap();
       expect((await opened).url()).toBe(job.apply_url);

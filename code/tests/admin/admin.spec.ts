@@ -2,6 +2,7 @@
 // and the audit log. Row-level security, the triggers, and the functions are the real ones. Run with `npm run test:admin`.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import pg from "pg";
 import { FAKE_GITHUB_PORT, PASSWORD, USERS } from "./global-setup";
 
 test.describe.configure({ mode: "serial" });
@@ -745,6 +746,61 @@ test.describe("audit log and sources", () => {
     await page.getByTestId("add-source").click();
     await expect(page.getByRole("status").filter({ hasText: "Added." })).toBeVisible();
     await expect(page.getByTestId("source-rows")).toContainText("E2E feed");
+  });
+});
+
+test.describe("employer feeds", () => {
+  // A feed and a held change, as the pipeline would leave them, written straight to the local database.
+  const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+  let feedId = 0;
+  test.beforeAll(async () => {
+    const db = new pg.Client({ connectionString: DB });
+    await db.connect();
+    const company = (await db.query("select id, (select id from source limit 1) as source from company where domain = 'e2e-test-co.test'")).rows[0];
+    feedId = (await db.query("insert into job_feed (company_id, source_id, provider, identifier) values ($1, $2, 'greenhouse', 'e2e-test-co') returning id", [company.id, company.source])).rows[0].id;
+    const job = (await db.query(
+      "insert into job (company_id, source_id, external_ref, title, apply_url, status) values ($1, $2, 'feed-1', 'Feed Engineer', 'https://e2e-test-co.test/jobs/feed-1', 'draft') returning id",
+      [company.id, company.source],
+    )).rows[0].id;
+    await db.query(
+      "insert into feed_event (feed_id, job_id, kind, field, old_value, new_value, external_ref) values ($1, $2, 'held_domain_change', 'apply_url', 'https://e2e-test-co.test/jobs/feed-1', 'https://job-boards.greenhouse.io/e2e-test-co/jobs/1', 'feed-1')",
+      [feedId, job],
+    );
+    await db.end();
+  });
+
+  test("an editor sees feeds, held changes, and history, but cannot approve or resolve", async ({ page }) => {
+    await signInAs(page, "editor");
+    await page.goto("/admin/feeds");
+    const feed = page.locator(`[data-feed="${feedId}"]`);
+    await expect(feed).toHaveAttribute("data-approved", "false");
+    await expect(feed).toContainText("Not approved: the pipeline does not read it.");
+    await expect(feed.getByTestId("approve-feed")).toBeDisabled();
+    await expect(page.getByTestId("held-rows")).toContainText("Held: the application link moved to another domain");
+    await expect(page.getByTestId("apply-held").first()).toBeDisabled();
+    await expect(page.getByTestId("reject-held").first()).toBeDisabled();
+    await noSeriousViolations(page);
+  });
+
+  test("a reviewer must give a reason, approves the feed, and applies the held link", async ({ page }) => {
+    await signInAs(page, "reviewer");
+    await page.goto("/admin/feeds");
+    const feed = page.locator(`[data-feed="${feedId}"]`);
+    await feed.getByTestId("approve-feed").click();
+    await expect(alertOf(page)).toContainText("Write a note saying why");
+    await feed.getByTestId(`note-feed-${feedId}`).fill("Greenhouse board linked from the company's careers page");
+    await feed.getByTestId("approve-feed").click();
+    await expect(page.getByRole("status").filter({ hasText: "Approved" })).toBeVisible();
+    await expect(feed).toHaveAttribute("data-approved", "true");
+    await expect(feed).toContainText("by you: Greenhouse board linked from the company's careers page");
+
+    const held = page.getByTestId("held-rows").locator("tr").first();
+    await held.getByRole("textbox").fill("The careers page now links this board");
+    await held.getByTestId("apply-held").click();
+    await expect(page.getByRole("status").filter({ hasText: "Applied" })).toBeVisible();
+    await expect(page.getByTestId("no-held")).toHaveText("Nothing is waiting.");
+    await expect(page.getByTestId("history-rows")).toContainText("Applied");
+    await expect(page.getByTestId("history-rows")).toContainText("The careers page now links this board");
   });
 });
 

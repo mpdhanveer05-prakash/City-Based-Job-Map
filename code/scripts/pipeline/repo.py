@@ -138,7 +138,14 @@ def apply_plan(conn: psycopg.Connection, feed: FeedConfig, plan: Plan, cities_fo
 
     # Held for review: recorded, not applied; the job keeps its current, evidenced values (ADR-0022).
     for kind, known, job in plan.held:
-        event(kind, known.id if known else None, job.external_ref, "apply_url", known.apply_url if known else None, job.apply_url)
+        # Raised once: not again while the same change is waiting, and not again after a reviewer rejected it.
+        seen = conn.execute(
+            """select 1 from feed_event where feed_id = %s and kind = %s and external_ref is not distinct from %s
+                 and new_value is not distinct from %s and (resolved_at is null or decision = 'rejected') limit 1""",
+            (feed.id, kind, job.external_ref, job.apply_url),
+        ).fetchone()
+        if seen is None:
+            event(kind, known.id if known else None, job.external_ref, "apply_url", known.apply_url if known else None, job.apply_url)
         done["held"] += 1
 
     for known in plan.suspect:

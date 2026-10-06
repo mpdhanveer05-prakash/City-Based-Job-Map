@@ -2,448 +2,37 @@
   "checked_on": "2026-10-06",
   "candidates": [
     {
-      "name": "Swiggy",
-      "domain": "swiggy.com",
-      "website_url": "https://www.swiggy.com",
-      "address": "Sumadhura Capitol Towers, 3rd- 6th Floor – Tower 1, Sy. No. 14 & 158, Pattanduru Agrahara, K R Puram Hobli, Bengaluru East Taluk, Bengaluru, Karnataka – 560066.",
+      "name": "Acko Technology and Services Limited",
+      "domain": "acko.com",
+      "website_url": "https://www.acko.com",
+      "address": "#36/5, Hustlehub One East, Somasandrapalya 27th Main Rd, Sector 2, HSR Layout, Bengaluru, Karnataka 560102",
       "verified_at": "2026-10-06",
       "evidence": {
         "name": {
-          "url": "https://www.swiggy.com/corporate/",
-          "quote": "Swiggy is a new-age consumer-first organization offering an easy-to-use convenience platform, accessible through a unified app."
+          "url": "https://www.acko.com",
+          "quote": "Acko Technology and Services Limited (formerly known as Acko Technology and Services Private Limited)"
         },
         "website": {
-          "url": "https://www.swiggy.com/corporate/",
-          "quote": "Swiggy is a new-age consumer-first organization offering an easy-to-use convenience platform"
+          "url": "https://www.acko.com",
+          "quote": "Acko Technology and Services Limited (formerly known as Acko Technology and Services Private Limited)"
         },
         "address": {
-          "url": "https://www.swiggy.com/corporate/",
-          "quote": "Sumadhura Capitol Towers, 3rd- 6th Floor – Tower 1, Sy. No. 14 & 158, Pattanduru Agrahara"
-        },
-        "description": {
-          "url": "https://www.swiggy.com/corporate/",
-          "quote": "offering an easy-to-use convenience platform, accessible through a unified app."
+          "url": "https://www.acko.com",
+          "quote": "#36/5, Hustlehub One East, Somasandrapalya 27th Main Rd, Sector 2, HSR Layout, Bengaluru, Karnataka 560102"
         },
         "sectors": {
-          "url": "https://www.swiggy.com/corporate/",
-          "quote": "Swiggy is a new-age consumer-first organization offering an easy-to-use convenience platform, accessible through a unified app."
+          "url": "https://www.acko.com",
+          "quote": "Loan Protection for Fintechs"
         }
       },
-      "dropped": {},
-      "research_note": "The corporate page mentions 'IPO Delivered - November 2024', but no investor-relations page with an exchange listing was fetched, so ownership_status is left null. The e-commerce sector is a judgement call. Quotes came through WebFetch's summariser, so dash and spacing characters may differ from the raw page.",
-      "description": "Consumer convenience platform offering food delivery and other services through a single app.",
-      "types": [],
-      "sectors": [
-        "e-commerce"
-      ],
-      "ownership_status": null
-    },
-    {
-      "name": "Razorpay",
-      "domain": "razorpay.com",
-      "website_url": "https://razorpay.com",
-      "address": "1st Floor, SJR Cyber, 22, Laskar Hosur Road, Adugodi, Bangalore, Karnataka - 560030",
-      "verified_at": "2026-10-06",
-      "evidence": {
-        "name": {
-          "url": "https://razorpay.com/about/",
-          "quote": "A comprehensive payments suite in India designed to help businesses seamlessly accept, process, and disburse payments."
-        },
-        "website": {
-          "url": "https://razorpay.com/about/",
-          "quote": "A comprehensive payments suite in India designed to help businesses seamlessly accept, process, and disburse payments."
-        },
-        "address": {
-          "url": "https://razorpay.com/about/",
-          "quote": "1st Floor, SJR Cyber, 22, Laskar Hosur Road, Adugodi, Bangalore, Karnataka - 560030"
-        },
-        "description": {
-          "url": "https://razorpay.com/about/",
-          "quote": "help businesses seamlessly accept, process, and disburse payments."
-        },
-        "types": {
-          "url": "https://razorpay.com/about/",
-          "quote": "providing clean, developer-friendly APIs and hassle-free integration."
-        },
-        "sectors": {
-          "url": "https://razorpay.com/about/",
-          "quote": "A comprehensive payments suite in India"
-        }
+      "dropped": {
+        "description": "quote_not_found"
       },
-      "dropped": {},
-      "research_note": "The about page mentions Malaysia (Curlec), Singapore and the US but gives no office addresses there, so mnc is not tagged. The name quote does not contain the word 'Razorpay'.",
-      "description": "Provides payment processing APIs and related products that let businesses accept, process and disburse payments.",
-      "types": [
-        "product"
-      ],
-      "sectors": [
-        "fintech"
-      ],
-      "ownership_status": null
-    },
-    {
-      "name": "Zerodha Broking Limited",
-      "domain": "zerodha.com",
-      "website_url": "https://zerodha.com",
-      "address": "Zerodha, #153/154, 4th Cross, J.P Nagar 4th Phase, Opp. Clarence Public School, Bengaluru - 560078",
-      "verified_at": "2026-10-06",
-      "evidence": {
-        "name": {
-          "url": "https://zerodha.com/contact/",
-          "quote": "Zerodha Broking Limited"
-        },
-        "website": {
-          "url": "https://zerodha.com/contact/",
-          "quote": "Zerodha, #153/154, 4th Cross, J.P Nagar 4th Phase"
-        },
-        "address": {
-          "url": "https://zerodha.com/contact/",
-          "quote": "#153/154, 4th Cross, J.P Nagar 4th Phase, Opp. Clarence Public School, Bengaluru - 560078"
-        },
-        "description": {
-          "url": "https://zerodha.com/about/",
-          "quote": "We kick-started operations on the 15th of August, 2010 with the goal of breaking all barriers that traders and investors face in India"
-        },
-        "sectors": {
-          "url": "https://zerodha.com/about/",
-          "quote": "breaking all barriers that traders and investors face in India in terms of cost, support, and technology."
-        }
-      },
-      "dropped": {},
-      "research_note": "The contact page also lists a support address: #192A 4th Floor, Kalyani Vista, 3rd Main Road JP Nagar 4th Phase Bengaluru - 560076. The name quote 'Zerodha Broking Limited' is only three words, below the 5-word minimum.",
-      "description": "Indian stockbroker, operating since 2010, that offers trading and investment services.",
-      "types": [],
-      "sectors": [
-        "fintech"
-      ],
-      "ownership_status": null
-    },
-    {
-      "name": "PhonePe Limited",
-      "domain": "phonepe.com",
-      "website_url": "https://www.phonepe.com",
-      "address": "Office-2, Floor 5, Wing A, Block A, Salarpuria Softzone, Bellandur Village, Varthur Hobli, Outer Ring Road, Bangalore South, Bangalore, Karnataka, India, 560103",
-      "verified_at": "2026-10-06",
-      "evidence": {
-        "name": {
-          "url": "https://www.phonepe.com/contact-us/",
-          "quote": "PhonePe Limited"
-        },
-        "website": {
-          "url": "https://www.phonepe.com/contact-us/",
-          "quote": "PhonePe Limited"
-        },
-        "address": {
-          "url": "https://www.phonepe.com/contact-us/",
-          "quote": "Salarpuria Softzone, Bellandur Village, Varthur Hobli, Outer Ring Road, Bangalore South"
-        },
-        "sectors": {
-          "url": "https://www.phonepe.com/contact-us/",
-          "quote": "CIN: U67190KA2012PLC176031"
-        }
-      },
-      "dropped": {},
-      "research_note": "No About page was fetched, so the description is null. The fintech sector rests only on general knowledge and a weak CIN quote, so drop it unless better evidence is found. The name quote is only two words, below the 5-word minimum.",
+      "research_note": "The address is on 3 lines, joined here with spaces. Sector 'fintech' (insurance) is a judgement call. The footer also shows CIN U74110KA2016PLC120161.",
       "description": null,
       "types": [],
       "sectors": [
         "fintech"
-      ],
-      "ownership_status": null
-    },
-    {
-      "name": "Wipro Limited",
-      "domain": "wipro.com",
-      "website_url": "https://www.wipro.com",
-      "address": "Wipro Limited Doddakannelli Sarjapur Road Bangalore 560 035",
-      "verified_at": "2026-10-06",
-      "evidence": {
-        "name": {
-          "url": "https://www.wipro.com/investors/",
-          "quote": "Wipro Limited Doddakannelli Sarjapur Road Bangalore 560 035"
-        },
-        "website": {
-          "url": "https://www.wipro.com/about-us/",
-          "quote": "Wipro is a leading Al-powered technology services and consulting company"
-        },
-        "address": {
-          "url": "https://www.wipro.com/investors/",
-          "quote": "Wipro Limited Doddakannelli Sarjapur Road Bangalore 560 035"
-        },
-        "description": {
-          "url": "https://www.wipro.com/about-us/",
-          "quote": "Wipro is a leading Al-powered technology services and consulting company focused on building innovative solutions that address clients' most complex digital transformation needs."
-        },
-        "types": {
-          "url": "https://www.wipro.com/about-us/",
-          "quote": "65 countries"
-        },
-        "sectors": {
-          "url": "https://www.wipro.com/about-us/",
-          "quote": "technology services and consulting company"
-        },
-        "ownership_status": {
-          "url": "https://www.wipro.com/investors/",
-          "quote": "Wipro Celebrates 25 Years on NYSE"
-        }
-      },
-      "dropped": {},
-      "research_note": "The mnc tag rests on a summariser report of '65 countries'; that quote is too short and may not be verbatim. The enterprise-software sector is a judgement call for a services firm. The NYSE listing is shown on the investors page; NSE comes from a summariser note.",
-      "description": "Technology services and consulting company that delivers digital transformation and AI-based solutions for clients.",
-      "types": [
-        "mnc"
-      ],
-      "sectors": [
-        "enterprise-software"
-      ],
-      "ownership_status": "public"
-    },
-    {
-      "name": "Groww",
-      "domain": "groww.in",
-      "website_url": "https://groww.in",
-      "address": "Vaishnavi Tech Park, South Tower, 3rd Floor Sarjapur Main Road, Bellandur, Bengaluru – 560103 Karnataka",
-      "verified_at": "2026-10-06",
-      "evidence": {
-        "name": {
-          "url": "https://groww.in/about-us",
-          "quote": "Vaishnavi Tech Park, South Tower, 3rd Floor Sarjapur Main Road, Bellandur"
-        },
-        "website": {
-          "url": "https://groww.in/about-us",
-          "quote": "Super easy to use, lightning fast, and crystal clear"
-        },
-        "address": {
-          "url": "https://groww.in/about-us",
-          "quote": "Vaishnavi Tech Park, South Tower, 3rd Floor Sarjapur Main Road, Bellandur, Bengaluru – 560103 Karnataka"
-        },
-        "description": {
-          "url": "https://groww.in/about-us",
-          "quote": "Super easy to use, lightning fast, and crystal clear"
-        }
-      },
-      "dropped": {
-        "sectors": "no_evidence"
-      },
-      "research_note": "The description and sector rest on the summariser's paraphrase of the page's products; no verbatim product sentence was captured, and neither the name nor the website quote contains 'Groww'. Listing status was not checked.",
-      "description": "Online investment platform for stocks, ETFs, mutual funds and F&O trading.",
-      "types": [],
-      "sectors": [],
-      "ownership_status": null
-    },
-    {
-      "name": "Practo Technologies Pvt. Ltd.",
-      "domain": "practo.com",
-      "website_url": "https://www.practo.com",
-      "address": "No.371, Clayworks Building, 1st Cross Rd, 3rd Block, Santhosapuram, Koramangala 3 Block, Koramangala, Bengaluru, Karnataka 560034",
-      "verified_at": "2026-10-06",
-      "evidence": {
-        "name": {
-          "url": "https://www.practo.com/company/contact",
-          "quote": "Practo Technologies Pvt. Ltd."
-        },
-        "website": {
-          "url": "https://www.practo.com/company/contact",
-          "quote": "Practo Technologies Pvt. Ltd."
-        },
-        "address": {
-          "url": "https://www.practo.com/company/contact",
-          "quote": "No.371, Clayworks Building, 1st Cross Rd, 3rd Block, Santhosapuram, Koramangala"
-        }
-      },
-      "dropped": {
-        "description": "no_evidence",
-        "sectors": "no_evidence"
-      },
-      "research_note": "Description and sector based on a fetch-tool summary, not a verbatim quote; no quote evidence for description/sector.",
-      "description": null,
-      "types": [],
-      "sectors": [],
-      "ownership_status": null
-    },
-    {
-      "name": "Juspay Technologies Private Limited",
-      "domain": "juspay.io",
-      "website_url": "https://juspay.io",
-      "address": "Stallion Business Center, 444, 18th Main Rd, 6th Block, Koramangala, Bengaluru- 560095",
-      "verified_at": "2026-10-06",
-      "evidence": {
-        "name": {
-          "url": "https://juspay.io/privacy-policy",
-          "quote": "Juspay Technologies Private Limited"
-        },
-        "website": {
-          "url": "https://juspay.io/privacy-policy",
-          "quote": "Juspay Technologies Private Limited"
-        },
-        "address": {
-          "url": "https://juspay.io/privacy-policy",
-          "quote": "Stallion Business Center, 444, 18th Main Rd, 6th Block, Koramangala"
-        }
-      },
-      "dropped": {
-        "sectors": "no_evidence"
-      },
-      "research_note": "No description/sector quote captured; fintech sector unverified by quote.",
-      "description": null,
-      "types": [],
-      "sectors": [],
-      "ownership_status": null
-    },
-    {
-      "name": "Simplilearn Solutions Pvt Ltd.",
-      "domain": "simplilearn.com",
-      "website_url": "https://www.simplilearn.com",
-      "address": "NALANDA 53/1 C, Manoj Arcade, 24th Main Rd, Sector 2, HSR Layout, Bengaluru - 560102, Karnataka, India.",
-      "verified_at": "2026-10-06",
-      "evidence": {
-        "name": {
-          "url": "https://www.simplilearn.com/contact-us",
-          "quote": "Simplilearn Solutions Pvt Ltd."
-        },
-        "website": {
-          "url": "https://www.simplilearn.com/contact-us",
-          "quote": "Simplilearn Solutions Pvt Ltd."
-        },
-        "address": {
-          "url": "https://www.simplilearn.com/contact-us",
-          "quote": "NALANDA 53/1 C, Manoj Arcade, 24th Main Rd, Sector 2, HSR Layout"
-        },
-        "description": {
-          "url": "https://www.simplilearn.com/contact-us",
-          "quote": "Simplilearn is the world's #1 online bootcamp and one of the world's leading certification training providers."
-        },
-        "types": {
-          "url": "https://www.simplilearn.com/contact-us",
-          "quote": "Simplilearn Singapore Pte Ltd."
-        },
-        "sectors": {
-          "url": "https://www.simplilearn.com/contact-us",
-          "quote": "one of the world's leading certification training providers"
-        }
-      },
-      "dropped": {},
-      "research_note": "mnc based on Simplilearn Americas, Inc. (Plano, TX) and Singapore entity listed on contact page.",
-      "description": "Online bootcamp and professional certification training provider.",
-      "types": [
-        "mnc"
-      ],
-      "sectors": [
-        "edtech"
-      ],
-      "ownership_status": null
-    },
-    {
-      "name": "Go Digit General Insurance Limited",
-      "domain": "godigit.com",
-      "website_url": "https://www.godigit.com",
-      "address": "Atlantis, 95, 4th B Cross Road, Koramangala Industrial Layout, 5th Block, Bengaluru, Karnataka 560095",
-      "verified_at": "2026-10-06",
-      "evidence": {
-        "name": {
-          "url": "https://www.godigit.com/contact",
-          "quote": "Go Digit General Insurance Limited"
-        },
-        "website": {
-          "url": "https://www.godigit.com/contact",
-          "quote": "Go Digit General Insurance Limited"
-        },
-        "address": {
-          "url": "https://www.godigit.com/contact",
-          "quote": "Atlantis, 95, 4th B Cross Road, Koramangala Industrial Layout, 5th Block"
-        }
-      },
-      "dropped": {},
-      "research_note": "Corporate office used; IR page references BSE/NSE stock exchange disclosures but no verbatim listing quote captured, so ownership_status left null. Description not captured.",
-      "description": null,
-      "types": [],
-      "sectors": [],
-      "ownership_status": null
-    },
-    {
-      "name": "MoEngage",
-      "domain": "moengage.com",
-      "website_url": "https://www.moengage.com",
-      "address": "1st Floor, #32, Salarpuria Tower II, Chikku Lakshmaiah Layout, Luskar Hosur Road, Koramangala, Bangalore - 560034, India",
-      "verified_at": "2026-10-06",
-      "evidence": {
-        "name": {
-          "url": "https://www.moengage.com/contact-us/",
-          "quote": "MoEngage is the agentic customer engagement platform trusted by 1,350+ global brands"
-        },
-        "website": {
-          "url": "https://www.moengage.com/contact-us/",
-          "quote": "MoEngage is the agentic customer engagement platform trusted by 1,350+ global brands"
-        },
-        "address": {
-          "url": "https://www.moengage.com/contact-us/",
-          "quote": "Salarpuria Tower II, Chikku Lakshmaiah Layout, Luskar Hosur Road, Koramangala, Bangalore - 560034"
-        },
-        "description": {
-          "url": "https://www.moengage.com/contact-us/",
-          "quote": "MoEngage is the agentic customer engagement platform trusted by 1,350+ global brands"
-        },
-        "types": {
-          "url": "https://www.moengage.com/contact-us/",
-          "quote": "580 California St, Suite 1200, San Francisco, CA 94104, USA"
-        },
-        "sectors": {
-          "url": "https://www.moengage.com/contact-us/",
-          "quote": "MoEngage is the agentic customer engagement platform"
-        }
-      },
-      "dropped": {},
-      "research_note": "Offices also in London, Toronto, Singapore per contact page.",
-      "description": "Customer engagement platform used by brands to message and engage their users.",
-      "types": [
-        "mnc",
-        "product"
-      ],
-      "sectors": [
-        "saas"
-      ],
-      "ownership_status": null
-    },
-    {
-      "name": "Tracxn Technologies Limited",
-      "domain": "tracxn.com",
-      "website_url": "https://tracxn.com",
-      "address": "L-248, 2nd Floor, 17th Cross, Sector 6, HSR Layout, Bengaluru, Karnataka 560102",
-      "verified_at": "2026-10-06",
-      "evidence": {
-        "name": {
-          "url": "https://w.tracxn.com/investor-relations",
-          "quote": "Tracxn Technologies Limited"
-        },
-        "website": {
-          "url": "https://tracxn.com/",
-          "quote": "Technology + Human-in-the-Loop for Deal Discovery"
-        },
-        "address": {
-          "url": "https://tracxn.com/",
-          "quote": "L-248, 2nd Floor, 17th Cross, Sector 6, HSR Layout, Bengaluru, Karnataka 560102"
-        },
-        "description": {
-          "url": "https://tracxn.com/",
-          "quote": "Technology + Human-in-the-Loop for Deal Discovery"
-        },
-        "types": {
-          "url": "https://tracxn.com/",
-          "quote": "Technology + Human-in-the-Loop for Deal Discovery"
-        },
-        "sectors": {
-          "url": "https://tracxn.com/",
-          "quote": "Technology + Human-in-the-Loop for Deal Discovery"
-        }
-      },
-      "dropped": {},
-      "research_note": "IR page shows CIN L72200KA2012PLC065294 (L prefix suggests listed) but extracted text had no explicit stock exchange statement, so ownership_status left null; recheck IR page.",
-      "description": "Data platform tracking private companies for investors and corporates to discover deals.",
-      "types": [
-        "product"
-      ],
-      "sectors": [
-        "ai-data"
       ],
       "ownership_status": null
     },
@@ -477,6 +66,37 @@
       "types": [],
       "sectors": [],
       "ownership_status": "public"
+    },
+    {
+      "name": "Bellatrix Aerospace",
+      "domain": "bellatrix.aero",
+      "website_url": "https://www.bellatrix.aero",
+      "address": "Bellatrix Aerospace Pvt. Ltd, #22, 5th Floor, Sankey Road, Bengaluru, Karnataka, 560020",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.bellatrix.aero",
+          "quote": "Copyright @ 2024 Bellatrix Aerospace. All Rights Reserved."
+        },
+        "website": {
+          "url": "https://www.bellatrix.aero",
+          "quote": "Copyright @ 2024 Bellatrix Aerospace. All Rights Reserved."
+        },
+        "address": {
+          "url": "https://www.bellatrix.aero/contact",
+          "quote": "Bellatrix Aerospace Pvt. Ltd, #22, 5th Floor, Sankey Road, Bengaluru, Karnataka, 560020"
+        },
+        "description": {
+          "url": "https://www.bellatrix.aero",
+          "quote": "Arka Hall Effect Thruster Rudra High Performance Green Thruster Pushpak Orbital Transfer Vehicle Fingernail Nano Thruster"
+        }
+      },
+      "dropped": {},
+      "research_note": "None of the allowed sectors fits aerospace propulsion, so sectors is empty.",
+      "description": "Space propulsion company building satellite thrusters such as the Arka Hall Effect Thruster and the Pushpak orbital transfer vehicle.",
+      "types": [],
+      "sectors": [],
+      "ownership_status": null
     },
     {
       "name": "Bosch Global Software Technologies Private Limited",
@@ -546,46 +166,98 @@
       "ownership_status": null
     },
     {
-      "name": "Sigmoid",
-      "domain": "sigmoid.com",
-      "website_url": "https://www.sigmoid.com/",
-      "address": "SJR I Park, 2nd Floor, Tower 2, Rd Number 9, EPIP Zone, Whitefield, Bengaluru, Karnataka 560066, India",
+      "name": "Delightful Gourmet Private Limited",
+      "domain": "licious.in",
+      "website_url": "https://www.licious.in",
+      "address": "2nd & 3rd Floor, 379, 100 Feet Road, HAL 2nd Stage, High Grounds, Indiranagar, Bengaluru, Karnataka – 560 038",
       "verified_at": "2026-10-06",
       "evidence": {
         "name": {
-          "url": "https://www.sigmoid.com/",
-          "quote": "Sigmoid helps F1000 enterprises modernize data, re-engineer business processes, and make better decisions using AI"
+          "url": "https://www.licious.in/terms",
+          "quote": "You may send a written remove request to Delightful Gourmet Private Limited"
         },
         "website": {
-          "url": "https://www.sigmoid.com/",
-          "quote": "Sigmoid helps F1000 enterprises modernize data, re-engineer business processes"
+          "url": "https://www.licious.in/terms",
+          "quote": "The Cash Account and Licious Cash+ is powered by a third-party vendor"
         },
         "address": {
-          "url": "https://www.sigmoid.com/contact-us/",
-          "quote": "SJR I Park, 2nd Floor, Tower 2, Rd Number 9, EPIP Zone, Whitefield, Bengaluru"
+          "url": "https://www.licious.in/terms",
+          "quote": "Delightful Gourmet Private Limited, 2nd & 3rd Floor, 379, 100 Feet Road, HAL 2nd Stage, High Grounds, Indiranagar, Bengaluru, Karnataka – 560 038"
         },
         "description": {
-          "url": "https://www.sigmoid.com/",
-          "quote": "Sigmoid helps F1000 enterprises modernize data, re-engineer business processes, and make better decisions using AI to gain competitive advantage"
-        },
-        "types": {
-          "url": "https://www.sigmoid.com/contact-us/",
-          "quote": "268 Bath Road, Slough, Berkshire, SL1 4DX, United Kingdom"
+          "url": "https://www.licious.in",
+          "quote": "Order Meat Online - Buy Fresh"
         },
         "sectors": {
-          "url": "https://www.sigmoid.com/",
-          "quote": "modernize data, re-engineer business processes, and make better decisions using AI"
+          "url": "https://www.licious.in",
+          "quote": "Order Meat Online - Buy Fresh"
         }
       },
       "dropped": {},
-      "research_note": "Not tagged product: Sigmoid appears to sell services. The contact page also lists offices in the USA, Netherlands, Poland, Canada and Singapore.",
-      "description": "Data engineering and AI services firm that helps large enterprises modernise data platforms and analytics.",
-      "types": [
-        "mnc"
-      ],
+      "research_note": "The HTML has '&amp;' in the address, so it only matches after entities are decoded. The description quote is under 5 words because of '&amp;'.",
+      "description": "Licious is an online platform for ordering fresh meat.",
+      "types": [],
       "sectors": [
-        "ai-data"
+        "e-commerce"
       ],
+      "ownership_status": null
+    },
+    {
+      "name": "Draftspotting Technologies Pvt. Ltd.",
+      "domain": "spotdraft.com",
+      "website_url": "https://www.spotdraft.com",
+      "address": "Ground Floor, No. 1193 & 1194, Sector VII, HSR Layout, Bangalore - 560102",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.spotdraft.com/privacy-policy",
+          "quote": "Draftspotting Technologies Pvt. Ltd. Ground Floor, No. 1193 & 1194, Sector VII, HSR Layout, Bangalore - 560102"
+        },
+        "website": {
+          "url": "https://www.spotdraft.com/privacy-policy",
+          "quote": "SpotDraft is the controller when it acts on its own behalf"
+        },
+        "address": {
+          "url": "https://www.spotdraft.com/privacy-policy",
+          "quote": "Ground Floor, No. 1193 & 1194, Sector VII, HSR Layout, Bangalore - 560102"
+        }
+      },
+      "dropped": {},
+      "research_note": "(Entity name stripped from the address; the remaining text is a substring of the page.) The brand is 'SpotDraft' and the legal entity is Draftspotting Technologies. The page also gives a variant without 'Ground Floor' (Bengaluru – 560102). No product description.",
+      "description": null,
+      "types": [],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "Exotel Techcom Pvt. Ltd.",
+      "domain": "exotel.com",
+      "website_url": "https://exotel.com",
+      "address": "Maruthi Infotech Center, 2nd Floor, Tower A, 540, 100 Feet Rd, Krishna Reddy Layout, Amarjyoti Layout, Domlur, Bengaluru, Karnataka 560071",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://exotel.com/contact",
+          "quote": "© 2026, Exotel Techcom Pvt. Ltd. All Rights Reserved"
+        },
+        "website": {
+          "url": "https://exotel.com/contact",
+          "quote": "© 2026, Exotel Techcom Pvt. Ltd. All Rights Reserved"
+        },
+        "address": {
+          "url": "https://exotel.com/contact",
+          "quote": "Maruthi Infotech Center, 2nd Floor, Tower A, 540, 100 Feet Rd, Krishna Reddy Layout, Amarjyoti Layout, Domlur, Bengaluru, Karnataka 560071"
+        }
+      },
+      "dropped": {
+        "description": "quote_not_found",
+        "types": "quote_not_found",
+        "sectors": "quote_not_found"
+      },
+      "research_note": "The 'product' quote is generic. The site menu lists named products (Voice API, Exotel MCP Server), but those items exist only in the JSON data inside the page.",
+      "description": null,
+      "types": [],
+      "sectors": [],
       "ownership_status": null
     },
     {
@@ -632,6 +304,232 @@
       "ownership_status": null
     },
     {
+      "name": "Go Digit General Insurance Limited",
+      "domain": "godigit.com",
+      "website_url": "https://www.godigit.com",
+      "address": "Atlantis, 95, 4th B Cross Road, Koramangala Industrial Layout, 5th Block, Bengaluru, Karnataka 560095",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.godigit.com/contact",
+          "quote": "Go Digit General Insurance Limited"
+        },
+        "website": {
+          "url": "https://www.godigit.com/contact",
+          "quote": "Go Digit General Insurance Limited"
+        },
+        "address": {
+          "url": "https://www.godigit.com/contact",
+          "quote": "Atlantis, 95, 4th B Cross Road, Koramangala Industrial Layout, 5th Block"
+        }
+      },
+      "dropped": {},
+      "research_note": "Corporate office used; IR page references BSE/NSE stock exchange disclosures but no verbatim listing quote captured, so ownership_status left null. Description not captured.",
+      "description": null,
+      "types": [],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "Groww",
+      "domain": "groww.in",
+      "website_url": "https://groww.in",
+      "address": "Vaishnavi Tech Park, South Tower, 3rd Floor Sarjapur Main Road, Bellandur, Bengaluru – 560103 Karnataka",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://groww.in/about-us",
+          "quote": "Vaishnavi Tech Park, South Tower, 3rd Floor Sarjapur Main Road, Bellandur"
+        },
+        "website": {
+          "url": "https://groww.in/about-us",
+          "quote": "Super easy to use, lightning fast, and crystal clear"
+        },
+        "address": {
+          "url": "https://groww.in/about-us",
+          "quote": "Vaishnavi Tech Park, South Tower, 3rd Floor Sarjapur Main Road, Bellandur, Bengaluru – 560103 Karnataka"
+        },
+        "description": {
+          "url": "https://groww.in/about-us",
+          "quote": "Super easy to use, lightning fast, and crystal clear"
+        }
+      },
+      "dropped": {
+        "sectors": "no_evidence"
+      },
+      "research_note": "The description and sector rest on the summariser's paraphrase of the page's products; no verbatim product sentence was captured, and neither the name nor the website quote contains 'Groww'. Listing status was not checked.",
+      "description": "Online investment platform for stocks, ETFs, mutual funds and F&O trading.",
+      "types": [],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "InMobi Technology Services Private Limited",
+      "domain": "inmobi.com",
+      "website_url": "https://www.inmobi.com",
+      "address": "7th Floor, Delta Block Embassy Tech Square Kadubeesanahalli Marathahalli - Sarjapur Outer Ring Rd Bengaluru, Karnataka-560103",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.inmobi.com/contact-us",
+          "quote": "InMobi Technology Services Private Limited"
+        },
+        "website": {
+          "url": "https://www.inmobi.com/contact-us",
+          "quote": "InMobi Technology Services Private Limited"
+        },
+        "address": {
+          "url": "https://www.inmobi.com/contact-us",
+          "quote": "7th Floor, Delta Block Embassy Tech Square Kadubeesanahalli Marathahalli - Sarjapur Outer Ring Rd Bengaluru, Karnataka-560103"
+        },
+        "types": {
+          "url": "https://www.inmobi.com/contact-us",
+          "quote": "Our larger campuses are located in San Francisco, Bangalore, New York, London, Beijing, Shanghai, and Tokyo."
+        }
+      },
+      "dropped": {
+        "description": "quote_not_found"
+      },
+      "research_note": "The page prints the address as 5 separate lines with no commas between them. My string joins those lines with single spaces, so it matches only if the checker collapses whitespace. The 'mnc' quote lists foreign cities, not a foreign address.",
+      "description": null,
+      "types": [
+        "mnc"
+      ],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "Juspay Technologies Private Limited",
+      "domain": "juspay.io",
+      "website_url": "https://juspay.io",
+      "address": "Stallion Business Center, 444, 18th Main Rd, 6th Block, Koramangala, Bengaluru- 560095",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://juspay.io/privacy-policy",
+          "quote": "Juspay Technologies Private Limited"
+        },
+        "website": {
+          "url": "https://juspay.io/privacy-policy",
+          "quote": "Juspay Technologies Private Limited"
+        },
+        "address": {
+          "url": "https://juspay.io/privacy-policy",
+          "quote": "Stallion Business Center, 444, 18th Main Rd, 6th Block, Koramangala"
+        }
+      },
+      "dropped": {
+        "sectors": "no_evidence"
+      },
+      "research_note": "No description/sector quote captured; fintech sector unverified by quote.",
+      "description": null,
+      "types": [],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "LeadSquared",
+      "domain": "leadsquared.com",
+      "website_url": "https://www.leadsquared.com",
+      "address": "2nd Floor, Omega Block, Embassy Tech Square, Kadubeesanahalli, Outer Ring Road, Bengaluru, Karnataka – 560103",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.leadsquared.com/contact-us/",
+          "quote": "LeadSquared 2nd Floor, Omega Block, Embassy Tech Square, Kadubeesanahalli, Outer Ring Road, Bengaluru, Karnataka – 560103"
+        },
+        "website": {
+          "url": "https://www.leadsquared.com/contact-us/",
+          "quote": "© 2026 LeadSquared"
+        },
+        "address": {
+          "url": "https://www.leadsquared.com/contact-us/",
+          "quote": "LeadSquared 2nd Floor, Omega Block, Embassy Tech Square, Kadubeesanahalli, Outer Ring Road, Bengaluru, Karnataka – 560103"
+        }
+      },
+      "dropped": {
+        "description": "quote_not_found",
+        "types": "quote_not_found",
+        "sectors": "quote_not_found"
+      },
+      "research_note": "The URL needs the trailing slash; without it the server returns a 103-byte page. The page's structured data gives the floors as '2nd and 3rd Floor'. The description quote comes from the meta description attribute.",
+      "description": null,
+      "types": [],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "Lowe's India Private Limited",
+      "domain": "lowes.co.in",
+      "website_url": "https://www.lowes.co.in",
+      "address": "Building Willow-L2, Manyata Embassy Business Park, SEZ, Outer Ring Rd, Nagavara, Bengaluru - 560 045",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.lowes.co.in/",
+          "quote": "Lowe's India Private Limited Building Willow-L2, Manyata Embassy Business Park, SEZ, Outer Ring Rd, Nagavara, Bengaluru - 560 045"
+        },
+        "website": {
+          "url": "https://www.lowes.co.in/",
+          "quote": "Lowe's India Private Limited"
+        },
+        "address": {
+          "url": "https://www.lowes.co.in/",
+          "quote": "Building Willow-L2, Manyata Embassy Business Park, SEZ, Outer Ring Rd, Nagavara, Bengaluru - 560 045"
+        }
+      },
+      "dropped": {},
+      "research_note": "The domain is lowes.co.in (lowesindia.com did not resolve). 'mnc' is withheld because no quoted foreign address was found on this domain.",
+      "description": null,
+      "types": [],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "MoEngage",
+      "domain": "moengage.com",
+      "website_url": "https://www.moengage.com",
+      "address": "1st Floor, #32, Salarpuria Tower II, Chikku Lakshmaiah Layout, Luskar Hosur Road, Koramangala, Bangalore - 560034, India",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.moengage.com/contact-us/",
+          "quote": "MoEngage is the agentic customer engagement platform trusted by 1,350+ global brands"
+        },
+        "website": {
+          "url": "https://www.moengage.com/contact-us/",
+          "quote": "MoEngage is the agentic customer engagement platform trusted by 1,350+ global brands"
+        },
+        "address": {
+          "url": "https://www.moengage.com/contact-us/",
+          "quote": "Salarpuria Tower II, Chikku Lakshmaiah Layout, Luskar Hosur Road, Koramangala, Bangalore - 560034"
+        },
+        "description": {
+          "url": "https://www.moengage.com/contact-us/",
+          "quote": "MoEngage is the agentic customer engagement platform trusted by 1,350+ global brands"
+        },
+        "types": {
+          "url": "https://www.moengage.com/contact-us/",
+          "quote": "580 California St, Suite 1200, San Francisco, CA 94104, USA"
+        },
+        "sectors": {
+          "url": "https://www.moengage.com/contact-us/",
+          "quote": "MoEngage is the agentic customer engagement platform"
+        }
+      },
+      "dropped": {},
+      "research_note": "Offices also in London, Toronto, Singapore per contact page.",
+      "description": "Customer engagement platform used by brands to message and engage their users.",
+      "types": [
+        "mnc",
+        "product"
+      ],
+      "sectors": [
+        "saas"
+      ],
+      "ownership_status": null
+    },
+    {
       "name": "Mu Sigma",
       "domain": "mu-sigma.com",
       "website_url": "https://www.mu-sigma.com/",
@@ -663,6 +561,648 @@
       "description": "Decision sciences and analytics firm that solves business problems for large companies using data and mathematics.",
       "types": [],
       "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "Ninjacart",
+      "domain": "ninjacart.com",
+      "website_url": "https://www.ninjacart.com/",
+      "address": "2nd floor Tower E, Helios Business Park, New Horizion College Bus stop, Service road, Chandana, Kadubeesanahalli , Bengaluru, 560103",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.ninjacart.com/",
+          "quote": "Our impact is making waves everywhere. Read about how Ninjacart is shaping the future of the agri economy."
+        },
+        "website": {
+          "url": "https://www.ninjacart.com/",
+          "quote": "Read about how Ninjacart is shaping the future of the agri economy."
+        },
+        "address": {
+          "url": "https://www.ninjacart.com/",
+          "quote": "2nd floor Tower E, Helios Business Park, New Horizion College Bus stop, Service road, Chandana, Kadubeesanahalli , Bengaluru, 560103"
+        }
+      },
+      "dropped": {},
+      "research_note": "The address has a <br /> after 'Helios Business Park,' and is printed with the misspelling 'Horizion' and a space before a comma, kept as printed. The legal footer reads '63Ideas Infolabs Private Limited | Ninjacart Pvt. ltd.' No description or sector quote was strong enough (agri supply chain, possibly logistics).",
+      "description": null,
+      "types": [],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "NIRAMAI Health Analytix",
+      "domain": "niramai.com",
+      "website_url": "https://www.niramai.com/",
+      "address": "Ground Floor, Innova Pearl, No. 17, 5th Block, Koramangala Industrial Layout, Bangalore, 560095",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.niramai.com/",
+          "quote": "NIRAMAI Health Analytix is a Bangalore-based deep-tech startup addressing critical healthcare problems through automated solutions."
+        },
+        "website": {
+          "url": "https://www.niramai.com/",
+          "quote": "NIRAMAI Health Analytix is a Bangalore-based deep-tech startup addressing critical healthcare problems through automated solutions."
+        },
+        "address": {
+          "url": "https://www.niramai.com/contact/",
+          "quote": "Ground Floor, Innova Pearl, No. 17, 5th Block, Koramangala Industrial Layout, Bangalore, 560095"
+        },
+        "description": {
+          "url": "https://www.niramai.com/",
+          "quote": "Niramai SMILE-100 is now FDA cleared as an adjunct breast imaging test."
+        },
+        "types": {
+          "url": "https://www.niramai.com/",
+          "quote": "The SMILE-100 System (also called BreastHealth-100) is a medical device developed by Niramai."
+        },
+        "sectors": {
+          "url": "https://www.niramai.com/",
+          "quote": "NIRAMAI Health Analytix is a Bangalore-based deep-tech startup addressing critical healthcare problems through automated solutions."
+        }
+      },
+      "dropped": {},
+      "research_note": "The contact page also shows '6th floor, 9 Appold street,' (London). mnc was not set because the full address was not captured. The ai-data sector is not directly quoted.",
+      "description": "Niramai is a Bangalore deep-tech company whose FDA-cleared Thermalytix thermal imaging test supports breast health screening.",
+      "types": [
+        "product"
+      ],
+      "sectors": [
+        "healthtech",
+        "ai-data"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "PhonePe Limited",
+      "domain": "phonepe.com",
+      "website_url": "https://www.phonepe.com",
+      "address": "Office-2, Floor 5, Wing A, Block A, Salarpuria Softzone, Bellandur Village, Varthur Hobli, Outer Ring Road, Bangalore South, Bangalore, Karnataka, India, 560103",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.phonepe.com/contact-us/",
+          "quote": "PhonePe Limited"
+        },
+        "website": {
+          "url": "https://www.phonepe.com/contact-us/",
+          "quote": "PhonePe Limited"
+        },
+        "address": {
+          "url": "https://www.phonepe.com/contact-us/",
+          "quote": "Salarpuria Softzone, Bellandur Village, Varthur Hobli, Outer Ring Road, Bangalore South"
+        },
+        "sectors": {
+          "url": "https://www.phonepe.com/contact-us/",
+          "quote": "CIN: U67190KA2012PLC176031"
+        }
+      },
+      "dropped": {},
+      "research_note": "No About page was fetched, so the description is null. The fintech sector rests only on general knowledge and a weak CIN quote, so drop it unless better evidence is found. The name quote is only two words, below the 5-word minimum.",
+      "description": null,
+      "types": [],
+      "sectors": [
+        "fintech"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Pixxel",
+      "domain": "pixxel.space",
+      "website_url": "https://www.pixxel.space",
+      "address": "2JHJ+756, Swami Narayani Clinic Rd, 3rd Block, HBR Layout, Bengaluru 560043",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.pixxel.space",
+          "quote": "Pixxel’s first commercial constellation, featuring six satellites designed for high-resolution, high-frequency hyperspectral imaging on a global scale"
+        },
+        "website": {
+          "url": "https://www.pixxel.space/contact",
+          "quote": "Get the latest from Pixxel in Hypersphere"
+        },
+        "address": {
+          "url": "https://www.pixxel.space/contact",
+          "quote": "2JHJ+756, Swami Narayani Clinic Rd, 3rd Block, HBR Layout, Bengaluru 560043"
+        },
+        "description": {
+          "url": "https://www.pixxel.space",
+          "quote": "Pixxel’s first commercial constellation, featuring six satellites designed for high-resolution, high-frequency hyperspectral imaging on a global scale"
+        },
+        "types": {
+          "url": "https://www.pixxel.space/contact",
+          "quote": "California, USA 2301, Rosecrans Ave, Suite 4150, El Segundo, CA 90245"
+        },
+        "sectors": {
+          "url": "https://www.pixxel.space",
+          "quote": "PRODUCTS Hyperspectral imagery Earth Observation Studio"
+        }
+      },
+      "dropped": {},
+      "research_note": "(The weak 'product' tag was dropped; mnc kept on the US address.) The ai-data sector is a judgement call. A second Bengaluru office is listed: 'Third Floor, 722, Chinmaya Mission Hospital road,Stage 2, Indiranagar, Bengaluru 560038'.",
+      "description": "Space company building a hyperspectral Earth-observation satellite constellation and selling hyperspectral imagery.",
+      "types": [
+        "mnc"
+      ],
+      "sectors": [
+        "ai-data"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Plum",
+      "domain": "plumhq.com",
+      "website_url": "https://www.plumhq.com/",
+      "address": "Primeco Union City, Block B, 6th Floor, ITPL Main Rd, Bengaluru, Karnataka 560067",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.plumhq.com/",
+          "quote": "Insurance products offered and serviced by Plum Benefits Insurance Brokers Pvt Ltd"
+        },
+        "website": {
+          "url": "https://www.plumhq.com/",
+          "quote": "Insurance products offered and serviced by Plum Benefits Insurance Brokers Pvt Ltd"
+        },
+        "address": {
+          "url": "https://www.plumhq.com/",
+          "quote": "Primeco Union City, Block B, 6th Floor, ITPL Main Rd, Bengaluru, Karnataka 560067"
+        },
+        "description": {
+          "url": "https://www.plumhq.com/",
+          "quote": "Plum brings that market knowledge and global-standard delivery together on one platform, so your India entity looks as sharp as the rest of your operation."
+        },
+        "types": {
+          "url": "https://www.plumhq.com/",
+          "quote": "Plum brings that market knowledge and global-standard delivery together on one platform"
+        },
+        "sectors": {
+          "url": "https://www.plumhq.com/",
+          "quote": "Our employee benefits suite covers preventive, primary, and crisis care. With Plum, you’ll never need another healthcare partner."
+        }
+      },
+      "dropped": {},
+      "research_note": "The sector could arguably be insurance/fintech rather than healthtech.",
+      "description": "Plum is an employee health benefits and insurance platform for Indian companies, with insurance offered via Plum Benefits Insurance Brokers.",
+      "types": [
+        "product"
+      ],
+      "sectors": [
+        "healthtech"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Postman, Inc.",
+      "domain": "postman.com",
+      "website_url": "https://www.postman.com",
+      "address": "Building no 310 6th Main Road Indiranagar, Bangalore, Karnataka 560038, India",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.postman.com/company/contact-us",
+          "quote": "© 2026 Postman, Inc."
+        },
+        "website": {
+          "url": "https://www.postman.com/company/contact-us",
+          "quote": "© 2026 Postman, Inc."
+        },
+        "address": {
+          "url": "https://www.postman.com/company/contact-us",
+          "quote": "Building no 310 6th Main Road Indiranagar, Bangalore, Karnataka 560038, India"
+        },
+        "description": {
+          "url": "https://www.postman.com",
+          "quote": "Go faster from development to production with higher accuracy and fewer tokens."
+        },
+        "types": {
+          "url": "https://www.postman.com/company/contact-us",
+          "quote": "We're a global company headquartered in San Francisco—with offices in Bangalore (where the company was founded) and Japan"
+        },
+        "sectors": {
+          "url": "https://www.postman.com",
+          "quote": "Go faster from development to production with higher accuracy and fewer tokens."
+        }
+      },
+      "dropped": {},
+      "research_note": "The address is on 3 lines, joined here with spaces. The description and sector quotes are weak; the page title is 'API engineering for your agents'. The 'mnc' quote names San Francisco but gives no foreign address.",
+      "description": "Postman provides an API development platform used to build and test APIs.",
+      "types": [
+        "mnc"
+      ],
+      "sectors": [
+        "saas"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Practo Technologies Pvt. Ltd.",
+      "domain": "practo.com",
+      "website_url": "https://www.practo.com",
+      "address": "No.371, Clayworks Building, 1st Cross Rd, 3rd Block, Santhosapuram, Koramangala 3 Block, Koramangala, Bengaluru, Karnataka 560034",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.practo.com/company/contact",
+          "quote": "Practo Technologies Pvt. Ltd."
+        },
+        "website": {
+          "url": "https://www.practo.com/company/contact",
+          "quote": "Practo Technologies Pvt. Ltd."
+        },
+        "address": {
+          "url": "https://www.practo.com/company/contact",
+          "quote": "No.371, Clayworks Building, 1st Cross Rd, 3rd Block, Santhosapuram, Koramangala"
+        }
+      },
+      "dropped": {
+        "description": "no_evidence",
+        "sectors": "no_evidence"
+      },
+      "research_note": "Description and sector based on a fetch-tool summary, not a verbatim quote; no quote evidence for description/sector.",
+      "description": null,
+      "types": [],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "Razorpay",
+      "domain": "razorpay.com",
+      "website_url": "https://razorpay.com",
+      "address": "1st Floor, SJR Cyber, 22, Laskar Hosur Road, Adugodi, Bangalore, Karnataka - 560030",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://razorpay.com/about/",
+          "quote": "A comprehensive payments suite in India designed to help businesses seamlessly accept, process, and disburse payments."
+        },
+        "website": {
+          "url": "https://razorpay.com/about/",
+          "quote": "A comprehensive payments suite in India designed to help businesses seamlessly accept, process, and disburse payments."
+        },
+        "address": {
+          "url": "https://razorpay.com/about/",
+          "quote": "1st Floor, SJR Cyber, 22, Laskar Hosur Road, Adugodi, Bangalore, Karnataka - 560030"
+        },
+        "description": {
+          "url": "https://razorpay.com/about/",
+          "quote": "help businesses seamlessly accept, process, and disburse payments."
+        },
+        "types": {
+          "url": "https://razorpay.com/about/",
+          "quote": "providing clean, developer-friendly APIs and hassle-free integration."
+        },
+        "sectors": {
+          "url": "https://razorpay.com/about/",
+          "quote": "A comprehensive payments suite in India"
+        }
+      },
+      "dropped": {},
+      "research_note": "The about page mentions Malaysia (Curlec), Singapore and the US but gives no office addresses there, so mnc is not tagged. The name quote does not contain the word 'Razorpay'.",
+      "description": "Provides payment processing APIs and related products that let businesses accept, process and disburse payments.",
+      "types": [
+        "product"
+      ],
+      "sectors": [
+        "fintech"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Shadowfax",
+      "domain": "shadowfax.in",
+      "website_url": "https://www.shadowfax.in",
+      "address": "3rd Floor, Shilpitha Tech Park, 55/3 55/4 Devarabisanahalli Rd, opposite Sakra World Hospital, Devarabisanahalli, Bellandur, Bengaluru, Karnataka 560103",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.shadowfax.in",
+          "quote": "Deliver faster with Shadowfax Prime."
+        },
+        "website": {
+          "url": "https://www.shadowfax.in",
+          "quote": "The Shadowfax Courier App powers on-demand pick-up and drop-off services within the city for individuals and small businesses."
+        },
+        "address": {
+          "url": "https://www.shadowfax.in",
+          "quote": "3rd Floor, Shilpitha Tech Park, 55/3 55/4 Devarabisanahalli Rd, opposite Sakra World Hospital, Devarabisanahalli, Bellandur, Bengaluru, Karnataka 560103"
+        },
+        "description": {
+          "url": "https://www.shadowfax.in",
+          "quote": "Your trusted partner for express parcel delivery, returns, same-day, next-day, 30-minute delivery, and fulfilment solutions."
+        },
+        "sectors": {
+          "url": "https://www.shadowfax.in",
+          "quote": "We provide end-to-end delivery services, from standard shipping to same-day delivery (SDD) and next-day delivery (NDD), designed for D2C and e-commerce brands."
+        }
+      },
+      "dropped": {},
+      "research_note": "The site has an Investor Relations link, but I found no quote naming a stock exchange, so ownership_status is null.",
+      "description": "Logistics company offering express parcel, returns, same-day, next-day and hyperlocal delivery for e-commerce and D2C brands.",
+      "types": [],
+      "sectors": [
+        "logistics",
+        "e-commerce"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Sigmoid",
+      "domain": "sigmoid.com",
+      "website_url": "https://www.sigmoid.com/",
+      "address": "SJR I Park, 2nd Floor, Tower 2, Rd Number 9, EPIP Zone, Whitefield, Bengaluru, Karnataka 560066, India",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.sigmoid.com/",
+          "quote": "Sigmoid helps F1000 enterprises modernize data, re-engineer business processes, and make better decisions using AI"
+        },
+        "website": {
+          "url": "https://www.sigmoid.com/",
+          "quote": "Sigmoid helps F1000 enterprises modernize data, re-engineer business processes"
+        },
+        "address": {
+          "url": "https://www.sigmoid.com/contact-us/",
+          "quote": "SJR I Park, 2nd Floor, Tower 2, Rd Number 9, EPIP Zone, Whitefield, Bengaluru"
+        },
+        "description": {
+          "url": "https://www.sigmoid.com/",
+          "quote": "Sigmoid helps F1000 enterprises modernize data, re-engineer business processes, and make better decisions using AI to gain competitive advantage"
+        },
+        "types": {
+          "url": "https://www.sigmoid.com/contact-us/",
+          "quote": "268 Bath Road, Slough, Berkshire, SL1 4DX, United Kingdom"
+        },
+        "sectors": {
+          "url": "https://www.sigmoid.com/",
+          "quote": "modernize data, re-engineer business processes, and make better decisions using AI"
+        }
+      },
+      "dropped": {},
+      "research_note": "Not tagged product: Sigmoid appears to sell services. The contact page also lists offices in the USA, Netherlands, Poland, Canada and Singapore.",
+      "description": "Data engineering and AI services firm that helps large enterprises modernise data platforms and analytics.",
+      "types": [
+        "mnc"
+      ],
+      "sectors": [
+        "ai-data"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "SigTuple Technologies Pvt. Ltd.",
+      "domain": "sigtuple.com",
+      "website_url": "https://sigtuple.com/",
+      "address": "Balaji Complex, # 284/11, Garvebhavipalya, Hosur Road, Bengaluru, Karnataka 560068, India",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://sigtuple.com/",
+          "quote": "© 2026 SigTuple Technologies Pvt. Ltd. · Bengaluru, India"
+        },
+        "website": {
+          "url": "https://sigtuple.com/",
+          "quote": "How does SigTuple support laboratory scalability?"
+        },
+        "address": {
+          "url": "https://sigtuple.com/",
+          "quote": "Balaji Complex, # 284/11, Garvebhavipalya, Hosur Road, Bengaluru, Karnataka 560068, India"
+        },
+        "description": {
+          "url": "https://sigtuple.com/",
+          "quote": "Medtech company Sigtuple receives U.S. FDA approval for its blood smear application. This innovative solution automates"
+        },
+        "types": {
+          "url": "https://sigtuple.com/",
+          "quote": "Medtech company Sigtuple receives U.S. FDA approval for its blood smear application. This innovative solution automates"
+        },
+        "sectors": {
+          "url": "https://sigtuple.com/",
+          "quote": "Medtech company Sigtuple receives U.S. FDA approval for its blood smear application."
+        }
+      },
+      "dropped": {},
+      "research_note": "The separator in the copyright line may not be a literal '·' in the raw HTML. The description quote comes from a press snippet shown on the official site. The ai-data sector is not directly quoted.",
+      "description": "SigTuple is a medical technology company whose AI100 system automates laboratory analysis such as blood smear review.",
+      "types": [
+        "product"
+      ],
+      "sectors": [
+        "healthtech",
+        "ai-data"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Simple Energy",
+      "domain": "simpleenergy.in",
+      "website_url": "https://www.simpleenergy.in",
+      "address": "9th floor, Wing A, No.2/2, North Gate Phase-2 Hobli, Venkatala, Yelahanka, Bengaluru, 560064.",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.simpleenergy.in",
+          "quote": "Simple Energy Products Stores Explore Login Book Now"
+        },
+        "website": {
+          "url": "https://www.simpleenergy.in",
+          "quote": "Simple Energy Products Stores Explore Login Book Now"
+        },
+        "address": {
+          "url": "https://www.simpleenergy.in",
+          "quote": "9th floor, Wing A, No.2/2, North Gate Phase-2 Hobli, Venkatala, Yelahanka, Bengaluru, 560064."
+        },
+        "sectors": {
+          "url": "https://www.simpleenergy.in",
+          "quote": "Buy Electric Scooter Book test Ride Locate Dealer EMI calculator"
+        }
+      },
+      "dropped": {
+        "description": "quote_not_found"
+      },
+      "research_note": "The 'Simple Energy' name quote may include <title> text if the verifier keeps the title; the footer says 'Simpleenergy Private Limited'.",
+      "description": null,
+      "types": [],
+      "sectors": [
+        "mobility"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Simplilearn Solutions Pvt Ltd.",
+      "domain": "simplilearn.com",
+      "website_url": "https://www.simplilearn.com",
+      "address": "NALANDA 53/1 C, Manoj Arcade, 24th Main Rd, Sector 2, HSR Layout, Bengaluru - 560102, Karnataka, India.",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.simplilearn.com/contact-us",
+          "quote": "Simplilearn Solutions Pvt Ltd."
+        },
+        "website": {
+          "url": "https://www.simplilearn.com/contact-us",
+          "quote": "Simplilearn Solutions Pvt Ltd."
+        },
+        "address": {
+          "url": "https://www.simplilearn.com/contact-us",
+          "quote": "NALANDA 53/1 C, Manoj Arcade, 24th Main Rd, Sector 2, HSR Layout"
+        },
+        "description": {
+          "url": "https://www.simplilearn.com/contact-us",
+          "quote": "Simplilearn is the world's #1 online bootcamp and one of the world's leading certification training providers."
+        },
+        "types": {
+          "url": "https://www.simplilearn.com/contact-us",
+          "quote": "Simplilearn Singapore Pte Ltd."
+        },
+        "sectors": {
+          "url": "https://www.simplilearn.com/contact-us",
+          "quote": "one of the world's leading certification training providers"
+        }
+      },
+      "dropped": {},
+      "research_note": "mnc based on Simplilearn Americas, Inc. (Plano, TX) and Singapore entity listed on contact page.",
+      "description": "Online bootcamp and professional certification training provider.",
+      "types": [
+        "mnc"
+      ],
+      "sectors": [
+        "edtech"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "slice",
+      "domain": "sliceit.com",
+      "website_url": "https://www.sliceit.com/",
+      "address": "No. 9 Ashford Park View, 80 ft Road, Koramangala, 3rd Block, Bangalore, Karnataka, 560034",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.sliceit.com/",
+          "quote": "slice - A new bank, for a new India"
+        },
+        "website": {
+          "url": "https://www.sliceit.com/",
+          "quote": "slice - A new bank, for a new India"
+        },
+        "address": {
+          "url": "https://www.sliceit.com/",
+          "quote": "No. 9 Ashford Park View, 80 ft Road, Koramangala, 3rd Block, Bangalore, Karnataka, 560034"
+        }
+      },
+      "dropped": {
+        "description": "quote_not_found",
+        "sectors": "quote_not_found"
+      },
+      "research_note": "The legal name is slice Small Finance Bank Limited, and the canonical site is now slice.bank.in. The description quote is inside JSON-LD, not visible text. The JSON-LD also gives a different address: '1st, 2nd & 3rd Floor, Ashford Park View Block III, 7th Main Road, Wipro Park, Koramangala', Bengaluru 560034. The two addresses conflict, so confirm on the contact page.",
+      "description": null,
+      "types": [],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "smallcase",
+      "domain": "smallcase.com",
+      "website_url": "https://www.smallcase.com/",
+      "address": "#51, 3rd Floor, Le Parc Richmonde, Richmond Road, Shanthala Nagar, Richmond Town, Bangalore - 560025",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.smallcase.com/",
+          "quote": "Join 1 crore+ people already investing with smallcase"
+        },
+        "website": {
+          "url": "https://www.smallcase.com/",
+          "quote": "Join 1 crore+ people already investing with smallcase"
+        },
+        "address": {
+          "url": "https://www.smallcase.com/",
+          "quote": "#51, 3rd Floor, Le Parc Richmonde, Richmond Road, Shanthala Nagar, Richmond Town, Bangalore - 560025"
+        },
+        "sectors": {
+          "url": "https://www.smallcase.com/",
+          "quote": "smallcase offers products & services regulated by SEBI & RBI, from licensed providers & platforms"
+        }
+      },
+      "dropped": {},
+      "research_note": "In the HTML the footer address is split across elements (line breaks after 'Road,' and after 'Bangalore -'), so the check needs to collapse whitespace. The sectors quote uses &amp; in the raw HTML. No description quote was taken.",
+      "description": null,
+      "types": [],
+      "sectors": [
+        "fintech"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Sorting Hat Technologies Pvt Ltd",
+      "domain": "unacademy.com",
+      "website_url": "https://unacademy.com/",
+      "address": "Maruti Infotech Centre, 3rd Floor, A-Block, Domlur, Koramangala Inner Ring Road, Bangalore- 560 071, Karnataka, India.",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://unacademy.com/privacy",
+          "quote": "Sorting Hat Technologies Pvt Ltd"
+        },
+        "website": {
+          "url": "https://unacademy.com/contact",
+          "quote": "© 2026 Sorting Hat Technologies Pvt Ltd"
+        },
+        "address": {
+          "url": "https://unacademy.com/privacy",
+          "quote": "Maruti Infotech Centre, 3rd Floor, A-Block, Domlur, Koramangala Inner Ring Road"
+        },
+        "sectors": {
+          "url": "https://unacademy.com/privacy",
+          "quote": "Sorting Hat Technologies Pvt Ltd"
+        }
+      },
+      "dropped": {},
+      "research_note": "The name recorded is the legal entity; the brand is Unacademy. The address is the privacy-grievance contact address, not necessarily an office. The sectors quote does not actually support edtech (no About page was fetched), and no description was verified.",
+      "description": null,
+      "types": [],
+      "sectors": [
+        "edtech"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Swiggy",
+      "domain": "swiggy.com",
+      "website_url": "https://www.swiggy.com",
+      "address": "Sumadhura Capitol Towers, 3rd- 6th Floor – Tower 1, Sy. No. 14 & 158, Pattanduru Agrahara, K R Puram Hobli, Bengaluru East Taluk, Bengaluru, Karnataka – 560066.",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.swiggy.com/corporate/",
+          "quote": "Swiggy is a new-age consumer-first organization offering an easy-to-use convenience platform, accessible through a unified app."
+        },
+        "website": {
+          "url": "https://www.swiggy.com/corporate/",
+          "quote": "Swiggy is a new-age consumer-first organization offering an easy-to-use convenience platform"
+        },
+        "address": {
+          "url": "https://www.swiggy.com/corporate/",
+          "quote": "Sumadhura Capitol Towers, 3rd- 6th Floor – Tower 1, Sy. No. 14 & 158, Pattanduru Agrahara"
+        },
+        "description": {
+          "url": "https://www.swiggy.com/corporate/",
+          "quote": "offering an easy-to-use convenience platform, accessible through a unified app."
+        },
+        "sectors": {
+          "url": "https://www.swiggy.com/corporate/",
+          "quote": "Swiggy is a new-age consumer-first organization offering an easy-to-use convenience platform, accessible through a unified app."
+        }
+      },
+      "dropped": {},
+      "research_note": "The corporate page mentions 'IPO Delivered - November 2024', but no investor-relations page with an exchange listing was fetched, so ownership_status is left null. The e-commerce sector is a judgement call. Quotes came through WebFetch's summariser, so dash and spacing characters may differ from the raw page.",
+      "description": "Consumer convenience platform offering food delivery and other services through a single app.",
+      "types": [],
+      "sectors": [
+        "e-commerce"
+      ],
       "ownership_status": null
     },
     {
@@ -703,36 +1243,242 @@
       "ownership_status": null
     },
     {
-      "name": "Sorting Hat Technologies Pvt Ltd",
-      "domain": "unacademy.com",
-      "website_url": "https://unacademy.com/",
-      "address": "Maruti Infotech Centre, 3rd Floor, A-Block, Domlur, Koramangala Inner Ring Road, Bangalore- 560 071, Karnataka, India.",
+      "name": "ThoughtSpot",
+      "domain": "thoughtspot.com",
+      "website_url": "https://www.thoughtspot.com",
+      "address": "3rd Floor, Indiqube Orion, Garden Layout, 24th Main Road, Sector 2, HSR Layout, Bangalore, Karnataka, India 560102",
       "verified_at": "2026-10-06",
       "evidence": {
         "name": {
-          "url": "https://unacademy.com/privacy",
-          "quote": "Sorting Hat Technologies Pvt Ltd"
+          "url": "https://www.thoughtspot.com/contact",
+          "quote": "Automated Semantic Modeling with ThoughtSpot"
         },
         "website": {
-          "url": "https://unacademy.com/contact",
-          "quote": "© 2026 Sorting Hat Technologies Pvt Ltd"
+          "url": "https://www.thoughtspot.com/contact",
+          "quote": "Automated Semantic Modeling with ThoughtSpot"
         },
         "address": {
-          "url": "https://unacademy.com/privacy",
-          "quote": "Maruti Infotech Centre, 3rd Floor, A-Block, Domlur, Koramangala Inner Ring Road"
+          "url": "https://www.thoughtspot.com/contact",
+          "quote": "3rd Floor, Indiqube Orion, Garden Layout, 24th Main Road, Sector 2, HSR Layout, Bangalore, Karnataka, India 560102"
         },
-        "sectors": {
-          "url": "https://unacademy.com/privacy",
-          "quote": "Sorting Hat Technologies Pvt Ltd"
+        "types": {
+          "url": "https://www.thoughtspot.com/contact",
+          "quote": "ThoughtSpot EMEA Ltd 26 Finsbury Square 4th Floor London EC2A 1DS"
         }
       },
       "dropped": {},
-      "research_note": "The name recorded is the legal entity; the brand is Unacademy. The address is the privacy-grievance contact address, not necessarily an office. The sectors quote does not actually support edtech (no About page was fetched), and no description was verified.",
+      "research_note": "The same page also lists a second Bengaluru address (Indiqube – Orion (Building) ... Bangalore South Taluk). It looks like the same building. No product or sector quote captured.",
       "description": null,
+      "types": [
+        "mnc"
+      ],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "Tracxn Technologies Limited",
+      "domain": "tracxn.com",
+      "website_url": "https://tracxn.com",
+      "address": "L-248, 2nd Floor, 17th Cross, Sector 6, HSR Layout, Bengaluru, Karnataka 560102",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://w.tracxn.com/investor-relations",
+          "quote": "Tracxn Technologies Limited"
+        },
+        "website": {
+          "url": "https://tracxn.com/",
+          "quote": "Technology + Human-in-the-Loop for Deal Discovery"
+        },
+        "address": {
+          "url": "https://tracxn.com/",
+          "quote": "L-248, 2nd Floor, 17th Cross, Sector 6, HSR Layout, Bengaluru, Karnataka 560102"
+        },
+        "description": {
+          "url": "https://tracxn.com/",
+          "quote": "Technology + Human-in-the-Loop for Deal Discovery"
+        },
+        "types": {
+          "url": "https://tracxn.com/",
+          "quote": "Technology + Human-in-the-Loop for Deal Discovery"
+        },
+        "sectors": {
+          "url": "https://tracxn.com/",
+          "quote": "Technology + Human-in-the-Loop for Deal Discovery"
+        }
+      },
+      "dropped": {},
+      "research_note": "IR page shows CIN L72200KA2012PLC065294 (L prefix suggests listed) but extracted text had no explicit stock exchange statement, so ownership_status left null; recheck IR page.",
+      "description": "Data platform tracking private companies for investors and corporates to discover deals.",
+      "types": [
+        "product"
+      ],
+      "sectors": [
+        "ai-data"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Tricog Health",
+      "domain": "tricog.com",
+      "website_url": "https://www.tricog.com/",
+      "address": "Old No. 82, New No. 3, PID No. 5-24-3, Second Main Road, Vyalikaval Extension, Bangalore, Karnataka, India, 560003",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.tricog.com/",
+          "quote": "Copyright © 2026 Tricog Health | All rights reserved"
+        },
+        "website": {
+          "url": "https://www.tricog.com/",
+          "quote": "Accelerating Cardiac Care Diagnosis | Tricog Health"
+        },
+        "address": {
+          "url": "https://www.tricog.com/",
+          "quote": "Old No. 82, New No. 3, PID No. 5-24-3, Second Main Road, Vyalikaval Extension, Bangalore, Karnataka, India, 560003"
+        },
+        "description": {
+          "url": "https://www.tricog.com/",
+          "quote": "Reports come in immediately within 1-2 minutes through the Tricog mobile app."
+        },
+        "types": {
+          "url": "https://www.tricog.com/",
+          "quote": "20, Bendemeer Road, #3-12 BS Bendemeer Center, Singapore – 339914"
+        },
+        "sectors": {
+          "url": "https://www.tricog.com/",
+          "quote": "From a Busy OPD to Care at Home: The Tricog Connected Pathway"
+        }
+      },
+      "dropped": {},
+      "research_note": "The Singapore quote's dash character may differ in the raw HTML. The Singapore address has no entity name, so mnc is moderately confident. The legal entity is 'Tricog Health India Private Limited.'",
+      "description": "Tricog Health offers connected cardiac care diagnosis, delivering ECG reports via its mobile app within minutes.",
+      "types": [
+        "mnc",
+        "product"
+      ],
+      "sectors": [
+        "healthtech"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Wipro Limited",
+      "domain": "wipro.com",
+      "website_url": "https://www.wipro.com",
+      "address": "Wipro Limited Doddakannelli Sarjapur Road Bangalore 560 035",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.wipro.com/investors/",
+          "quote": "Wipro Limited Doddakannelli Sarjapur Road Bangalore 560 035"
+        },
+        "website": {
+          "url": "https://www.wipro.com/about-us/",
+          "quote": "Wipro is a leading Al-powered technology services and consulting company"
+        },
+        "address": {
+          "url": "https://www.wipro.com/investors/",
+          "quote": "Wipro Limited Doddakannelli Sarjapur Road Bangalore 560 035"
+        },
+        "description": {
+          "url": "https://www.wipro.com/about-us/",
+          "quote": "Wipro is a leading Al-powered technology services and consulting company focused on building innovative solutions that address clients' most complex digital transformation needs."
+        },
+        "types": {
+          "url": "https://www.wipro.com/about-us/",
+          "quote": "65 countries"
+        },
+        "sectors": {
+          "url": "https://www.wipro.com/about-us/",
+          "quote": "technology services and consulting company"
+        },
+        "ownership_status": {
+          "url": "https://www.wipro.com/investors/",
+          "quote": "Wipro Celebrates 25 Years on NYSE"
+        }
+      },
+      "dropped": {},
+      "research_note": "The mnc tag rests on a summariser report of '65 countries'; that quote is too short and may not be verbatim. The enterprise-software sector is a judgement call for a services firm. The NYSE listing is shown on the investors page; NSE comes from a summariser note.",
+      "description": "Technology services and consulting company that delivers digital transformation and AI-based solutions for clients.",
+      "types": [
+        "mnc"
+      ],
+      "sectors": [
+        "enterprise-software"
+      ],
+      "ownership_status": "public"
+    },
+    {
+      "name": "Zerodha Broking Limited",
+      "domain": "zerodha.com",
+      "website_url": "https://zerodha.com",
+      "address": "Zerodha, #153/154, 4th Cross, J.P Nagar 4th Phase, Opp. Clarence Public School, Bengaluru - 560078",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://zerodha.com/contact/",
+          "quote": "Zerodha Broking Limited"
+        },
+        "website": {
+          "url": "https://zerodha.com/contact/",
+          "quote": "Zerodha, #153/154, 4th Cross, J.P Nagar 4th Phase"
+        },
+        "address": {
+          "url": "https://zerodha.com/contact/",
+          "quote": "#153/154, 4th Cross, J.P Nagar 4th Phase, Opp. Clarence Public School, Bengaluru - 560078"
+        },
+        "description": {
+          "url": "https://zerodha.com/about/",
+          "quote": "We kick-started operations on the 15th of August, 2010 with the goal of breaking all barriers that traders and investors face in India"
+        },
+        "sectors": {
+          "url": "https://zerodha.com/about/",
+          "quote": "breaking all barriers that traders and investors face in India in terms of cost, support, and technology."
+        }
+      },
+      "dropped": {},
+      "research_note": "The contact page also lists a support address: #192A 4th Floor, Kalyani Vista, 3rd Main Road JP Nagar 4th Phase Bengaluru - 560076. The name quote 'Zerodha Broking Limited' is only three words, below the 5-word minimum.",
+      "description": "Indian stockbroker, operating since 2010, that offers trading and investment services.",
       "types": [],
       "sectors": [
-        "edtech"
+        "fintech"
       ],
+      "ownership_status": null
+    },
+    {
+      "name": "Zetwerk Manufacturing Businesses Limited",
+      "domain": "zetwerk.com",
+      "website_url": "https://zetwerk.com",
+      "address": "# 84/1, Vaishnavi Sovereign, Ground & 1st Floor, Green Glen Layout, Bellandur, Bengaluru, Karnataka 560103",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://zetwerk.com/contact-us",
+          "quote": "Zetwerk Manufacturing Businesses Limited (Formerly known as Zetwerk Manufacturing Businesses Private Limited)."
+        },
+        "website": {
+          "url": "https://zetwerk.com/contact-us",
+          "quote": "Zetwerk Manufacturing Businesses Limited (Formerly known as Zetwerk Manufacturing Businesses Private Limited)."
+        },
+        "address": {
+          "url": "https://zetwerk.com/contact-us",
+          "quote": "# 84/1, Vaishnavi Sovereign, Ground & 1st Floor, Green Glen Layout, Bellandur, Bengaluru, Karnataka 560103"
+        },
+        "types": {
+          "url": "https://zetwerk.com/contact-us",
+          "quote": "Zetwerk Manufacturing USA Inc."
+        }
+      },
+      "dropped": {
+        "description": "quote_not_found"
+      },
+      "research_note": "The quote for 'mnc' names a US entity but has no foreign address. The HTML has '&amp;' in the address, so it only matches after entities are decoded.",
+      "description": null,
+      "types": [
+        "mnc"
+      ],
+      "sectors": [],
       "ownership_status": null
     }
   ]

@@ -104,7 +104,7 @@ def check(company: dict, field: str) -> dict:
 def main() -> None:
     today = dt.date.today().isoformat()
     report, candidates = [], []
-    for path in sorted((ROOT / "research").glob("group-*.json")):
+    for path in sorted((ROOT / "research").glob("group-*.json"), key=lambda p: (p.stem.startswith("group-r"), p.stem)):
         for company in json.loads(path.read_text(encoding="utf-8")):
             checks = [check(company, f) for f in FIELDS]
             by = {c["field"]: c for c in checks}
@@ -125,6 +125,11 @@ def main() -> None:
             for f in ("description", "types", "sectors", "ownership_status"):
                 record[f] = company.get(f) if by[f]["outcome"] == "verified" else (None if f in ("description", "ownership_status") else [])
             candidates.append(record)
+    # One candidate per company: a later research round replaces an earlier one only by passing the same checks.
+    by_domain: dict[str, dict] = {}
+    for c in candidates:
+        by_domain[c["domain"].lower().removeprefix("www.")] = c
+    candidates = sorted(by_domain.values(), key=lambda c: c["name"].lower())
     (ROOT / "verification.json").write_text(json.dumps({"checked_on": today, "companies": report}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     (ROOT / "candidates.json").write_text(json.dumps({"checked_on": today, "candidates": candidates}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     counts: dict[str, int] = {}
