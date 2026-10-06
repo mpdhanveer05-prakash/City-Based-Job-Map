@@ -1,0 +1,2622 @@
+{
+  "checked_on": "2026-10-06",
+  "companies": [
+    {
+      "candidate": "Flipkart",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "flipkart.com/pages/contact-us and /pages/aboutus both returned HTTP 500; nothing verified."
+    },
+    {
+      "candidate": "Swiggy",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.swiggy.com/corporate/",
+          "quote": "Swiggy is a new-age consumer-first organization offering an easy-to-use convenience platform, accessible through a unified app.",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.swiggy.com/corporate/",
+          "quote": "Swiggy is a new-age consumer-first organization offering an easy-to-use convenience platform",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.swiggy.com/corporate/",
+          "quote": "Sumadhura Capitol Towers, 3rd- 6th Floor – Tower 1, Sy. No. 14 & 158, Pattanduru Agrahara",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://www.swiggy.com/corporate/",
+          "quote": "offering an easy-to-use convenience platform, accessible through a unified app.",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.swiggy.com/corporate/",
+          "quote": "Swiggy is a new-age consumer-first organization offering an easy-to-use convenience platform, accessible through a unified app.",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "The corporate page mentions 'IPO Delivered - November 2024', but no investor-relations page with an exchange listing was fetched, so ownership_status is left null. The e-commerce sector is a judgement call. Quotes came through WebFetch's summariser, so dash and spacing characters may differ from the raw page."
+    },
+    {
+      "candidate": "Razorpay",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://razorpay.com/about/",
+          "quote": "A comprehensive payments suite in India designed to help businesses seamlessly accept, process, and disburse payments.",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://razorpay.com/about/",
+          "quote": "A comprehensive payments suite in India designed to help businesses seamlessly accept, process, and disburse payments.",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://razorpay.com/about/",
+          "quote": "1st Floor, SJR Cyber, 22, Laskar Hosur Road, Adugodi, Bangalore, Karnataka - 560030",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://razorpay.com/about/",
+          "quote": "help businesses seamlessly accept, process, and disburse payments.",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://razorpay.com/about/",
+          "quote": "providing clean, developer-friendly APIs and hassle-free integration.",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "url": "https://razorpay.com/about/",
+          "quote": "A comprehensive payments suite in India",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "The about page mentions Malaysia (Curlec), Singapore and the US but gives no office addresses there, so mnc is not tagged. The name quote does not contain the word 'Razorpay'."
+    },
+    {
+      "candidate": "Zerodha",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://zerodha.com/contact/",
+          "quote": "Zerodha Broking Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://zerodha.com/contact/",
+          "quote": "Zerodha, #153/154, 4th Cross, J.P Nagar 4th Phase",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://zerodha.com/contact/",
+          "quote": "#153/154, 4th Cross, J.P Nagar 4th Phase, Opp. Clarence Public School, Bengaluru - 560078",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://zerodha.com/about/",
+          "quote": "We kick-started operations on the 15th of August, 2010 with the goal of breaking all barriers that traders and investors face in India",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "url": "https://zerodha.com/about/",
+          "quote": "breaking all barriers that traders and investors face in India in terms of cost, support, and technology.",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "The contact page also lists a support address: #192A 4th Floor, Kalyani Vista, 3rd Main Road JP Nagar 4th Phase Bengaluru - 560076. The name quote 'Zerodha Broking Limited' is only three words, below the 5-word minimum."
+    },
+    {
+      "candidate": "PhonePe",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.phonepe.com/contact-us/",
+          "quote": "PhonePe Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.phonepe.com/contact-us/",
+          "quote": "PhonePe Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.phonepe.com/contact-us/",
+          "quote": "Salarpuria Softzone, Bellandur Village, Varthur Hobli, Outer Ring Road, Bangalore South",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.phonepe.com/contact-us/",
+          "quote": "CIN: U67190KA2012PLC176031",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "No About page was fetched, so the description is null. The fintech sector rests only on general knowledge and a weak CIN quote, so drop it unless better evidence is found. The name quote is only two words, below the 5-word minimum."
+    },
+    {
+      "candidate": "CRED",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "/contact returned 404. /privacy shows only the legal entity 'Dreamplug Technologies Pvt Ltd', with no address. Nothing verified to the evidence standard."
+    },
+    {
+      "candidate": "Meesho",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "meesho.com returned 403 on /about and /legal/privacy; nothing verified."
+    },
+    {
+      "candidate": "Infosys",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "infosys.com returned 403 on /investors.html and /contact.html; nothing verified."
+    },
+    {
+      "candidate": "Wipro",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.wipro.com/investors/",
+          "quote": "Wipro Limited Doddakannelli Sarjapur Road Bangalore 560 035",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.wipro.com/about-us/",
+          "quote": "Wipro is a leading Al-powered technology services and consulting company",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.wipro.com/investors/",
+          "quote": "Wipro Limited Doddakannelli Sarjapur Road Bangalore 560 035",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://www.wipro.com/about-us/",
+          "quote": "Wipro is a leading Al-powered technology services and consulting company focused on building innovative solutions that address clients' most complex digital transformation needs.",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://www.wipro.com/about-us/",
+          "quote": "65 countries",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.wipro.com/about-us/",
+          "quote": "technology services and consulting company",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "url": "https://www.wipro.com/investors/",
+          "quote": "Wipro Celebrates 25 Years on NYSE",
+          "outcome": "verified"
+        }
+      ],
+      "uncertain": "The mnc tag rests on a summariser report of '65 countries'; that quote is too short and may not be verbatim. The enterprise-software sector is a judgement call for a services firm. The NYSE listing is shown on the investors page; NSE comes from a summariser note."
+    },
+    {
+      "candidate": "Groww",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://groww.in/about-us",
+          "quote": "Vaishnavi Tech Park, South Tower, 3rd Floor Sarjapur Main Road, Bellandur",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://groww.in/about-us",
+          "quote": "Super easy to use, lightning fast, and crystal clear",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://groww.in/about-us",
+          "quote": "Vaishnavi Tech Park, South Tower, 3rd Floor Sarjapur Main Road, Bellandur, Bengaluru – 560103 Karnataka",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://groww.in/about-us",
+          "quote": "Super easy to use, lightning fast, and crystal clear",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "The description and sector rest on the summariser's paraphrase of the page's products; no verbatim product sentence was captured, and neither the name nor the website quote contains 'Groww'. Listing status was not checked."
+    },
+    {
+      "candidate": "Licious",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.licious.in/about-us",
+          "quote": "Order Meat Online - Buy Fresh & High Quality Meat at Best Price on Licious",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.licious.in/about-us",
+          "quote": "Order Meat Online - Buy Fresh & High Quality Meat at Best Price on Licious",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "url": "https://www.licious.in/about-us",
+          "quote": "Order Meat Online - Buy Fresh & High Quality Meat at Best Price on Licious",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.licious.in/about-us",
+          "quote": "Order Meat Online - Buy Fresh & High Quality Meat",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "No Bengaluru address on the fetched page (/contact-us returned 404). The quote is probably the page title, so it may fail the raw-text check."
+    },
+    {
+      "candidate": "Udaan",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://udaan.com/",
+          "quote": "India's Largest eB2B Platform for Small Businesses Owners",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://udaan.com/",
+          "quote": "India's Largest eB2B Platform for Small Businesses Owners",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "url": "https://udaan.com/",
+          "quote": "India's Largest eB2B Platform for Small Businesses Owners",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "url": "https://udaan.com/",
+          "quote": "India's Largest eB2B Platform for Small Businesses Owners",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "No Bengaluru address found (/contact returned Not Found). The quote may be the page title, and it does not contain 'Udaan'."
+    },
+    {
+      "candidate": "Myntra",
+      "group": "group-a",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "myntra.com/contactus timed out; nothing verified."
+    },
+    {
+      "candidate": "Practo",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.practo.com/company/contact",
+          "quote": "Practo Technologies Pvt. Ltd.",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.practo.com/company/contact",
+          "quote": "Practo Technologies Pvt. Ltd.",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.practo.com/company/contact",
+          "quote": "No.371, Clayworks Building, 1st Cross Rd, 3rd Block, Santhosapuram, Koramangala",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Description and sector based on a fetch-tool summary, not a verbatim quote; no quote evidence for description/sector."
+    },
+    {
+      "candidate": "Zetwerk",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.zetwerk.com/contact-us/",
+          "quote": "Zetwerk Manufacturing Businesses Limited (Formerly known as Zetwerk Manufacturing Businesses Private Limited).",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.zetwerk.com/contact-us/",
+          "quote": "Zetwerk Manufacturing Businesses Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.zetwerk.com/contact-us/",
+          "quote": "#84/1, Vaishnavi Sovereign, Ground & 1st Floor, Green Glen Layout, Bellandur",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "description",
+          "url": "https://www.zetwerk.com/contact-us/",
+          "quote": "Zetwerk is a global manufacturer that can help you maximize efficiency, quality and value in your supply chain.",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://www.zetwerk.com/contact-us/",
+          "quote": "73, Upper Paya Lebar Road #08-01l Centro Bianco Singapore",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "mnc based on listed USA/Singapore/UAE office addresses on contact page."
+    },
+    {
+      "candidate": "InMobi",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.inmobi.com/company/contact",
+          "quote": "InMobi Technology Services Private Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.inmobi.com/company/contact",
+          "quote": "InMobi Technology Services Private Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.inmobi.com/company/contact",
+          "quote": "7th Floor, Delta Block, Embassy Tech Square, Kadubeesanahalli",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "description",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "types",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Other-country offices (Singapore, Tokyo, London etc.) reported by fetch summary, no verbatim quote captured for types; description paraphrased from summary."
+    },
+    {
+      "candidate": "Juspay",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://juspay.io/privacy-policy",
+          "quote": "Juspay Technologies Private Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://juspay.io/privacy-policy",
+          "quote": "Juspay Technologies Private Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://juspay.io/privacy-policy",
+          "quote": "Stallion Business Center, 444, 18th Main Rd, 6th Block, Koramangala",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "No description/sector quote captured; fintech sector unverified by quote."
+    },
+    {
+      "candidate": "Postman",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.postman.com/company/contact-us/",
+          "quote": "Postman, Inc.",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.postman.com/company/contact-us/",
+          "quote": "Postman, Inc.",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.postman.com/company/contact-us/",
+          "quote": "Building no 310, 6th Main Road Indiranagar, Bangalore, Karnataka 560038, India",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "description",
+          "url": "https://www.postman.com/company/contact-us/",
+          "quote": "Postman is an API platform that enables teams to design, build, test, and manage APIs throughout their lifecycle.",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "types",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "sectors",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Description quote may be summary-paraphrased; offices in San Francisco and Tokyo reported but no verbatim quote for types/sectors."
+    },
+    {
+      "candidate": "Ather Energy",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Contact and investor-relations pages returned HTTP 403; nothing verified."
+    },
+    {
+      "candidate": "Rapido",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "address",
+          "url": "https://www.rapido.bike/Contact",
+          "quote": "648, 1st Main Rd, Muneswara Nagar, Sector 6, HSR Layout",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Legal name not found (page says 'Rapido office'); description/sector from summary without verbatim quote."
+    },
+    {
+      "candidate": "Jupiter (Amica Financial Technologies)",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://jupiter.money/contact/",
+          "quote": "Amica Financial Technologies Private Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://jupiter.money/contact/",
+          "quote": "Amica Financial Technologies Private Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "url": "https://jupiter.money/contact/",
+          "quote": "Jupiter is the 1-app for everything money that lets you spend and save money, track expenses, pay bills",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "url": "https://jupiter.money/contact/",
+          "quote": "pay bills, and invest money in Direct Mutual Funds",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "No Bengaluru address on the contact page."
+    },
+    {
+      "candidate": "Khatabook",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Contact page returned empty content and privacy page 403; nothing verified."
+    },
+    {
+      "candidate": "Simplilearn",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.simplilearn.com/contact-us",
+          "quote": "Simplilearn Solutions Pvt Ltd.",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.simplilearn.com/contact-us",
+          "quote": "Simplilearn Solutions Pvt Ltd.",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.simplilearn.com/contact-us",
+          "quote": "NALANDA 53/1 C, Manoj Arcade, 24th Main Rd, Sector 2, HSR Layout",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://www.simplilearn.com/contact-us",
+          "quote": "Simplilearn is the world's #1 online bootcamp and one of the world's leading certification training providers.",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://www.simplilearn.com/contact-us",
+          "quote": "Simplilearn Singapore Pte Ltd.",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.simplilearn.com/contact-us",
+          "quote": "one of the world's leading certification training providers",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "mnc based on Simplilearn Americas, Inc. (Plano, TX) and Singapore entity listed on contact page."
+    },
+    {
+      "candidate": "Cult.fit",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Contact and privacy URLs returned 404; nothing verified."
+    },
+    {
+      "candidate": "Acko",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.acko.com/contact-us/",
+          "quote": "Acko Technology and Services Limited (formerly Acko Technology and Services Private Limited)",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "website",
+          "url": "https://www.acko.com/contact-us/",
+          "quote": "Acko Technology and Services Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.acko.com/contact-us/",
+          "quote": "#36/5, Hustlehub One East, Somasandrapalya 27th Main Rd, Sector 2, HSR Layout",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Description/sector from summary, no verbatim quote; fintech for insurance is a judgement."
+    },
+    {
+      "candidate": "Go Digit General Insurance",
+      "group": "group-b",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.godigit.com/contact",
+          "quote": "Go Digit General Insurance Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.godigit.com/contact",
+          "quote": "Go Digit General Insurance Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.godigit.com/contact",
+          "quote": "Atlantis, 95, 4th B Cross Road, Koramangala Industrial Layout, 5th Block",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Corporate office used; IR page references BSE/NSE stock exchange disclosures but no verbatim listing quote captured, so ownership_status left null. Description not captured."
+    },
+    {
+      "candidate": "Niyo",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "url": "https://goniyo.com/privacy-policy",
+          "quote": "Finnew Solutions Private Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "url": "https://goniyo.com/privacy-policy",
+          "quote": "fintech start-up company providing digital banking solutions to our customers",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "url": "https://goniyo.com/privacy-policy",
+          "quote": "fintech start-up company providing digital banking solutions to our customers",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Privacy policy shows no Bengaluru address; brand name not quoted from homepage. Quote came via WebFetch summariser, verify verbatim."
+    },
+    {
+      "candidate": "Open (Open Financial Technologies)",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Contact and privacy pages on open.money redirect to /404; nothing confirmed. Skipped."
+    },
+    {
+      "candidate": "Perfios",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "website",
+          "url": "https://perfios.ai/contact-us/",
+          "quote": "Effortless End-to-End Solutions for Banking & Financial Excellence",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "url": "https://perfios.ai/contact-us/",
+          "quote": "Effortless End-to-End Solutions for Banking & Financial Excellence",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "url": "https://perfios.ai/contact-us/",
+          "quote": "Effortless End-to-End Solutions for Banking & Financial Excellence",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "perfios.com redirects to perfios.ai. Contact page lists countries (Malaysia, Singapore, UAE, etc.) but office addresses were not in extracted text, so mnc not tagged. No Bengaluru address extracted."
+    },
+    {
+      "candidate": "Hasura",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "hasura.io/about redirects to promptql.io (apparent rebrand); contact page has no addresses. Not confirmed."
+    },
+    {
+      "candidate": "Locus",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "url": "https://locus.sh/contact-us/",
+          "quote": "The world's first agentic TMS built for enterprise delivery",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "url": "https://locus.sh/contact-us/",
+          "quote": "The world's first agentic TMS built for enterprise delivery",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "types",
+          "url": "https://locus.sh/contact-us/",
+          "quote": "The world's first agentic TMS built for enterprise delivery",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "sectors",
+          "url": "https://locus.sh/contact-us/",
+          "quote": "The world's first agentic TMS built for enterprise delivery",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Footer copyright reads 'Mara Labs Inc.'; no Bengaluru address found on homepage or contact page."
+    },
+    {
+      "candidate": "MoEngage",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.moengage.com/contact-us/",
+          "quote": "MoEngage is the agentic customer engagement platform trusted by 1,350+ global brands",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.moengage.com/contact-us/",
+          "quote": "MoEngage is the agentic customer engagement platform trusted by 1,350+ global brands",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.moengage.com/contact-us/",
+          "quote": "Salarpuria Tower II, Chikku Lakshmaiah Layout, Luskar Hosur Road, Koramangala, Bangalore - 560034",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://www.moengage.com/contact-us/",
+          "quote": "MoEngage is the agentic customer engagement platform trusted by 1,350+ global brands",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://www.moengage.com/contact-us/",
+          "quote": "580 California St, Suite 1200, San Francisco, CA 94104, USA",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.moengage.com/contact-us/",
+          "quote": "MoEngage is the agentic customer engagement platform",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Offices also in London, Toronto, Singapore per contact page."
+    },
+    {
+      "candidate": "Capillary Technologies",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Site returned HTTP 403 to fetches; nothing verified. Listing status not checked."
+    },
+    {
+      "candidate": "Tracxn",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://w.tracxn.com/investor-relations",
+          "quote": "Tracxn Technologies Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://tracxn.com/",
+          "quote": "Technology + Human-in-the-Loop for Deal Discovery",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://tracxn.com/",
+          "quote": "L-248, 2nd Floor, 17th Cross, Sector 6, HSR Layout, Bengaluru, Karnataka 560102",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://tracxn.com/",
+          "quote": "Technology + Human-in-the-Loop for Deal Discovery",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://tracxn.com/",
+          "quote": "Technology + Human-in-the-Loop for Deal Discovery",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "url": "https://tracxn.com/",
+          "quote": "Technology + Human-in-the-Loop for Deal Discovery",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "IR page shows CIN L72200KA2012PLC065294 (L prefix suggests listed) but extracted text had no explicit stock exchange statement, so ownership_status left null; recheck IR page."
+    },
+    {
+      "candidate": "Exotel",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "website",
+          "url": "https://exotel.com/contact-us/",
+          "quote": "Reliable Enterprise Connectivity",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://exotel.com/contact-us/",
+          "quote": "Maruthi Infotech Center, 2nd Floor, Tower A, 540, 100 Feet Rd, Krishna Reddy Layout",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://exotel.com/contact-us/",
+          "quote": "Reliable Enterprise Connectivity",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://exotel.com/contact-us/",
+          "quote": "ZNA Business Center, Single Business Tower, Business Bay, Dubai, United Arab Emirates",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "url": "https://exotel.com/contact-us/",
+          "quote": "Reliable Enterprise Connectivity",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Name evidence not separately quoted; description wording weakly supported by short tagline."
+    },
+    {
+      "candidate": "Yellow.ai",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "url": "https://yellow.ai/contact-us/",
+          "quote": "Enterprise-Grade Agentic AI Platform",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "url": "https://yellow.ai/contact-us/",
+          "quote": "autonomous experiences for your customers and employees",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://yellow.ai/contact-us/",
+          "quote": "Enterprise-Grade Agentic AI Platform",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "url": "https://yellow.ai/contact-us/",
+          "quote": "Enterprise-Grade Agentic AI Platform",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Contact URL served a 'Partner With Us' page with no addresses; no Bengaluru address found."
+    },
+    {
+      "candidate": "Observe.AI",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "url": "https://www.observe.ai/contact-us",
+          "quote": "275 Shoreline Drive, Suite #450, Redwood City, CA",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "url": "https://www.observe.ai/contact-us",
+          "quote": "AI Agents that deliver natural conversation with reliable execution",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.observe.ai/contact-us",
+          "quote": "AI Agents that deliver natural conversation with reliable execution",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Only a Redwood City address is listed; no Bengaluru office on official contact page."
+    },
+    {
+      "candidate": "LeadSquared",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.leadsquared.com/contact-us/",
+          "quote": "LeadSquared, 2nd Floor, Omega Block, Embassy Tech Square",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "website",
+          "url": "https://www.leadsquared.com/contact-us/",
+          "quote": "The CRM that tells you what to do, before you have to ask.",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.leadsquared.com/contact-us/",
+          "quote": "2nd Floor, Omega Block, Embassy Tech Square, Kadubeesanahalli, Outer Ring Road, Bengaluru",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://www.leadsquared.com/contact-us/",
+          "quote": "The CRM that tells you what to do, before you have to ask.",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://www.leadsquared.com/contact-us/",
+          "quote": "The CRM that tells you what to do, before you have to ask.",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.leadsquared.com/contact-us/",
+          "quote": "The CRM that tells you what to do, before you have to ask.",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "US/Indonesia/UAE phone numbers only, no overseas office addresses, so mnc not tagged."
+    },
+    {
+      "candidate": "Mobile Premier League",
+      "group": "group-c",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "mpl.live/contact-us returned 404; not researched further."
+    },
+    {
+      "candidate": "SAP Labs India",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "sap.com office-locations page returned HTTP 403; nothing confirmed."
+    },
+    {
+      "candidate": "Intel India",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "intel.in India location URL redirected to a 404 page; nothing confirmed."
+    },
+    {
+      "candidate": "Cisco India",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Cisco India page returned 404; nothing confirmed."
+    },
+    {
+      "candidate": "Walmart Global Tech India",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Walmart Global Tech India locations URL returned 404; nothing confirmed."
+    },
+    {
+      "candidate": "Target in India",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "india.target.com returned no readable text (it is probably rendered by JavaScript); nothing confirmed."
+    },
+    {
+      "candidate": "Goldman Sachs Bengaluru",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "goldmansachs.com Bengaluru location page returned HTTP 403; nothing confirmed."
+    },
+    {
+      "candidate": "Adobe India",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.adobe.com/in/about-adobe/contact/offices.html",
+          "quote": "Adobe, Inc.",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "website",
+          "url": "https://www.adobe.com/in/about-adobe/contact/offices.html",
+          "quote": "Adobe, Inc.",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "address",
+          "url": "https://www.adobe.com/in/about-adobe/contact/offices.html",
+          "quote": "Prestige Platina Technology Park, Building 1, Block A, Bangalore, India 560103",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "The quotes came through WebFetch's summarising model, so check them against the raw page. The same page lists a second Bangalore office: 'Prestige Tech Park IV, Block-1, Outer Ring Road, Marathahalli, Boghanahalli Village, Hobli Kadubeesanahalli, Varthur, Bangalore, 560087, India'. I did not check the name of the Indian entity, the About page (so no description), the types, or the stock listing. The website_url (/in/) was not fetched as a homepage; it is inferred from the offices page path."
+    },
+    {
+      "candidate": "Atlassian India",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.atlassian.com/company",
+          "quote": "Atlassian goes public! We are listed on NASDAQ as TEAM.",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.atlassian.com/company",
+          "quote": "Atlassian goes public! We are listed on NASDAQ as TEAM.",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.atlassian.com/company/contact",
+          "quote": "Divyasree Greens Sy No 12/1, 12/2A, 13/1A, Chalaghatta Village Bengaluru Urban Karnataka 560071",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "url": "https://www.atlassian.com/company",
+          "quote": "We are listed on NASDAQ as TEAM.",
+          "outcome": "verified"
+        }
+      ],
+      "uncertain": "Quotes came through WebFetch's summariser. The listing evidence is from a company history page, not the investor-relations site the brief asks for, so ownership_status may need to be dropped or re-verified on investors.atlassian.com. According to the contact page there are offices in Australia, India, Japan, the Netherlands, Turkey, Poland and the US, which would support mnc, but I left the types empty because the summariser rebuilt that list and I could not get a verbatim quote. I found no factual description sentence, so description is null."
+    },
+    {
+      "candidate": "Uber India",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Not researched within the time available."
+    },
+    {
+      "candidate": "Qualcomm India",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "qualcomm.com locations page returned no body content; nothing confirmed."
+    },
+    {
+      "candidate": "NVIDIA India",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "NVIDIA India contact URL returned 404; nothing confirmed."
+    },
+    {
+      "candidate": "Bosch Global Software Technologies",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.bosch-softwaretechnologies.com/en/locations/",
+          "quote": "Bosch Global Software Technologies Private Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.bosch-softwaretechnologies.com/en/locations/",
+          "quote": "Bosch Global Software Technologies Private Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.bosch-softwaretechnologies.com/en/locations/",
+          "quote": "123, Industrial Layout, Hosur Road, Koramangala, Bangalore - 560 095",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Quotes came through WebFetch's summariser. A second address is listed: '360° Business Park Electronic City Phase I, Bengaluru, Karnataka 560100, India'. The About and imprint pages returned 404, so the description and types are unconfirmed. Bosch is not publicly listed, so ownership_status is null."
+    },
+    {
+      "candidate": "Mercedes-Benz Research and Development India",
+      "group": "group-d",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.mbrdi.co.in/",
+          "quote": "Mercedes-Benz Research & Development India",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.mbrdi.co.in/",
+          "quote": "Mercedes-Benz Research & Development India",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "The homepage and /contact page showed no address and no descriptive text; the site is probably rendered by JavaScript. The 'Mercedes-Benz Research & Development India' quote is under the 5-word minimum the brief sets."
+    },
+    {
+      "candidate": "Freshworks",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.freshworks.com/company/about/",
+          "quote": "AI-first service software to deliver exceptional customer and employee experiences",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.freshworks.com/company/about/",
+          "quote": "Trusted by 74,000+ businesses worldwide",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "url": "https://www.freshworks.com/company/about/",
+          "quote": "Modern and intuitive IT service management",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://www.freshworks.com/company/about/",
+          "quote": "Effortless customer service and support",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.freshworks.com/company/about/",
+          "quote": "AI-first service software to deliver exceptional customer and employee experiences",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "No Bengaluru address found: the privacy page gives only Chennai (Perungudi) and US addresses, and the contact/locations pages returned 404. The about page lists products but its quotes do not contain the word 'Freshworks', so the name evidence is weak. Its privacy page names group companies in Germany, Netherlands, France and UK but gives no addresses, so mnc was not tagged. ir.freshworks.com did not state a Nasdaq listing in its text, so ownership_status is null."
+    },
+    {
+      "candidate": "Chargebee",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.chargebee.com/",
+          "quote": "Billing & Monetization for SaaS and AI Companies",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.chargebee.com/",
+          "quote": "Billing & Monetization for SaaS and AI Companies",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.chargebee.com/contact/",
+          "quote": "4th Floor, Jupiter block, Prestige Tech Park, Kadubeesanahalli, Bengaluru, Karnataka, 560103",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://www.chargebee.com/",
+          "quote": "Billing & Monetization for SaaS and AI Companies",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://www.chargebee.com/contact/",
+          "quote": "Piet Heinkade 55, 1019 GM Amsterdam, Netherlands",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.chargebee.com/",
+          "quote": "Adopt new pricing models—tiered, volume, stairstep, usage-based, flat-fee, or any custom model, without outgrowing your billing system",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "The homepage quote does not contain the word 'Chargebee'. The contact page also lists offices in Ireland and the USA. All quotes came through a summarising fetch, so the exact characters (for example the em dash) may differ from the raw page."
+    },
+    {
+      "candidate": "BigBasket",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "bigbasket.com returned 403 and the contact page returned 404, so nothing could be verified."
+    },
+    {
+      "candidate": "Dream11 (Sporta Technologies)",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "dream11.com/about-us redirects to about.dream11.in/about-us, and fetching that page failed. Nothing was verified. A Bengaluru office is also doubtful; Dream11 is Mumbai-based."
+    },
+    {
+      "candidate": "Sigmoid",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.sigmoid.com/",
+          "quote": "Sigmoid helps F1000 enterprises modernize data, re-engineer business processes, and make better decisions using AI",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.sigmoid.com/",
+          "quote": "Sigmoid helps F1000 enterprises modernize data, re-engineer business processes",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.sigmoid.com/contact-us/",
+          "quote": "SJR I Park, 2nd Floor, Tower 2, Rd Number 9, EPIP Zone, Whitefield, Bengaluru",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://www.sigmoid.com/",
+          "quote": "Sigmoid helps F1000 enterprises modernize data, re-engineer business processes, and make better decisions using AI to gain competitive advantage",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://www.sigmoid.com/contact-us/",
+          "quote": "268 Bath Road, Slough, Berkshire, SL1 4DX, United Kingdom",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.sigmoid.com/",
+          "quote": "modernize data, re-engineer business processes, and make better decisions using AI",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Not tagged product: Sigmoid appears to sell services. The contact page also lists offices in the USA, Netherlands, Poland, Canada and Singapore."
+    },
+    {
+      "candidate": "Fractal Analytics",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://fractal.ai/",
+          "quote": "Fractal helps global organizations transform critical business functions through AI-led transformation",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://fractal.ai/",
+          "quote": "Fractal helps global organizations transform critical business functions through AI-led transformation",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://fractal.ai/contact-us/",
+          "quote": "West Tower Block 2A, Embassy Tech Village Devarabesanahalli, Outer Ring Road, Bengaluru 560103",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://fractal.ai/",
+          "quote": "transform critical business functions through AI-led transformation, strong AI foundations, and human-centered adoption",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://fractal.ai/contact-us/",
+          "quote": "71 Robinson Road, #14-01, Singapore, 068895",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "url": "https://fractal.ai/",
+          "quote": "through AI-led transformation, strong AI foundations, and human-centered adoption",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "The homepage calls Fractal 'newly-listed', but I found no exchange named on an investor-relations page, so ownership_status is null. Two other Bengaluru offices are listed (East Tower Block 2A, and Embassy Manyata)."
+    },
+    {
+      "candidate": "Mu Sigma",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.mu-sigma.com/contact-us",
+          "quote": "Mu Sigma Business Solutions Pvt. Ltd., 10th Floor to 14th Floor - Aviator Building",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.mu-sigma.com/",
+          "quote": "We are a Decision Sciences Company",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.mu-sigma.com/contact-us",
+          "quote": "10th Floor to 14th Floor - Aviator Building, Ascendas",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://www.mu-sigma.com/",
+          "quote": "We are a Decision Sciences Company",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://www.mu-sigma.com/contact-us",
+          "quote": "2222 Rio Grande Street, Austin Texas 78705",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.mu-sigma.com/",
+          "quote": "We solve complex problems. And we don't 'leverage data,' we weaponize math.",
+          "outcome": "quote_not_found"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "The address contains an en dash ('Ascendas – ITPL SEZ'), so the address quote stops before it. The page also lists offices in the UAE, UK, Singapore, Japan, Germany, China and Canada."
+    },
+    {
+      "candidate": "Tejas Networks",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.tejasnetworks.com/",
+          "quote": "India's leading R&D driven telecom and networking products company",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.tejasnetworks.com/",
+          "quote": "India's leading R&D driven telecom and networking products company",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://www.tejasnetworks.com/contact-us",
+          "quote": "Electronic City Phase 1",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "url": "https://www.tejasnetworks.com/",
+          "quote": "End-to-End Portfolio from Access to Core",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://www.tejasnetworks.com/",
+          "quote": "India's leading R&D driven telecom and networking products company",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "The address came from a summarising fetch and may be abridged (no street or plot number), so check it against the raw page. The investors page mentions 'Stock Exchange Filings' and SEBI listing regulations but names no exchange, so ownership_status is null. None of the allowed sector slugs fits a telecom equipment maker."
+    },
+    {
+      "candidate": "Mindtree / LTIMindtree",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "no_evidence"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "ltimindtree.com now redirects to ltm.com, and the site calls the company 'LTM (formerly LTIMindtree)'. The contact page had no addresses (it points to a 'Global Footprint' page I did not fetch), and the homepage text is marketing copy. Nothing reliable was recorded."
+    },
+    {
+      "candidate": "Infoedge",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "outcome": "empty"
+        },
+        {
+          "field": "website",
+          "outcome": "empty"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "Not researched, so I did not check whether it has a Bengaluru office."
+    },
+    {
+      "candidate": "Unacademy",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://unacademy.com/privacy",
+          "quote": "Sorting Hat Technologies Pvt Ltd",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://unacademy.com/contact",
+          "quote": "© 2026 Sorting Hat Technologies Pvt Ltd",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "url": "https://unacademy.com/privacy",
+          "quote": "Maruti Infotech Centre, 3rd Floor, A-Block, Domlur, Koramangala Inner Ring Road",
+          "outcome": "verified"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "url": "https://unacademy.com/privacy",
+          "quote": "Sorting Hat Technologies Pvt Ltd",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "The name recorded is the legal entity; the brand is Unacademy. The address is the privacy-grievance contact address, not necessarily an office. The sectors quote does not actually support edtech (no About page was fetched), and no description was verified."
+    },
+    {
+      "candidate": "Vedantu",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.vedantu.com/privacy-policy",
+          "quote": "Vedantu Innovations Private Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.vedantu.com/privacy-policy",
+          "quote": "Vedantu Innovations Private Limited",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "outcome": "empty"
+        },
+        {
+          "field": "types",
+          "outcome": "empty"
+        },
+        {
+          "field": "sectors",
+          "outcome": "empty"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "No Bengaluru postal address was found: the privacy policy names Bangalore only as the seat of arbitration, and the contact page returned a 404."
+    },
+    {
+      "candidate": "Toddle",
+      "group": "group-e",
+      "checks": [
+        {
+          "field": "name",
+          "url": "https://www.toddleapp.com/contact-us/",
+          "quote": "The all-in-one collaboration platform for educators",
+          "outcome": "verified"
+        },
+        {
+          "field": "website",
+          "url": "https://www.toddleapp.com/contact-us/",
+          "quote": "The all-in-one collaboration platform for educators",
+          "outcome": "verified"
+        },
+        {
+          "field": "address",
+          "outcome": "empty"
+        },
+        {
+          "field": "description",
+          "url": "https://www.toddleapp.com/contact-us/",
+          "quote": "streamlines planning, assessments, reports, projects, portfolios, and family communication",
+          "outcome": "verified"
+        },
+        {
+          "field": "types",
+          "url": "https://www.toddleapp.com/contact-us/",
+          "quote": "The all-in-one collaboration platform for educators",
+          "outcome": "verified"
+        },
+        {
+          "field": "sectors",
+          "url": "https://www.toddleapp.com/contact-us/",
+          "quote": "The all-in-one collaboration platform for educators",
+          "outcome": "verified"
+        },
+        {
+          "field": "ownership_status",
+          "outcome": "empty"
+        }
+      ],
+      "uncertain": "No Bengaluru address was found on the contact or privacy pages. The legal entity is 'Teacher Tools Pvt. Ltd.' (from the copyright notice). The name quote does not contain 'Toddle'."
+    }
+  ]
+}

@@ -43,6 +43,7 @@ const NAV: Array<{ href: string; label: string; min: Role }> = [
   { href: "/admin/jobs", label: "Jobs", min: "editor" },
   { href: "/admin/import", label: "Import", min: "editor" },
   { href: "/admin/review", label: "Review", min: "editor" },
+  { href: "/admin/feeds", label: "Feeds", min: "editor" },
   { href: "/admin/audit", label: "Audit log", min: "reviewer" },
   { href: "/admin/sources", label: "Sources", min: "admin" },
 ];
