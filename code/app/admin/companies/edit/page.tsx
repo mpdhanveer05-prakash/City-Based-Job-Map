@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useAdmin } from "@/components/admin/admin-root";
 import { EvidencePanel } from "@/components/admin/evidence-panel";
+import { LogoPanel } from "@/components/admin/logo-panel";
 import { useReference, type AnyError, type Reference } from "@/components/admin/use-reference";
 import { CheckRow, Field, Notice, PageHeader, Select, TextArea, TextInput } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
@@ -228,6 +229,7 @@ function CompanyFormView({ id, initial, counts, reference }: { id: string | null
         </div>
       </form>
       {id && <EvidencePanel companyId={id} />}
+      {id && <LogoPanel companyId={id} />}
     </>
   );
 }

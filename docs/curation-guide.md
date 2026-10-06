@@ -14,7 +14,7 @@ How companies, offices, founders, and jobs get into the directory and stay right
 | Company type: Startup, MNC, Product | Published company information | Apply the definitions in section 2 |
 | Funding stage, ownership status | The company's own announcements, or a reliable funding report | Record the announcement and its date; if it is not stated, leave it unknown |
 | Founders | The official leadership or About page | Name and role exactly as published; professional facts only |
-| Logo | The company's brand assets, or a licensed logo provider | It is this company's current logo, and we may use it |
+| Logo | The company's brand assets, written permission, or a licensed logo provider ([ADR-0024](decisions/0024-logo-storage-and-provenance.md)) | It is this company's current logo, and we may use it. Upload it on the company's admin page with where it came from, the basis and the page that shows it, a note, and the date; a reviewer approves it before it shows |
 | Jobs | The official careers page or an authorised feed (an applicant-tracking system the company uses) | Title, employer, location and work arrangement, and a working application link on the employer's site |
 
 **Discovery is not evidence.** Directories, ecosystem lists, and news round-ups help find candidates. Every fact must then be checked on an official source. A dataset may be imported only after its reuse conditions are checked. Each **source** in the admin (Sources page) records its permission note.
