@@ -29,7 +29,7 @@ Lint, typecheck, Vitest, pgTAP (local Supabase in CI), dependency audit, secret 
 
 | Job | Steps |
 | --- | --- |
-| `checks` | `npm ci`, lint, typecheck, Vitest, build, then `npm audit --omit=dev --audit-level=high` (fails on high or critical in what ships) and an informational `npm audit --audit-level=high` over the tooling ([ADR-0015](decisions/0015-dependency-audit-gate.md)) |
+| `checks` | `npm ci`, lint, typecheck, Vitest, build, then `npm run audit` (`scripts/audit-gate.mts`, ADR-0019): `npm audit` over **every** dependency fails on any high or critical finding not covered by a current, reviewed entry in `code/security/audit-exceptions.json` (at most 90 days; expired and stale entries also fail). The split audit of [ADR-0015](decisions/0015-dependency-audit-gate.md) was not accepted. |
 | `e2e` | Chromium install, then `npm run test:e2e` (Playwright + axe, desktop and Pixel 7). The HTML report is uploaded on failure |
 
 To run the same Playwright suite against a server that's already running (`wrangler dev`, or a preview Worker URL), set `PLAYWRIGHT_BASE_URL`; the built-in `next start` server is then skipped.

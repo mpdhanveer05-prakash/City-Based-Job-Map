@@ -1,0 +1,21 @@
+{
+  "$comment": "Reviewed, time-limited exceptions to the blocking dependency audit (ADR-0019). scripts/audit-gate.mts fails CI on any high or critical finding not listed here, on an expired entry, and on an entry that no longer matches a finding. Expiry is at most 90 days after the review.",
+  "exceptions": [
+    {
+      "advisory": "GHSA-vfj7-8cjw-p6xm",
+      "cve": "CVE-2026-93687",
+      "package": "braces",
+      "installedVersion": "3.0.3",
+      "affectedVersions": "<= 3.0.3 (every published version; no patched release as of 6 Oct 2026)",
+      "path": "eslint-config-next@16.3.7 > @next/eslint-plugin-next@16.3.7 > fast-glob@3.3.1 > micromatch@4.0.8 > braces@3.0.3",
+      "allowedVia": ["braces", "micromatch", "fast-glob", "@next/eslint-plugin-next", "eslint-config-next"],
+      "fixesChecked": "braces has no patched version. eslint-config-next@16.3.8 (latest) still pins fast-glob 3.3.1. npm's only offer is a downgrade to eslint-config-next@14.2.35 (Next 14 rules), which is not compatible. The other path (shadcn CLI, ts-morph) was removed in P9-09 by vendoring shadcn's stylesheet.",
+      "exposure": "Lint time only; never shipped to the browser or the Edge Functions. The plugin's single glob call (dist/utils/get-root-dirs.js) receives settings.next.rootDir from our own eslint.config.mjs, which does not set it, so the pattern is the plugin's default. A hostile pattern would have to be committed to the repository, and its effect would be a crashed lint run (denial of service), not code execution. CI's lint job holds no secrets (permissions: contents: read); the deploy workflows run npm ci but not lint, and their Cloudflare credentials are scoped to the deploy step.",
+      "mitigation": "Do not set settings.next.rootDir from external input; keep credentials out of jobs that run lint; Dependabot proposes eslint-config-next updates weekly; on each update re-run npm ls braces and drop this entry as soon as the path is gone.",
+      "reviewer": "Claude Code (engineering review, 6 Oct 2026)",
+      "owner": "Project owner (M.P. Dhanveer Prakash), to confirm",
+      "reviewedOn": "2026-10-06",
+      "expires": "2027-01-04"
+    }
+  ]
+}
