@@ -273,7 +273,7 @@ describe("expansion zoom (tap a cluster)", () => {
       });
     }
     expect(checked).toBeGreaterThan(50);
-  });
+  }, 20_000); // Exhaustive over every cluster at six levels: it passed alone but took over 5 s (the default) twice in full-suite runs.
 
   it("is null for an office, a stack, a malformed key, a key from an earlier load, and before any load", () => {
     const engine = loadedEngine();

@@ -108,7 +108,7 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[slu
         <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-base">
           <dt className="text-muted-foreground">Sectors</dt>
           <dd>{company.sectors.length > 0 ? company.sectors.join(", ") : "Not stated"}</dd>
-          <dt className="text-muted-foreground">Verification</dt>
+          <dt className="text-muted-foreground">Company details</dt>
           <dd data-testid="verified">{verifiedText(company.lastVerifiedAt)}</dd>
           <dt className="text-muted-foreground">Open jobs</dt>
           <dd className="tabular-nums">{company.jobs.length}</dd>

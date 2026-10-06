@@ -26,6 +26,8 @@ const companySchema = z.object({
   careers_url: z.string().regex(/^https:\/\//).nullable(),
   startup_stage: z.enum(STARTUP_STAGES).nullable(),
   ownership_status: z.enum(OWNERSHIP_STATUSES).nullable(),
+  /** Whether the company's required evidence is complete (ADR-0022). Read by the build; not written to the public files. */
+  evidence_complete: z.boolean(),
   last_verified_at: isoOrNull,
   types: z.array(z.enum(COMPANY_TYPES)),
   sectors: z.array(slugSchema),
@@ -50,6 +52,10 @@ const jobSchema = z.object({
   apply_url: z.string().regex(/^https:\/\//),
   status: z.enum(["active", "suspect"]),
   last_checked_at: isoOrNull,
+  /** The last successful check (ADR-0022): the jobs page's freshness comes from this, not from the company's date. */
+  last_ok_at: isoOrNull,
+  /** Whether the job's required evidence is complete (ADR-0022). Read by the build; not written to the public files. */
+  evidence_complete: z.boolean(),
 });
 
 const position = z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)]);
@@ -132,8 +138,11 @@ export type DetailsFile = {
     string,
     { description: string | null; website_url: string; careers_url: string | null; last_verified_at: string | null }
   >;
-  jobs: SnapshotJob[];
+  jobs: PublicJob[];
 };
+
+/** A job as the public files hold it: without the internal evidence flag. */
+export type PublicJob = Omit<SnapshotJob, "evidence_complete">;
 
 export type CityDatasetFiles = {
   companies: CompaniesFile;
@@ -218,7 +227,16 @@ export function splitSnapshot(snapshot: CitySnapshot): CityDatasetFiles {
           },
         ]),
       ),
-      jobs: snapshot.jobs,
+      // Every field but the internal evidence flag (ADR-0022), named so a new snapshot field is not published by accident.
+      jobs: snapshot.jobs.map((j): PublicJob => ({
+        id: j.id,
+        company_id: j.company_id,
+        title: j.title,
+        apply_url: j.apply_url,
+        status: j.status,
+        last_checked_at: j.last_checked_at,
+        last_ok_at: j.last_ok_at,
+      })),
     },
   };
 }

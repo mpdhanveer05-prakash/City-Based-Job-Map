@@ -177,6 +177,7 @@
    "careers_url": "https://amber-forge-synthetic.example/careers",
    "startup_stage": "pre_seed",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -196,6 +197,7 @@
    "careers_url": "https://amber-labs-synthetic.example/careers",
    "startup_stage": "series_b",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -215,6 +217,7 @@
    "careers_url": "https://amber-systems-synthetic.example/careers",
    "startup_stage": "series_b",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -234,6 +237,7 @@
    "careers_url": "https://amber-works-synthetic.example/careers",
    "startup_stage": "pre_seed",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -253,6 +257,7 @@
    "careers_url": "https://birch-forge-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "public",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc",
@@ -273,6 +278,7 @@
    "careers_url": "https://birch-labs-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "public",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc",
@@ -293,6 +299,7 @@
    "careers_url": "https://birch-systems-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "public",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc",
@@ -313,6 +320,7 @@
    "careers_url": "https://birch-works-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "public",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc",
@@ -333,6 +341,7 @@
    "careers_url": "https://cobalt-forge-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "private",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "product"
@@ -353,6 +362,7 @@
    "careers_url": "https://cobalt-labs-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "product"
@@ -373,6 +383,7 @@
    "careers_url": "https://cobalt-systems-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "product"
@@ -393,6 +404,7 @@
    "careers_url": "https://cobalt-works-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "private",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "product"
@@ -413,6 +425,7 @@
    "careers_url": "https://delta-forge-synthetic.example/careers",
    "startup_stage": "seed",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -432,6 +445,7 @@
    "careers_url": "https://delta-labs-synthetic.example/careers",
    "startup_stage": "series_c",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -451,6 +465,7 @@
    "careers_url": "https://delta-systems-synthetic.example/careers",
    "startup_stage": "series_c",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -470,6 +485,7 @@
    "careers_url": "https://delta-works-synthetic.example/careers",
    "startup_stage": "seed",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -489,6 +505,7 @@
    "careers_url": "https://ember-forge-synthetic.example/careers",
    "startup_stage": "seed",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -508,6 +525,7 @@
    "careers_url": "https://ember-labs-synthetic.example/careers",
    "startup_stage": "series_c_plus",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -527,6 +545,7 @@
    "careers_url": "https://ember-loop-synthetic.example/careers",
    "startup_stage": "series_c_plus",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -546,6 +565,7 @@
    "careers_url": "https://ember-systems-synthetic.example/careers",
    "startup_stage": "series_c_plus",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -565,6 +585,7 @@
    "careers_url": "https://ember-works-synthetic.example/careers",
    "startup_stage": "seed",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -584,6 +605,7 @@
    "careers_url": "https://fjord-forge-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "private",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -604,6 +626,7 @@
    "careers_url": "https://fjord-labs-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "private",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -624,6 +647,7 @@
    "careers_url": "https://fjord-loop-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "private",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -644,6 +668,7 @@
    "careers_url": "https://fjord-systems-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "private",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -664,6 +689,7 @@
    "careers_url": "https://fjord-works-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "private",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -684,6 +710,7 @@
    "careers_url": "https://garnet-forge-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "product"
@@ -703,6 +730,7 @@
    "careers_url": "https://garnet-labs-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "private",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "product"
@@ -722,6 +750,7 @@
    "careers_url": "https://garnet-loop-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "private",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "product"
@@ -741,6 +770,7 @@
    "careers_url": "https://garnet-systems-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "private",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "product"
@@ -760,6 +790,7 @@
    "careers_url": "https://garnet-works-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "product"
@@ -779,6 +810,7 @@
    "careers_url": "https://harbor-forge-synthetic.example/careers",
    "startup_stage": "bootstrapped",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -798,6 +830,7 @@
    "careers_url": "https://harbor-labs-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "public",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -817,6 +850,7 @@
    "careers_url": "https://harbor-loop-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "public",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -836,6 +870,7 @@
    "careers_url": "https://harbor-systems-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "public",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -855,6 +890,7 @@
    "careers_url": "https://harbor-works-synthetic.example/careers",
    "startup_stage": "bootstrapped",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup"
@@ -874,6 +910,7 @@
    "careers_url": "https://indigo-forge-synthetic.example/careers",
    "startup_stage": "series_a",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup",
@@ -895,6 +932,7 @@
    "careers_url": "https://indigo-labs-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "acquired",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup",
@@ -916,6 +954,7 @@
    "careers_url": "https://indigo-works-synthetic.example/careers",
    "startup_stage": "series_a",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup",
@@ -937,6 +976,7 @@
    "careers_url": "https://juniper-forge-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -956,6 +996,7 @@
    "careers_url": "https://juniper-labs-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -975,6 +1016,7 @@
    "careers_url": "https://juniper-loop-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -994,6 +1036,7 @@
    "careers_url": "https://juniper-works-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "mnc"
@@ -1013,6 +1056,7 @@
    "careers_url": "https://kestrel-forge-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "private",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "product"
@@ -1032,6 +1076,7 @@
    "careers_url": "https://kestrel-works-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": "private",
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "product"
@@ -1051,6 +1096,7 @@
    "careers_url": "https://lumen-forge-synthetic.example/careers",
    "startup_stage": "series_a",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup",
@@ -1072,6 +1118,7 @@
    "careers_url": "https://lumen-labs-synthetic.example/careers",
    "startup_stage": null,
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup",
@@ -1093,6 +1140,7 @@
    "careers_url": "https://lumen-works-synthetic.example/careers",
    "startup_stage": "series_a",
    "ownership_status": null,
+   "evidence_complete": false,
    "last_verified_at": null,
    "types": [
     "startup",
@@ -1674,7 +1722,9 @@
    "title": "UX Designer",
    "apply_url": "https://lumen-works-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "0370fa2f-59b5-f732-4200-61eaa855df66",
@@ -1682,7 +1732,9 @@
    "title": "Security Engineer",
    "apply_url": "https://garnet-works-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "06a950b7-3761-5337-4132-eb52bff9ec58",
@@ -1690,7 +1742,9 @@
    "title": "Product Manager",
    "apply_url": "https://indigo-labs-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "06c76f83-b701-03b8-582e-290b052c1ce6",
@@ -1698,7 +1752,9 @@
    "title": "Mobile Engineer",
    "apply_url": "https://garnet-systems-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "075dab25-a27e-07b4-3691-69760e8d6f02",
@@ -1706,7 +1762,9 @@
    "title": "Security Engineer",
    "apply_url": "https://harbor-forge-synthetic.example/careers/3",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "0c106999-70af-85cd-de91-ffb993750320",
@@ -1714,7 +1772,9 @@
    "title": "UX Designer",
    "apply_url": "https://birch-works-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "0c939269-c4b3-7a5c-ece3-8e80620468f7",
@@ -1722,7 +1782,9 @@
    "title": "Product Manager",
    "apply_url": "https://ember-loop-synthetic.example/careers/3",
    "status": "suspect",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "0eca9b81-096f-e200-ee9f-0a51c50f0889",
@@ -1730,7 +1792,9 @@
    "title": "Product Manager",
    "apply_url": "https://ember-systems-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "167ebcf7-4061-097e-f969-eed429cca51b",
@@ -1738,7 +1802,9 @@
    "title": "Mobile Engineer",
    "apply_url": "https://harbor-labs-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "16def3c8-8ddb-9ed7-8d17-a0a6126e91d4",
@@ -1746,7 +1812,9 @@
    "title": "Product Manager",
    "apply_url": "https://harbor-loop-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "1996e002-6238-b139-bbaa-7a1ad87c793b",
@@ -1754,7 +1822,9 @@
    "title": "Product Manager",
    "apply_url": "https://kestrel-works-synthetic.example/careers/3",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "1a02251d-b331-b1e0-e6aa-38840e5e3fa8",
@@ -1762,7 +1832,9 @@
    "title": "Mobile Engineer",
    "apply_url": "https://cobalt-forge-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "1b76806f-5647-daff-1146-7b79fd887c96",
@@ -1770,7 +1842,9 @@
    "title": "Site Reliability Engineer",
    "apply_url": "https://ember-forge-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "1c09e43e-9954-667a-978f-a7ef29907d22",
@@ -1778,7 +1852,9 @@
    "title": "UX Designer",
    "apply_url": "https://amber-labs-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "1f0014b9-79f5-1ef3-a54c-3c709f3bc10c",
@@ -1786,7 +1862,9 @@
    "title": "Backend Engineer",
    "apply_url": "https://garnet-forge-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "22188568-7d45-560d-1dbc-3622b5c27880",
@@ -1794,7 +1872,9 @@
    "title": "Backend Engineer",
    "apply_url": "https://amber-systems-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "26fb03b7-b36c-714e-f643-97a7c3b0ec08",
@@ -1802,7 +1882,9 @@
    "title": "Site Reliability Engineer",
    "apply_url": "https://kestrel-works-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "29e087e9-55ef-2846-a862-4913d9d14949",
@@ -1810,7 +1892,9 @@
    "title": "UX Designer",
    "apply_url": "https://fjord-loop-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "2b57b16a-adf4-7940-8a69-cc0e774ad452",
@@ -1818,7 +1902,9 @@
    "title": "Frontend Engineer",
    "apply_url": "https://ember-forge-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "2d6a8a1f-1210-5a7b-22ce-5a8dad7e2762",
@@ -1826,7 +1912,9 @@
    "title": "Frontend Engineer",
    "apply_url": "https://birch-forge-synthetic.example/careers/3",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "2e2f2d68-0ea4-c5a4-3538-94edb0610779",
@@ -1834,7 +1922,9 @@
    "title": "Security Engineer",
    "apply_url": "https://ember-systems-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "306229a5-2265-d710-af72-34da4df6923d",
@@ -1842,7 +1932,9 @@
    "title": "Site Reliability Engineer",
    "apply_url": "https://ember-loop-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "31f7cb03-84e4-405d-9766-4c8648b05595",
@@ -1850,7 +1942,9 @@
    "title": "Mobile Engineer",
    "apply_url": "https://juniper-loop-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "32cc78db-e528-9b66-8360-23a82953fdf4",
@@ -1858,7 +1952,9 @@
    "title": "DevOps Engineer",
    "apply_url": "https://garnet-forge-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "35709130-4fbc-bb94-4f60-7cf19ff02f61",
@@ -1866,7 +1962,9 @@
    "title": "UX Designer",
    "apply_url": "https://delta-labs-synthetic.example/careers/1",
    "status": "suspect",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "4a66d4d1-6246-695a-9785-ba922ad00985",
@@ -1874,7 +1972,9 @@
    "title": "DevOps Engineer",
    "apply_url": "https://ember-labs-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "4a8d5fb9-83e1-ea17-2702-7fe6efca224c",
@@ -1882,7 +1982,9 @@
    "title": "Product Manager",
    "apply_url": "https://delta-works-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "4cef6be8-7521-9567-bfcd-446b75b1632c",
@@ -1890,7 +1992,9 @@
    "title": "Product Manager",
    "apply_url": "https://kestrel-forge-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "56b3652e-8b89-634f-95cc-e8731db83a73",
@@ -1898,7 +2002,9 @@
    "title": "Mobile Engineer",
    "apply_url": "https://juniper-forge-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "5cd7e8d3-4dea-fcaf-54ce-7f31ce75ccc5",
@@ -1906,7 +2012,9 @@
    "title": "Frontend Engineer",
    "apply_url": "https://ember-loop-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "645ab268-8a42-c531-abbb-90f96f59f8f6",
@@ -1914,7 +2022,9 @@
    "title": "DevOps Engineer",
    "apply_url": "https://juniper-loop-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "6d759b75-001b-04b7-bc12-b71f62a98b8a",
@@ -1922,7 +2032,9 @@
    "title": "Frontend Engineer",
    "apply_url": "https://delta-works-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "6e48e03a-722e-9e57-c328-186ad98feb9f",
@@ -1930,7 +2042,9 @@
    "title": "Backend Engineer",
    "apply_url": "https://garnet-loop-synthetic.example/careers/1",
    "status": "suspect",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "744bfece-e095-1a91-add2-2930dd21cfc2",
@@ -1938,7 +2052,9 @@
    "title": "Backend Engineer",
    "apply_url": "https://kestrel-forge-synthetic.example/careers/3",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "79bd9ef5-9eaf-52ea-1314-832259fe4cb7",
@@ -1946,7 +2062,9 @@
    "title": "Mobile Engineer",
    "apply_url": "https://indigo-works-synthetic.example/careers/1",
    "status": "suspect",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "79e8032f-7f84-682a-07b1-9ada92b430e7",
@@ -1954,7 +2072,9 @@
    "title": "Product Manager",
    "apply_url": "https://birch-systems-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "7b8e6d9f-3444-9d35-4319-925c18145362",
@@ -1962,7 +2082,9 @@
    "title": "Product Manager",
    "apply_url": "https://harbor-forge-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "7eb15cc8-d0dc-40ca-5b41-752f2658dfa5",
@@ -1970,7 +2092,9 @@
    "title": "Mobile Engineer",
    "apply_url": "https://ember-labs-synthetic.example/careers/3",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "845a1113-3e82-9e43-b830-f3528de528f8",
@@ -1978,7 +2102,9 @@
    "title": "Security Engineer",
    "apply_url": "https://amber-forge-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "8b9f9b60-042d-0e0a-ad5a-070ac5345561",
@@ -1986,7 +2112,9 @@
    "title": "Frontend Engineer",
    "apply_url": "https://fjord-labs-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "8c9ef366-1a38-f23c-3607-4ffe1dc0310e",
@@ -1994,7 +2122,9 @@
    "title": "Product Manager",
    "apply_url": "https://ember-forge-synthetic.example/careers/3",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "9010972d-ed2f-028e-84f3-55caede12d8c",
@@ -2002,7 +2132,9 @@
    "title": "UX Designer",
    "apply_url": "https://fjord-forge-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "93b2ba04-143f-56c1-5794-34d4949eced9",
@@ -2010,7 +2142,9 @@
    "title": "Backend Engineer",
    "apply_url": "https://ember-systems-synthetic.example/careers/3",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "978d4ffb-5c3c-bba0-8f58-bd750facfd50",
@@ -2018,7 +2152,9 @@
    "title": "DevOps Engineer",
    "apply_url": "https://delta-systems-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "9940cdea-4d34-6638-bf5e-91051428793a",
@@ -2026,7 +2162,9 @@
    "title": "QA Engineer",
    "apply_url": "https://juniper-labs-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "9dfe84ab-a627-bbac-ed30-1cc0eadc324d",
@@ -2034,7 +2172,9 @@
    "title": "Site Reliability Engineer",
    "apply_url": "https://juniper-labs-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "a0c52b11-7310-6afd-4024-3909fa6e3ea4",
@@ -2042,7 +2182,9 @@
    "title": "Product Manager",
    "apply_url": "https://amber-forge-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "a1e7029a-ad56-78fb-e2e1-f606ad9e83d2",
@@ -2050,7 +2192,9 @@
    "title": "UX Designer",
    "apply_url": "https://harbor-labs-synthetic.example/careers/3",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "a53cbd52-7521-bcac-564e-a3f1995d13d8",
@@ -2058,7 +2202,9 @@
    "title": "DevOps Engineer",
    "apply_url": "https://harbor-labs-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "addaf04a-dd6b-e635-0494-a1d925b7c26c",
@@ -2066,7 +2212,9 @@
    "title": "Mobile Engineer",
    "apply_url": "https://delta-systems-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "af76376d-236a-1958-ac0f-3287e448850c",
@@ -2074,7 +2222,9 @@
    "title": "Frontend Engineer",
    "apply_url": "https://harbor-loop-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "b78657c9-025f-9c53-a44f-e3b635d2b3e0",
@@ -2082,7 +2232,9 @@
    "title": "Frontend Engineer",
    "apply_url": "https://harbor-works-synthetic.example/careers/3",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "b9bcf1fa-4e4b-f14f-17df-54050bd21fb3",
@@ -2090,7 +2242,9 @@
    "title": "Frontend Engineer",
    "apply_url": "https://harbor-forge-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "bc491916-ff27-2240-87f4-c5780b7ef653",
@@ -2098,7 +2252,9 @@
    "title": "Data Scientist",
    "apply_url": "https://delta-labs-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "bf589b2a-7a66-1bce-6ff8-b2a42a458ee6",
@@ -2106,7 +2262,9 @@
    "title": "DevOps Engineer",
    "apply_url": "https://fjord-works-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "c1eb5e6a-56b6-1baf-8f0a-fd27aca1f86f",
@@ -2114,7 +2272,9 @@
    "title": "QA Engineer",
    "apply_url": "https://harbor-works-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "c346ef8a-28b4-44b6-dfb0-a06eace3c566",
@@ -2122,7 +2282,9 @@
    "title": "Backend Engineer",
    "apply_url": "https://ember-labs-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "c62d0ce3-41c8-484a-1456-d685961c4752",
@@ -2130,7 +2292,9 @@
    "title": "Product Manager",
    "apply_url": "https://garnet-works-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "c6ebc86b-3e12-dbe9-599a-77117742218e",
@@ -2138,7 +2302,9 @@
    "title": "Security Engineer",
    "apply_url": "https://birch-systems-synthetic.example/careers/3",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "c749a17a-34fa-8607-737e-e5d8292f1487",
@@ -2146,7 +2312,9 @@
    "title": "Data Scientist",
    "apply_url": "https://birch-works-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "c9bee7b1-89da-52e7-a504-1356c8943b54",
@@ -2154,7 +2322,9 @@
    "title": "QA Engineer",
    "apply_url": "https://fjord-systems-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "d5431f78-b497-0c86-a00a-66bfe6834d5b",
@@ -2162,7 +2332,9 @@
    "title": "DevOps Engineer",
    "apply_url": "https://garnet-loop-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "e159e3cd-6e75-e9de-6fd6-5b06575b64ee",
@@ -2170,7 +2342,9 @@
    "title": "QA Engineer",
    "apply_url": "https://birch-works-synthetic.example/careers/3",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "e402ef7b-cd96-0190-487d-caf9347b29fe",
@@ -2178,7 +2352,9 @@
    "title": "Backend Engineer",
    "apply_url": "https://cobalt-works-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "e455fbf1-0d1c-2b70-85d5-9d304fbdedca",
@@ -2186,7 +2362,9 @@
    "title": "Frontend Engineer",
    "apply_url": "https://amber-works-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "e492f58d-97ed-8ec0-69fb-f5fb12e92514",
@@ -2194,7 +2372,9 @@
    "title": "QA Engineer",
    "apply_url": "https://birch-forge-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "e562ca79-e01d-5614-7131-705b40c1fece",
@@ -2202,7 +2382,9 @@
    "title": "UX Designer",
    "apply_url": "https://garnet-systems-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "e59376f5-df04-f1d3-366e-8f4747567320",
@@ -2210,7 +2392,9 @@
    "title": "Mobile Engineer",
    "apply_url": "https://amber-labs-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "e5f36359-d06d-5e91-87c7-342ecc8db91d",
@@ -2218,7 +2402,9 @@
    "title": "Security Engineer",
    "apply_url": "https://harbor-loop-synthetic.example/careers/3",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "e5fe33bc-1f58-da76-b857-a4d779c7c007",
@@ -2226,7 +2412,9 @@
    "title": "Site Reliability Engineer",
    "apply_url": "https://cobalt-labs-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "e635c107-9d6d-e919-c998-3f11279d7736",
@@ -2234,7 +2422,9 @@
    "title": "DevOps Engineer",
    "apply_url": "https://juniper-forge-synthetic.example/careers/1",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "ebb56a1f-c339-4b2d-fcb1-e966a20bdfbd",
@@ -2242,7 +2432,9 @@
    "title": "Site Reliability Engineer",
    "apply_url": "https://harbor-works-synthetic.example/careers/2",
    "status": "suspect",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "efb47570-05fd-0a74-b4ee-0b43634d6676",
@@ -2250,7 +2442,9 @@
    "title": "Site Reliability Engineer",
    "apply_url": "https://birch-forge-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   },
   {
    "id": "fba9ce62-5ebc-b913-a8d7-5d086db10986",
@@ -2258,7 +2452,9 @@
    "title": "Frontend Engineer",
    "apply_url": "https://kestrel-works-synthetic.example/careers/2",
    "status": "active",
-   "last_checked_at": null
+   "last_checked_at": null,
+   "last_ok_at": null,
+   "evidence_complete": false
   }
  ]
 }

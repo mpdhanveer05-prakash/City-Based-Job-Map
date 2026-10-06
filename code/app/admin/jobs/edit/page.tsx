@@ -11,6 +11,7 @@ import { CheckRow, Field, Notice, PageHeader, Select, TextInput } from "@/compon
 import { Button } from "@/components/ui/button";
 import { describeError } from "@/lib/admin/errors";
 import { WORK_MODES, checkJobForm, type FieldErrors, type JobForm } from "@/lib/admin/forms";
+import { EvidencePanel } from "@/components/admin/evidence-panel";
 
 const BLANK = (company: string): JobForm => ({
   company_id: company,
@@ -207,6 +208,7 @@ function JobFormView({ id, initial, initialCompany, reference }: { id: string | 
           )}
         </div>
       </form>
+      {id && <EvidencePanel jobId={id} />}
     </>
   );
 }

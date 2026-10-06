@@ -15,6 +15,25 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-06: Evidence follow-ups (ADR-0022), phone coverage (P9-16), curation guide (Completed locally)
+- **Built:** migration `20261006150000_evidence_jobs_refresh.sql`:
+  - job evidence (title, employer, location and work arrangement, application URL), recorded by the pipeline from the job's own posting and required (reviewed) for an admin to publish a job; `job.closed_at`;
+  - changes to public facts commit only with reviewed evidence for the new value (evidence can be recorded for a proposed value);
+  - `self_reviewed` recorded;
+  - refresh policy, `evidence_check`, `evidence_due`, `record_evidence_check`, `refresh_problems` (a check never moves `verified_at`; a failed fetch is never a change);
+  - `evidence_complete` per company and job in the build snapshot (kept out of the public files).
+
+  Also: the release build and the launch gate refuse incomplete records; `scripts/pipeline/evidence.py` and the `evidence` CLI step in the pipeline workflow; the job evidence panel; refresh problems on the Review page; the jobs page shows the oldest last successful check; the company page labels its date "Company details".
+- **Audit governance:** exception `approval` record (pending). The gate reports TECHNICAL and APPROVAL separately; `npm run audit -- --release` (now in the production workflow) fails while any exception is unapproved; an AI or the assessor cannot approve. The owner stays PENDING.
+- **Phone coverage:** `tests/e2e/phone.spec.ts`, 10 tests on the phone profile.
+- **Docs:** [curation-guide.md](curation-guide.md) (the Startup and MNC wording is a proposal), ADR-0022.
+- **Bugs found and fixed along the way:** (1) the evidence panel's review button refreshed the wrong query (a shadowed `id`), so the page stayed stale after a review. Found by the admin e2e, diagnosed with a temporary spec, now fixed. (2) A regular expression written by a script contained backspace characters instead of `` (the AI-approver check matched nothing). Unit tests caught it; the repository was scanned for control characters and is clean. (3) The exhaustive cluster-worker test went over Vitest's 5 s default twice under full-suite load and now has a 20 s limit.
+- **Verified this session (from `code/`):** lint and typecheck clean; `npm test` **618 passed**; `npx supabase test db` **620 passed** (14 files; new `13_evidence_followups.test.sql` with 37); `npm run test:parity` **8 passed**; pipeline pytest **76 passed**. `npm run audit`: technical **pass** and approval **1 not approved** (exit 0); `npm run audit -- --release`: **FAIL**, as designed (exit 1). `npm run test:admin` (full local stack, after `db reset`) **46 passed**. `npm run test:e2e` on the final build (desktop + phone) **266 passed, 0 failed, 52 skipped**: 41 desktop-only tests skipped on the phone profile, and 11 phone-only tests (the 10 new ones and 1 older) skipped on desktop. `node scripts/launch-gate.mts` on the synthetic build: FAIL, including the new check "48 published companies and 74 open jobs lack required evidence" (Bengaluru).
+- **Findings, not fixed:**
+  - P9-17: the static export's prefetch payloads answer 404 (the client asks for a dotted name, the export writes nested folders); seen on every admin page.
+  - Once, on the phone profile, the Apply link measured 17 px before reaching 44 px. A soft navigation can paint a frame before the page's styles; the spec now waits for the final size.
+- **For the owner:** confirm the audit exception's owner and an independent approver; confirm that feed-sourced job changes need no human review (ADR-0022); confirm the Startup and MNC wording in the curation guide.
+
 ### 2026-10-06: P9-07 field evidence and publication gates (Completed locally, ADR-0021)
 - **Built:** migrations `20261006120000_field_evidence.sql` (`field_evidence` bound to one record and to the value it supports; immutable; claims until a reviewer reviews them; `publication_approval`; deferred publication gates for companies, offices, founders; `evidence_report`, `publication_problems`, `evidence_gaps`, `review_evidence`) and `20261006130000_import_evidence.sql` (the import requires evidence per filled-in field and stores each entry against the company or the office). Browser: `lib/admin/import-evidence.ts` (`source_url`, `verified_at`, `source_covers`, `<field>_source_url`/`_verified_at`; `industry` maps to sectors), the evidence panel on the company page (states, reasons publishing is blocked, record evidence, Mark reviewed for reviewers), and "Published companies with unsupported facts" on the Review page. The import template now lines up with its header; its example row had been one column short since `ownership_status` was added.
 - **Audit exception identities:** the owner is now recorded as `PENDING: not yet confirmed by the project owner` (`ownerConfirmed: false`), and the reviewer as `Claude Code (AI coding assistant) ... not an independent human review`. `npm run audit` passes and prints a NOTICE for the unconfirmed owner.

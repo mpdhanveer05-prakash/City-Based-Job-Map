@@ -47,8 +47,19 @@ export function describeDataSource(source: DataSource): string {
 export const isReleaseBuild = (env: DataSourceEnv): boolean => env.RELEASE_BUILD === "1";
 
 /** A release build must not ship sample data. Returns the problem, or null when it is fine. */
-export function assertReleaseData(env: DataSourceEnv, datasets: ReadonlyArray<{ city: string; synthetic: boolean }>): string | null {
+export function assertReleaseData(
+  env: DataSourceEnv,
+  datasets: ReadonlyArray<{ city: string; synthetic: boolean; evidenceIncomplete?: { companies: number; jobs: number } }>,
+): string | null {
   if (!isReleaseBuild(env)) return null;
   const bad = datasets.filter((d) => d.synthetic).map((d) => d.city);
-  return bad.length ? `RELEASE_BUILD=1 refuses synthetic sample data (${bad.join(", ")}). Build from a real Supabase project.` : null;
+  if (bad.length) return `RELEASE_BUILD=1 refuses synthetic sample data (${bad.join(", ")}). Build from a real Supabase project.`;
+  // ADR-0022: a record published before evidence existed, or whose evidence went stale, may stay in local and staging
+  // data, but never reaches production.
+  const thin = datasets.filter((d) => d.evidenceIncomplete && (d.evidenceIncomplete.companies > 0 || d.evidenceIncomplete.jobs > 0));
+  return thin.length
+    ? `RELEASE_BUILD=1 refuses published records without their required evidence (${thin
+        .map((d) => `${d.city}: ${d.evidenceIncomplete!.companies} companies, ${d.evidenceIncomplete!.jobs} jobs`)
+        .join("; ")}). Record and review the evidence, or unpublish them.`
+    : null;
 }

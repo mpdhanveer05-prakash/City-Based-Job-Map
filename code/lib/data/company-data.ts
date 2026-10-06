@@ -33,7 +33,7 @@ export type CompanyPageData = {
   cities: Array<{ slug: string; name: string }>;
   offices: CompanyOffice[];
   /** Active and suspect jobs listed in any of its cities, each once, in title order. */
-  jobs: Array<{ id: string; title: string; applyUrl: string; status: SnapshotJob["status"]; lastCheckedAt: string | null }>;
+  jobs: Array<{ id: string; title: string; applyUrl: string; status: SnapshotJob["status"]; lastCheckedAt: string | null; lastOkAt: string | null }>;
   synthetic: boolean;
 };
 
@@ -95,7 +95,7 @@ export function buildCompanyPages(cities: readonly CityFiles[]): Map<string, Com
       const company = companyById.get(j.company_id);
       const page = company && pages.get(company.slug);
       if (!page || page.jobs.some((x) => x.id === j.id)) continue;
-      page.jobs.push({ id: j.id, title: j.title, applyUrl: j.apply_url, status: j.status, lastCheckedAt: j.last_checked_at });
+      page.jobs.push({ id: j.id, title: j.title, applyUrl: j.apply_url, status: j.status, lastCheckedAt: j.last_checked_at, lastOkAt: j.last_ok_at });
     }
   }
 

@@ -25,7 +25,7 @@ const id = (n: number) => `00000000-0000-4000-8000-${n.toString(16).padStart(12,
 const NOW = new Date("2026-10-05T12:00:00Z");
 const strict: GateThresholds = { minCompanies: 2, minPreciseShare: 0.9, minFreshJobShare: 0.9, freshDays: 7, maxOutsideBoundary: 0 };
 
-function files(over: { synthetic?: boolean; accuracies?: string[]; points?: Array<[number, number]>; jobChecked?: Array<string | null>; companies?: number } = {}) {
+function files(over: { evidenceIncomplete?: { companies: number; jobs: number }; synthetic?: boolean; accuracies?: string[]; points?: Array<[number, number]>; jobChecked?: Array<string | null>; companies?: number } = {}) {
   const n = over.companies ?? 2;
   const companies = Array.from({ length: n }, (_, i) => ({ id: id(i + 1), slug: `c${i + 1}`, name: `C${i + 1}`, logo_key: null, startup_stage: null, ownership_status: null, types: [], sectors: [], open_jobs: 0 }));
   const accuracies = over.accuracies ?? Array(n).fill("building");
@@ -35,6 +35,7 @@ function files(over: { synthetic?: boolean; accuracies?: string[]; points?: Arra
   const jobChecked = over.jobChecked ?? ["2026-10-04T00:00:00Z"];
   return {
     synthetic: over.synthetic ?? false,
+    evidenceIncomplete: "evidenceIncomplete" in over ? over.evidenceIncomplete : { companies: 0, jobs: 0 },
     companies: { version: 1, synthetic: false, city: { slug: "bangalore", boundary: { type: "MultiPolygon", coordinates: [[SQUARE]] } }, neighbourhoods: [], tech_parks: [], sectors: [], companies } as unknown as CompaniesFile,
     offices: { version: 1, offices } as unknown as OfficesFile,
     details: { version: 1, companies: {}, jobs: jobChecked.map((t, i) => ({ id: id(200 + i), company_id: id(1), title: "J", apply_url: "https://x.example/j", status: "active", last_checked_at: t })) } as DetailsFile,
@@ -44,6 +45,12 @@ function files(over: { synthetic?: boolean; accuracies?: string[]; points?: Arra
 const failed = (r: ReturnType<typeof evaluateLaunchGate>) => r.checks.filter((c) => !c.pass).map((c) => c.name);
 
 describe("evaluateLaunchGate", () => {
+  it("fails published records without their required evidence, and a manifest that does not say (ADR-0022)", () => {
+    expect(failed(evaluateLaunchGate(files({ evidenceIncomplete: { companies: 3, jobs: 0 } }), strict, NOW))).toEqual(["Every published record has its required evidence"]);
+    expect(failed(evaluateLaunchGate(files({ evidenceIncomplete: { companies: 0, jobs: 1 } }), strict, NOW))).toEqual(["Every published record has its required evidence"]);
+    expect(failed(evaluateLaunchGate(files({ evidenceIncomplete: undefined }), strict, NOW))).toEqual(["Every published record has its required evidence"]);
+  });
+
   it("passes good real data", () => {
     const r = evaluateLaunchGate(files(), strict, NOW);
     expect(r.pass).toBe(true);

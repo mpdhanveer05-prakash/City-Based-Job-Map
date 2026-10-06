@@ -110,7 +110,7 @@ async function main() {
 
   const releaseProblem = assertReleaseData(
     env,
-    sets.map((s) => ({ city: s.city, synthetic: s.synthetic })),
+    sets.map((s) => ({ city: s.city, synthetic: s.synthetic, evidenceIncomplete: s.evidenceIncomplete })),
   );
   if (releaseProblem) {
     console.error(`build-datasets: ${releaseProblem}`);

@@ -9,7 +9,7 @@ import { companies, jobs, offices, resultSummary } from "@/lib/explorer/labels";
 const id = (n: number) => `00000000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
 const company = (n: number, name: string) => ({
   id: id(n), slug: name.toLowerCase().replace(/\W+/g, "-"), name, logo_key: null, description: null, website_url: `https://c${n}.example`,
-  careers_url: null, startup_stage: null, ownership_status: null, last_verified_at: null, types: ["startup"], sectors: [], founders: [],
+  careers_url: null, startup_stage: null, ownership_status: null, evidence_complete: true, last_verified_at: null, types: ["startup"], sectors: [], founders: [],
 });
 const snapshot = citySnapshotSchema.parse({
   version: 1,
@@ -23,10 +23,10 @@ const snapshot = citySnapshotSchema.parse({
   companies: [company(1, "Koral Systems"), company(2, "Amber Forge"), company(3, "Kora Labs"), company(4, "Zeta Koral"), company(5, "Amber Mint")],
   offices: [],
   jobs: [
-    { id: id(21), company_id: id(1), title: "Backend Engineer", apply_url: "https://c1.example/1", status: "active", last_checked_at: null },
-    { id: id(22), company_id: id(2), title: "Backend Engineer", apply_url: "https://c2.example/1", status: "active", last_checked_at: null },
-    { id: id(23), company_id: id(2), title: "Site Reliability Engineer", apply_url: "https://c2.example/2", status: "active", last_checked_at: null },
-    { id: id(24), company_id: id(3), title: "Hidden Role", apply_url: "https://c3.example/1", status: "suspect", last_checked_at: null },
+    { id: id(21), company_id: id(1), title: "Backend Engineer", apply_url: "https://c1.example/1", status: "active", last_checked_at: null, last_ok_at: null, evidence_complete: true },
+    { id: id(22), company_id: id(2), title: "Backend Engineer", apply_url: "https://c2.example/1", status: "active", last_checked_at: null, last_ok_at: null, evidence_complete: true },
+    { id: id(23), company_id: id(2), title: "Site Reliability Engineer", apply_url: "https://c2.example/2", status: "active", last_checked_at: null, last_ok_at: null, evidence_complete: true },
+    { id: id(24), company_id: id(3), title: "Hidden Role", apply_url: "https://c3.example/1", status: "suspect", last_checked_at: null, last_ok_at: null, evidence_complete: true },
   ],
 });
 const files = splitSnapshot(snapshot);

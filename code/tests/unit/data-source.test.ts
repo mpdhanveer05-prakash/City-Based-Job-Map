@@ -50,13 +50,20 @@ describe("assertReleaseData", () => {
     expect(assertReleaseData({ RELEASE_BUILD: "1" }, sets)).toMatch(/refuses synthetic.*bangalore/);
     expect(assertReleaseData({ RELEASE_BUILD: "1" }, [{ city: "chennai", synthetic: false }])).toBeNull();
   });
+
+  it("refuses published records without their required evidence in a release build only (ADR-0022)", () => {
+    const thin = [{ city: "chennai", synthetic: false, evidenceIncomplete: { companies: 2, jobs: 5 } }];
+    expect(assertReleaseData({ RELEASE_BUILD: "1" }, thin)).toMatch(/without their required evidence \(chennai: 2 companies, 5 jobs\)/);
+    expect(assertReleaseData({}, thin)).toBeNull();
+    expect(assertReleaseData({ RELEASE_BUILD: "1" }, [{ city: "chennai", synthetic: false, evidenceIncomplete: { companies: 0, jobs: 0 } }])).toBeNull();
+  });
 });
 
 describe("snapshotIsSynthetic", () => {
   const id = (n: number) => `00000000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
   const company = (n: number) => ({
     id: id(n), slug: `c-${n}`, name: `C ${n}`, logo_key: null, description: null, website_url: `https://c${n}.example`,
-    careers_url: null, startup_stage: null, ownership_status: null, last_verified_at: null, types: [], sectors: [], founders: [],
+    careers_url: null, startup_stage: null, ownership_status: null, evidence_complete: true, last_verified_at: null, types: [], sectors: [], founders: [],
   });
   const make = (companies: number, synthetic: number): CitySnapshot =>
     citySnapshotSchema.parse({

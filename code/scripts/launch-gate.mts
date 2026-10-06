@@ -27,6 +27,7 @@ const results = Object.entries(manifest.cities)
     return evaluateLaunchGate(
       {
         synthetic: entry.synthetic,
+        evidenceIncomplete: entry.evidence_incomplete,
         companies: read(entry.files.companies.path),
         offices: read(entry.files.offices.path),
         details: read(entry.files.details.path),

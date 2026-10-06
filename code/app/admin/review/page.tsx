@@ -83,7 +83,17 @@ export default function ReviewPage() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc("evidence_gaps", { p_limit: 100 });
       if (error) throw error;
-      return (data ?? []) as Array<{ company_id: string; slug: string; name: string; missing: number; stale: number; claimed: number }>;
+      return (data ?? []) as Array<{ company_id: string; slug: string; name: string; missing: number; stale: number; claimed: number; check_problems: number }>;
+    },
+  });
+  // Source checks the pipeline could not complete, or that did not find the value (ADR-0022). A failed fetch says
+  // nothing about the value; "not found" is a possible change that a person confirms by recording new evidence.
+  const refresh = useQuery({
+    queryKey: ["admin", "refresh-problems"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("refresh_problems", { p_limit: 100 });
+      if (error) throw error;
+      return (data ?? []) as Array<{ evidence_id: number; record_type: string; company_id: string; label: string; field: string; source_url: string; outcome: string; checked_at: string }>;
     },
   });
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -127,6 +137,7 @@ export default function ReviewPage() {
                 <th scope="col" className="text-right">No evidence</th>
                 <th scope="col" className="text-right">Older value</th>
                 <th scope="col" className="text-right">Not reviewed</th>
+                <th scope="col" className="text-right">Check problems</th>
               </tr>
             </thead>
             <tbody data-testid="evidence-gap-rows">
@@ -138,6 +149,49 @@ export default function ReviewPage() {
                   <td className="text-right tabular-nums">{g.missing}</td>
                   <td className="text-right tabular-nums">{g.stale}</td>
                   <td className="text-right tabular-nums">{g.claimed}</td>
+                  <td className="text-right tabular-nums">{g.check_problems}</td>
+                </tr>
+              ))}
+            </tbody>
+          </DataTable>
+        )}
+      </section>
+
+      <section aria-labelledby="refresh-problems" className="mb-8">
+        <h2 id="refresh-problems" className="text-xl font-bold">
+          Source checks that need a person
+        </h2>
+        <p className="mb-2 text-sm text-muted-foreground">
+          &ldquo;Could not be read&rdquo; means the check failed and nothing is known about the value. &ldquo;Not found&rdquo; means the page no longer shows it: confirm
+          the change by recording new evidence. A check never changes a verified date.
+        </p>
+        {refresh.isError ? (
+          <Notice kind="error">{describeError(refresh.error as AnyError)}</Notice>
+        ) : (refresh.data ?? []).length === 0 ? (
+          <p className="text-sm">{refresh.isPending ? "Loading…" : "No failed or inconclusive checks."}</p>
+        ) : (
+          <DataTable label="Source checks that need a person">
+            <thead>
+              <tr>
+                <th scope="col">Record</th>
+                <th scope="col">Fact</th>
+                <th scope="col">Result</th>
+                <th scope="col">Source</th>
+              </tr>
+            </thead>
+            <tbody data-testid="refresh-problem-rows">
+              {refresh.data!.map((r) => (
+                <tr key={r.evidence_id}>
+                  <td>
+                    <Link href={`/admin/companies/edit?id=${r.company_id}`}>{r.label}</Link>
+                  </td>
+                  <td>{r.field.replace(/_/g, " ")}</td>
+                  <td>{r.outcome === "fetch_failed" ? "Could not be read" : "Not found"}</td>
+                  <td className="max-w-[28ch] truncate">
+                    <a href={r.source_url} target="_blank" rel="noopener noreferrer">
+                      {r.source_url}
+                    </a>
+                  </td>
                 </tr>
               ))}
             </tbody>

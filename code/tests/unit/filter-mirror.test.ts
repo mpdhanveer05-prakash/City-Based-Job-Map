@@ -31,6 +31,7 @@ const company = (n: number, slug: string, name: string, types: string[], stage: 
   careers_url: null,
   startup_stage: stage,
   ownership_status: ownership,
+  evidence_complete: true,
   last_verified_at: null,
   types,
   sectors,
@@ -53,6 +54,8 @@ const job = (n: number, companyN: number, title: string, status: "active" | "sus
   apply_url: `https://c${companyN}.example/${n}`,
   status,
   last_checked_at: null,
+  last_ok_at: null,
+  evidence_complete: true,
 });
 
 const companies = [

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateAudit, type AuditException, type AuditReport } from "@/lib/audit-gate";
+import { approvalOf, evaluateAudit, type AuditException, type AuditReport } from "@/lib/audit-gate";
 
 const BRACES = "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm";
 const report = (extra: AuditReport["vulnerabilities"] = {}): AuditReport => ({
@@ -70,5 +70,29 @@ describe("audit gate (ADR-0019)", () => {
 
   it("fails a stale exception", () => {
     expect(run({ vulnerabilities: {} }, [entry()]).problems).toEqual([expect.stringContaining("stale")]);
+  });
+});
+
+describe("exception approval (ADR-0022)", () => {
+  const approved = (over: Partial<NonNullable<AuditException["approval"]>> = {}, extra: Partial<AuditException> = {}) =>
+    entry({ ownerConfirmed: true, approval: { status: "approved", approvedBy: "Priya Raman", approvedOn: "2026-10-07", ...over }, ...extra });
+
+  it("is reported apart from the technical result, and pending does not fail CI", () => {
+    const out = run(report(), [entry()]);
+    expect(out.problems).toEqual([]);
+    expect(out.approvals).toEqual([{ advisory: "GHSA-vfj7-8cjw-p6xm", approved: false, reason: "no approval recorded (status pending)" }]);
+  });
+
+  it("counts only a named, dated human who is not the assessor, with the owner confirmed", () => {
+    expect(approvalOf(approved(), "2026-10-08")).toEqual({ approved: true, reason: "approved by Priya Raman on 2026-10-07" });
+    expect(approvalOf(approved({ approvedBy: "Claude Code" }), "2026-10-08").reason).toBe("an AI assessment is not a human approval");
+    expect(approvalOf(approved({ approvedBy: "r" }), "2026-10-08").reason).toBe("the approver must not be the assessor");
+    expect(approvalOf(approved({ approvedBy: null }), "2026-10-08").reason).toMatch(/needs approvedBy/);
+    expect(approvalOf(approved({ approvedOn: "2026-10-09" }), "2026-10-08").reason).toMatch(/between the review and today/);
+    expect(approvalOf(approved({}, { ownerConfirmed: false }), "2026-10-08").reason).toBe("the owner is not confirmed");
+  });
+
+  it("does not mistake a name containing the letters ai for an AI", () => {
+    expect(approvalOf(approved({ approvedBy: "Sai Kailash" }), "2026-10-08").approved).toBe(true);
   });
 });

@@ -3,6 +3,7 @@
     python -m scripts.pipeline.cli sync        # read every active feed
     python -m scripts.pipeline.cli linkcheck   # check apply links, oldest first
     python -m scripts.pipeline.cli monitor     # fail if a scheduled job is overdue
+    python -m scripts.pipeline.cli evidence    # check due evidence against its source (ADR-0022)
 
 Each reads PIPELINE_DATABASE_URL (the pipeline login role, never the service role). Exit code 1 means something needs a person:
 a run where every feed failed, or a scheduled job that has not finished in time.
@@ -13,6 +14,7 @@ import argparse
 import sys
 
 from . import repo
+from .evidence import run_evidence_checks
 from .linkcheck import run_checks
 from .sync import run_sync
 
@@ -31,13 +33,17 @@ def monitor(conn) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pipeline")
-    parser.add_argument("command", choices=["sync", "linkcheck", "monitor"])
-    parser.add_argument("--limit", type=int, default=500, help="links to check in one run (linkcheck)")
+    parser.add_argument("command", choices=["sync", "linkcheck", "monitor", "evidence"])
+    parser.add_argument("--limit", type=int, default=500, help="links (linkcheck) or evidence sources (evidence) to check in one run")
     args = parser.parse_args(argv)
 
     with repo.connect() as conn:
         if args.command == "monitor":
             return monitor(conn)
+        if args.command == "evidence":
+            r = run_evidence_checks(conn, limit=args.limit)
+            print(f"evidence: {r.checked} checked, {r.found} found, {r.not_found} not found (for a person to confirm), {r.failed} could not be read, {r.reachable} reachable")
+            return 0
         if args.command == "sync":
             reports = run_sync(conn)
             for r in reports:

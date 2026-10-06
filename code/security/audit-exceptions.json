@@ -1,5 +1,5 @@
 {
-  "$comment": "Reviewed, time-limited exceptions to the blocking dependency audit (ADR-0019). scripts/audit-gate.mts fails CI on any high or critical finding not listed here, on an expired entry, and on an entry that no longer matches a finding. Expiry is at most 90 days after the review.",
+  "$comment": "Reviewed, time-limited exceptions to the blocking dependency audit (ADR-0019, ADR-0022). scripts/audit-gate.mts reports two things separately: the TECHNICAL audit (fails on any high or critical finding not covered here, an expired entry, an entry over 90 days, or a stale entry) and the APPROVAL of each exception. An exception is approved only when a named human, who is not the assessor, records approval.approvedBy and approval.approvedOn and the owner is confirmed. An AI assessment is not an approval. CI runs the technical audit; a release (`npm run audit -- --release`) also fails while any exception is unapproved.",
   "exceptions": [
     {
       "advisory": "GHSA-vfj7-8cjw-p6xm",
@@ -22,7 +22,13 @@
       "owner": "PENDING: not yet confirmed by the project owner",
       "reviewedOn": "2026-10-06",
       "expires": "2027-01-04",
-      "ownerConfirmed": false
+      "ownerConfirmed": false,
+      "approval": {
+        "status": "pending",
+        "approvedBy": null,
+        "approvedOn": null,
+        "note": "Waiting for the project owner to name an owner and an independent human approver."
+      }
     }
   ]
 }

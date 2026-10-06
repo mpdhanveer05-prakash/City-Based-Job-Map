@@ -37,8 +37,10 @@ export default async function CompanyJobsPage({ params }: PageProps<"/companies/
   if (!company) notFound();
 
   const firstCity = company.cities[0]?.slug ?? "bangalore";
-  // The freshest check among the listed jobs: the page says when the list was last confirmed, not job by job.
-  const lastChecked = company.jobs.map((j) => j.lastCheckedAt).filter((t): t is string => !!t).sort().at(-1) ?? null;
+  // The OLDEST last successful check among the listed jobs (ADR-0022): every job on the list was confirmed open at least
+  // that recently. A job never confirmed makes it "Not yet checked". The company's own Verified date says nothing here.
+  const okDates = company.jobs.map((j) => j.lastOkAt);
+  const lastChecked = okDates.length === 0 || okDates.some((t) => !t) ? null : (okDates as string[]).sort()[0];
 
   return (
     <main className="mx-auto w-full max-w-[72ch] flex-1 px-4 py-6 sm:px-6" data-testid="jobs-page" data-company={company.slug}>

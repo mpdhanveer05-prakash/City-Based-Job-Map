@@ -49,7 +49,14 @@ export function inBoundary(lng: number, lat: number, boundary: { coordinates: un
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 
 export function evaluateLaunchGate(
-  files: { synthetic: boolean; companies: CompaniesFile; offices: OfficesFile; details: DetailsFile },
+  files: {
+    synthetic: boolean;
+    /** From the manifest (ADR-0022); absent in a manifest written before the evidence counts existed, which fails. */
+    evidenceIncomplete?: { companies: number; jobs: number };
+    companies: CompaniesFile;
+    offices: OfficesFile;
+    details: DetailsFile;
+  },
   thresholds: GateThresholds,
   now: Date = new Date(),
 ): GateResult {
@@ -61,6 +68,14 @@ export function evaluateLaunchGate(
   const add = (name: string, pass: boolean, detail: string) => checks.push({ name, pass, detail });
 
   add("The data is real, not the synthetic sample", !files.synthetic, files.synthetic ? "Every company here is synthetic sample data." : "No synthetic marker.");
+  const thin = files.evidenceIncomplete;
+  add(
+    "Every published record has its required evidence",
+    !!thin && thin.companies === 0 && thin.jobs === 0,
+    thin
+      ? `${thin.companies} published companies and ${thin.jobs} open jobs lack required evidence.`
+      : "The manifest does not say: rebuild the datasets with the current build.",
+  );
   add("Enough companies", companies.length >= thresholds.minCompanies, `${companies.length} published, ${thresholds.minCompanies} needed.`);
 
   const precise = offices.filter((o) => ["rooftop", "building", "campus"].includes(o.accuracy)).length;

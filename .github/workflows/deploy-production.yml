@@ -70,6 +70,9 @@ jobs:
           cache: npm
           cache-dependency-path: code/package-lock.json
       - run: npm ci
+      # ADR-0022: the technical audit AND a human approval of every exception it relies on. An unapproved exception fails here.
+      - name: Release audit gate (technical audit and exception approval)
+        run: npm run audit -- --release
       # `prebuild` fails without real data; `postbuild` enforces the static-assets limits, writes the CSP, and scans out/.
       - run: npm run build
       - name: Launch gate (each city must pass)

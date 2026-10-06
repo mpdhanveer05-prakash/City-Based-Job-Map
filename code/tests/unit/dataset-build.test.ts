@@ -18,7 +18,7 @@ const snapshot: CitySnapshot = citySnapshotSchema.parse({
   companies: [
     {
       id: id(1), slug: "amber-forge-synthetic", name: "Amber Forge (synthetic)", logo_key: null, description: "Synthetic.",
-      website_url: "https://amber-forge-synthetic.example", careers_url: null, startup_stage: "seed", ownership_status: null, last_verified_at: null,
+      website_url: "https://amber-forge-synthetic.example", careers_url: null, startup_stage: "seed", ownership_status: null, evidence_complete: true, last_verified_at: null,
       types: ["startup"], sectors: ["saas"], founders: [],
     },
   ],
@@ -26,7 +26,7 @@ const snapshot: CitySnapshot = citySnapshotSchema.parse({
     { id: id(11), company_id: id(1), lng: 80.25, lat: 13.0, accuracy: "building", address: "Synthetic address 1", neighbourhood: "adyar", tech_park: null },
   ],
   jobs: [
-    { id: id(21), company_id: id(1), title: "Backend Engineer", apply_url: "https://amber-forge-synthetic.example/careers/1", status: "active", last_checked_at: null },
+    { id: id(21), company_id: id(1), title: "Backend Engineer", apply_url: "https://amber-forge-synthetic.example/careers/1", status: "active", last_checked_at: null, last_ok_at: null, evidence_complete: true },
   ],
 });
 
@@ -42,6 +42,13 @@ describe("serializeDataset", () => {
       expect(text).not.toMatch(/\n/);
       expect(() => JSON.parse(text)).not.toThrow();
     }
+  });
+
+  it("keeps the evidence flags out of the public files, and counts what is incomplete for the manifest (ADR-0022)", () => {
+    const set = serializeDataset({ ...snapshot, companies: snapshot.companies.map((c) => ({ ...c, evidence_complete: false })) });
+    for (const name of DATASET_FILE_NAMES) expect(set.files[name]).not.toContain("evidence_complete");
+    expect(set.evidenceIncomplete).toEqual({ companies: snapshot.companies.length, jobs: 0 });
+    expect(buildManifest([set]).cities[set.city].evidence_incomplete).toEqual(set.evidenceIncomplete);
   });
 
   it("gives the same bytes for the same data", () => {

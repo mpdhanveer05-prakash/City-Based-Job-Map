@@ -46,6 +46,10 @@ jobs:
         run: python -m scripts.pipeline.cli sync
       - name: Check the apply links
         run: python -m scripts.pipeline.cli linkcheck --limit 800
+      # ADR-0022: evidence due a check by its field's interval (jobs daily, company facts weekly, office and funding monthly).
+      # A failed fetch is recorded as such and never treated as a change; a check never moves a verified date.
+      - name: Check evidence against its sources
+        run: python -m scripts.pipeline.cli evidence --limit 300
       # Both finished without a failing exit code: ask for a rebuild (the deploy workflow queues builds, so a burst is one build).
       - name: Request a rebuild
         env:

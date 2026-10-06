@@ -102,6 +102,8 @@ def apply_plan(conn: psycopg.Connection, feed: FeedConfig, plan: Plan, cities_fo
                     done["duplicates"] += 1
                     continue
                 set_cities(row["id"], job)
+                # The job's own posting is the evidence for its title, employer, location, and link (ADR-0022).
+                conn.execute("select record_feed_job_evidence(%s)", (row["id"],))
                 done["new"] += 1
         except psycopg.errors.CheckViolation:
             done["unlisted"] += 1
@@ -119,6 +121,7 @@ def apply_plan(conn: psycopg.Connection, feed: FeedConfig, plan: Plan, cities_fo
                     (job.title, job.apply_url, job.work_mode, job.posted_at, known.id),
                 )
                 set_cities(known.id, job)
+                conn.execute("select record_feed_job_evidence(%s)", (known.id,))
                 done["refreshed"] += 1
         except psycopg.errors.UniqueViolation:
             done["duplicates"] += 1

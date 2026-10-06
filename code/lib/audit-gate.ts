@@ -26,6 +26,8 @@ export interface AuditException {
   expires: string;
   /** False until the named owner has confirmed they own the exception; the gate prints a notice while it is false. */
   ownerConfirmed?: boolean;
+  /** A named human's approval (ADR-0022). An AI assessment is not one. */
+  approval?: { status: "pending" | "approved"; approvedBy: string | null; approvedOn: string | null; note?: string };
 }
 
 export interface ExceptionRegister {
@@ -37,6 +39,22 @@ export interface AuditGateResult {
   covered: string[];
   /** Not failures: things a person still has to do, such as confirming an exception's owner. */
   notices: string[];
+  /** The approval of each exception the technical audit relies on, reported apart from it (ADR-0022). */
+  approvals: Array<{ advisory: string; approved: boolean; reason: string }>;
+}
+
+const AI_ASSESSOR = /\b(claude|ai|assistant|llm|gpt|copilot)\b/i;
+
+/** Whether an exception carries a human approval: named, dated, not the assessor, not an AI, and with its owner confirmed. */
+export function approvalOf(e: AuditException, today: string): { approved: boolean; reason: string } {
+  const a = e.approval;
+  if (!a || a.status !== "approved") return { approved: false, reason: "no approval recorded (status pending)" };
+  if (!a.approvedBy?.trim() || !a.approvedOn || !isDate(a.approvedOn)) return { approved: false, reason: "approval needs approvedBy and approvedOn (YYYY-MM-DD)" };
+  if (AI_ASSESSOR.test(a.approvedBy)) return { approved: false, reason: "an AI assessment is not a human approval" };
+  if (a.approvedBy.trim().toLowerCase() === e.reviewer.trim().toLowerCase()) return { approved: false, reason: "the approver must not be the assessor" };
+  if (a.approvedOn > today || a.approvedOn < e.reviewedOn) return { approved: false, reason: "the approval date must fall between the review and today" };
+  if (e.ownerConfirmed !== true) return { approved: false, reason: "the owner is not confirmed" };
+  return { approved: true, reason: `approved by ${a.approvedBy.trim()} on ${a.approvedOn}` };
 }
 
 const BLOCKING = new Set(["high", "critical"]);
@@ -88,5 +106,6 @@ export function evaluateAudit(report: AuditReport, register: ExceptionRegister, 
   for (const e of valid) {
     if (!found.get(e.advisory)?.has(e.package)) problems.push(`exception ${e.advisory} (${e.package}) is stale: the audit no longer reports it. Remove it.`);
   }
-  return { problems, covered, notices };
+  const approvals = valid.map((e) => ({ advisory: e.advisory, ...approvalOf(e, today) }));
+  return { problems, covered, notices, approvals };
 }

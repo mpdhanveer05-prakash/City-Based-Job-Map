@@ -16,6 +16,8 @@ export type SerializedDataset = {
   /** True when every company is synthetic sample data. */
   synthetic: boolean;
   counts: { companies: number; offices: number; jobs: number };
+  /** Published companies and open jobs whose required evidence is incomplete (ADR-0022). A release build and the launch gate refuse any. */
+  evidenceIncomplete: { companies: number; jobs: number };
   /** The company slugs in this city and its slug redirects, for the build's `_redirects` (not written to the dataset files). */
   slugs: string[];
   slugRedirects: Array<{ old_slug: string; new_slug: string }>;
@@ -31,6 +33,10 @@ export function serializeDataset(snapshot: CitySnapshot): SerializedDataset {
     synthetic: snapshotIsSynthetic(snapshot),
     slugs: snapshot.companies.map((c) => c.slug),
     slugRedirects: snapshot.slug_redirects,
+    evidenceIncomplete: {
+      companies: snapshot.companies.filter((c) => !c.evidence_complete).length,
+      jobs: snapshot.jobs.filter((j) => !j.evidence_complete).length,
+    },
     counts: {
       companies: snapshot.companies.length,
       offices: snapshot.offices.length,
@@ -53,6 +59,7 @@ export type Manifest = {
       data_version: number;
       synthetic: boolean;
       counts: SerializedDataset["counts"];
+      evidence_incomplete: SerializedDataset["evidenceIncomplete"];
       files: Record<DatasetFileName, { path: string; bytes: number }>;
     }
   >;
@@ -69,7 +76,7 @@ export function buildManifest(sets: readonly SerializedDataset[]): Manifest {
     for (const name of DATASET_FILE_NAMES) {
       files[name] = { path: datasetPath(set.city, set.dataVersion, name), bytes: new TextEncoder().encode(set.files[name]).length };
     }
-    cities[set.city] = { data_version: set.dataVersion, synthetic: set.synthetic, counts: set.counts, files };
+    cities[set.city] = { data_version: set.dataVersion, synthetic: set.synthetic, counts: set.counts, evidence_incomplete: set.evidenceIncomplete, files };
   }
   return { version: 1, cities };
 }
