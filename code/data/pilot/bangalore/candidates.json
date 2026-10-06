@@ -68,6 +68,51 @@
       "ownership_status": "public"
     },
     {
+      "name": "Atomicwork",
+      "domain": "atomicwork.com",
+      "website_url": "https://www.atomicwork.com/",
+      "address": "1st Floor, Campus 3B, Ecospace, Outer Ring Road, Bellandur, Bengaluru, Karnataka - 560103",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.atomicwork.com/company/contact",
+          "quote": "Our team spans the globe, with hubs in San Francisco and Bengaluru that keep us near the people we build for."
+        },
+        "website": {
+          "url": "https://www.atomicwork.com/company/contact",
+          "quote": "Our team spans the globe, with hubs in San Francisco and Bengaluru that keep us near the people we build for."
+        },
+        "address": {
+          "url": "https://www.atomicwork.com/company/contact",
+          "quote": "1st Floor, Campus 3B, Ecospace, Outer Ring Road, Bellandur, Bengaluru, Karnataka - 560103"
+        },
+        "description": {
+          "url": "https://www.atomicwork.com/",
+          "quote": "Agentic ITSM AI-native IT service desk Agentic ESM AI-native enterprise service desk"
+        },
+        "types": {
+          "url": "https://www.atomicwork.com/company/contact",
+          "quote": "Palo Alto 720 University Ave, Suite 204, Palo Alto CA 94301"
+        },
+        "sectors": {
+          "url": "https://www.atomicwork.com/",
+          "quote": "Agentic ITSM AI-native IT service desk"
+        }
+      },
+      "dropped": {},
+      "research_note": "Name evidence relies on the page containing 'Atomicwork' elsewhere (the verifier checks the name is on the page). mnc rests on the Palo Alto address; reviewer may drop it.",
+      "description": "Atomicwork builds an AI-native IT and enterprise service desk platform.",
+      "types": [
+        "product",
+        "mnc"
+      ],
+      "sectors": [
+        "enterprise-software",
+        "saas"
+      ],
+      "ownership_status": null
+    },
+    {
       "name": "Bellatrix Aerospace",
       "domain": "bellatrix.aero",
       "website_url": "https://www.bellatrix.aero",
@@ -126,6 +171,74 @@
       "ownership_status": null
     },
     {
+      "name": "BYJU’S",
+      "domain": "byjus.com",
+      "website_url": "https://byjus.com/",
+      "address": "2nd Floor, Tower D, IBC Knowledge Park, 4/1, Bannerghatta MainRoad, Bengaluru",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://byjus.com/contact-us/",
+          "quote": "HEADQUARTERS BYJU’S, 2nd Floor, Tower D, IBC Knowledge Park"
+        },
+        "website": {
+          "url": "https://byjus.com/contact-us/",
+          "quote": "HEADQUARTERS BYJU’S, 2nd Floor, Tower D, IBC Knowledge Park"
+        },
+        "address": {
+          "url": "https://byjus.com/contact-us/",
+          "quote": "2nd Floor, Tower D, IBC Knowledge Park, 4/1, Bannerghatta MainRoad, Bengaluru"
+        },
+        "description": {
+          "url": "https://byjus.com/",
+          "quote": "Personalised learning app to learn anytime, anywhere"
+        },
+        "sectors": {
+          "url": "https://byjus.com/",
+          "quote": "Comprehensive learning programs & classes for all students"
+        }
+      },
+      "dropped": {},
+      "research_note": "(Name removed from the address.) No PIN code on the page. Given the company's insolvency history, its operating status needs a human check before publication.",
+      "description": "BYJU'S offers online learning programs and a learning app for school students and exam preparation.",
+      "types": [],
+      "sectors": [
+        "edtech"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Captain Fresh",
+      "domain": "captainfresh.in",
+      "website_url": "https://www.captainfresh.in/",
+      "address": "10th Floor, Urban Vault Citrine, Sy. No. 43/4, Sanjeevini Nagar, Hebbal Village, Bellary Road, Kodigehalli, Bengaluru 560092, Karnataka, India",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.captainfresh.in/",
+          "quote": "Captain Fresh"
+        },
+        "website": {
+          "url": "https://www.captainfresh.in/",
+          "quote": "Captain Fresh"
+        },
+        "address": {
+          "url": "https://www.captainfresh.in/contact-us",
+          "quote": "10th Floor, Urban Vault Citrine, Sy. No. 43/4, Sanjeevini Nagar, Hebbal Village, Bellary Road, Kodigehalli, Bengaluru 560092, Karnataka, India"
+        },
+        "description": {
+          "url": "https://www.captainfresh.in/",
+          "quote": "Connecting People to Healthier, Sustainable Protein."
+        }
+      },
+      "dropped": {},
+      "research_note": "Name quote is short and may be only in the title; the verifier decides. Address listed as headquarters of Infifresh Foods Limited.",
+      "description": "Captain Fresh is a seafood and protein supply company; legal entity Infifresh Foods Limited.",
+      "types": [],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
       "name": "Chargebee",
       "domain": "chargebee.com",
       "website_url": "https://www.chargebee.com/",
@@ -163,6 +276,44 @@
         "saas",
         "fintech"
       ],
+      "ownership_status": null
+    },
+    {
+      "name": "CloudSEK",
+      "domain": "cloudsek.com",
+      "website_url": "https://www.cloudsek.com/",
+      "address": "16/1, Cambridge Rd, Halasuru, Cambridge Layout, Jogupalya, Bengaluru, Karnataka - 560008",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.cloudsek.com/contact",
+          "quote": "CloudSEK Information Security Pvt Ltd."
+        },
+        "website": {
+          "url": "https://www.cloudsek.com/",
+          "quote": "CloudSEK AI Agents connect the scattered signals into an attack graph"
+        },
+        "address": {
+          "url": "https://www.cloudsek.com/contact",
+          "quote": "16/1, Cambridge Rd, Halasuru, Cambridge Layout, Jogupalya, Bengaluru, Karnataka - 560008"
+        },
+        "description": {
+          "url": "https://www.cloudsek.com/",
+          "quote": "Products AIVigil AI Attack Surface Monitoring XVigil Digital Risk protection BeVigil Attack Surface monitoring SVigil Third party Risk Monitoring"
+        },
+        "types": {
+          "url": "https://www.cloudsek.com/contact",
+          "quote": "CloudSEK Inc. 8 The Green, Ste A, Dover, DE - 19901 United States"
+        }
+      },
+      "dropped": {},
+      "research_note": "(Entity name removed from the address; sectors left empty because no listed sector fits cybersecurity, as the agent suggested.)",
+      "description": "CloudSEK builds AI-driven predictive cybersecurity products, including attack surface monitoring and digital risk protection.",
+      "types": [
+        "mnc",
+        "product"
+      ],
+      "sectors": [],
       "ownership_status": null
     },
     {
@@ -304,6 +455,43 @@
       "ownership_status": null
     },
     {
+      "name": "FreshToHome",
+      "domain": "freshtohome.com",
+      "website_url": "https://www.freshtohome.com/",
+      "address": "No. 1, 2nd Floor, Carlton Towers, Old Airport Road, Bangalore - 560008",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.freshtohome.com/",
+          "quote": "when it comes to fresh meat and online meat delivery, FreshToHome is the name you can trust"
+        },
+        "website": {
+          "url": "https://www.freshtohome.com/",
+          "quote": "when it comes to fresh meat and online meat delivery, FreshToHome is the name you can trust"
+        },
+        "address": {
+          "url": "https://www.freshtohome.com/",
+          "quote": "No. 1, 2nd Floor, Carlton Towers, Old Airport Road, Bangalore - 560008"
+        },
+        "description": {
+          "url": "https://www.freshtohome.com/",
+          "quote": "when it comes to fresh meat and online meat delivery, FreshToHome is the name you can trust"
+        },
+        "sectors": {
+          "url": "https://www.freshtohome.com/",
+          "quote": "fresh meat and online meat delivery"
+        }
+      },
+      "dropped": {},
+      "research_note": "The address follows 'Freshtohome Foods Private Limited' in the footer.",
+      "description": "FreshToHome sells fresh meat and fish online for home delivery.",
+      "types": [],
+      "sectors": [
+        "e-commerce"
+      ],
+      "ownership_status": null
+    },
+    {
       "name": "Go Digit General Insurance Limited",
       "domain": "godigit.com",
       "website_url": "https://www.godigit.com",
@@ -428,6 +616,50 @@
       "ownership_status": null
     },
     {
+      "name": "Krutrim",
+      "domain": "olakrutrim.com",
+      "website_url": "https://www.olakrutrim.com/",
+      "address": "8th Floor, Wing C, Prestige RMZ Startech Block C, Industrial Layout, Hosur Road, Koramangala, Bengaluru, Bengaluru Urban, Karnataka, 560095",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.olakrutrim.com/privacy-policy",
+          "quote": "Krutrim SI Designs Private Limited"
+        },
+        "website": {
+          "url": "https://www.olakrutrim.com/",
+          "quote": "500+ teams trust Krutrim"
+        },
+        "address": {
+          "url": "https://www.olakrutrim.com/privacy-policy",
+          "quote": "8th Floor, Wing C, Prestige RMZ Startech Block C, Industrial Layout, Hosur Road, Koramangala, Bengaluru, Bengaluru Urban, Karnataka, 560095"
+        },
+        "description": {
+          "url": "https://www.olakrutrim.com/",
+          "quote": "India's AI-First Cloud Platform"
+        },
+        "types": {
+          "url": "https://www.olakrutrim.com/",
+          "quote": "Manage compute, storage, networking, and AI workloads"
+        },
+        "sectors": {
+          "url": "https://www.olakrutrim.com/",
+          "quote": "India's AI-First Cloud Platform"
+        }
+      },
+      "dropped": {},
+      "research_note": "(Types quote shortened as the agent advised.) The address is the registered office from the privacy policy.",
+      "description": "Krutrim runs Krutrim Cloud, an AI-first cloud platform hosted in India.",
+      "types": [
+        "product"
+      ],
+      "sectors": [
+        "cloud-devops",
+        "ai-data"
+      ],
+      "ownership_status": null
+    },
+    {
       "name": "LeadSquared",
       "domain": "leadsquared.com",
       "website_url": "https://www.leadsquared.com",
@@ -456,6 +688,51 @@
       "description": null,
       "types": [],
       "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "Leena AI",
+      "domain": "leena.ai",
+      "website_url": "https://leena.ai/",
+      "address": "Parangi Palaya, HSR Layout, Bengaluru, KA 560102",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://leena.ai/contact-us",
+          "quote": "Leena AI named a Gartner® Pioneer for AI Agents in HR."
+        },
+        "website": {
+          "url": "https://leena.ai/",
+          "quote": "Agentic AI for the Enterprise Back Office | Leena AI"
+        },
+        "address": {
+          "url": "https://leena.ai/contact-us",
+          "quote": "Parangi Palaya, HSR Layout, Bengaluru, KA 560102"
+        },
+        "description": {
+          "url": "https://leena.ai/",
+          "quote": "Agentic AI platform with pre-built AI Colleagues for the back-office."
+        },
+        "types": {
+          "url": "https://leena.ai/contact-us",
+          "quote": "New York, NY 132 West, 31st Street, Suite #1006, NY 10001"
+        },
+        "sectors": {
+          "url": "https://leena.ai/",
+          "quote": "Agentic AI platform with pre-built AI Colleagues for the back-office."
+        }
+      },
+      "dropped": {},
+      "research_note": "The Bengaluru address is short (locality only, with no building or street number); it is exactly what the contact page shows. The name quote contains the ® character.",
+      "description": "Leena AI offers an agentic AI platform with pre-built AI colleagues for enterprise back-office functions.",
+      "types": [
+        "mnc",
+        "product"
+      ],
+      "sectors": [
+        "ai-data",
+        "enterprise-software"
+      ],
       "ownership_status": null
     },
     {
@@ -866,6 +1143,123 @@
       ],
       "sectors": [
         "fintech"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "River Mobility Private Limited",
+      "domain": "rideriver.com",
+      "website_url": "https://www.rideriver.com/",
+      "address": "No. 25/3, KIADB EPIP Zone, Seetharampalya–Hoodi Road, Mahadevapura, Whitefield, Bengaluru, Bengaluru Urban, Karnataka 560048",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.rideriver.com/",
+          "quote": "River Mobility Private Limited Corporate Address"
+        },
+        "website": {
+          "url": "https://www.rideriver.com/",
+          "quote": "River is a design company reshaping personal transportation for livelihood."
+        },
+        "address": {
+          "url": "https://www.rideriver.com/",
+          "quote": "No. 25/3, KIADB EPIP Zone, Seetharampalya–Hoodi Road, Mahadevapura, Whitefield, Bengaluru, Bengaluru Urban, Karnataka 560048"
+        },
+        "description": {
+          "url": "https://www.rideriver.com/",
+          "quote": "River is a design company reshaping personal transportation for livelihood."
+        },
+        "sectors": {
+          "url": "https://www.rideriver.com/",
+          "quote": "River Indie: Electric Scooters for Urban Mobility"
+        }
+      },
+      "dropped": {},
+      "research_note": "Display name could be 'River'. Sectors quote may only be in the title.",
+      "description": "River designs and sells the Indie electric scooter.",
+      "types": [],
+      "sectors": [
+        "mobility"
+      ],
+      "ownership_status": null
+    },
+    {
+      "name": "Sahaj Software",
+      "domain": "sahaj.ai",
+      "website_url": "https://www.sahaj.ai/",
+      "address": "#365, 3rd Floor, Sulochana Building, 1st Cross Road, 3rd Block, Koramangala, Sarjapura Main Road, Bangalore 560034, India",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.sahaj.ai/contact/",
+          "quote": "Contact Us Sahaj Software Home"
+        },
+        "website": {
+          "url": "https://www.sahaj.ai/",
+          "quote": "Who we are Sahaj Software Home"
+        },
+        "address": {
+          "url": "https://www.sahaj.ai/contact/",
+          "quote": "#365, 3rd Floor, Sulochana Building, 1st Cross Road, 3rd Block, Koramangala, Sarjapura Main Road, Bangalore 560034, India"
+        },
+        "description": {
+          "url": "https://www.sahaj.ai/",
+          "quote": "software engineering firm, we focus on transforming businesses and delivering impact by combining software engineering, AI & ML, platform & data engineering"
+        },
+        "types": {
+          "url": "https://www.sahaj.ai/contact/",
+          "quote": "Austin 8911 N Capital of Texas Hwy,Suite 4200,Austin, TX 78759"
+        }
+      },
+      "dropped": {},
+      "research_note": "The name quote comes from navigation text near the page title. Sahaj is a services firm, so it is not tagged as product.",
+      "description": "Sahaj Software is a software engineering firm working on AI and ML, data engineering and platform engineering for clients.",
+      "types": [
+        "mnc"
+      ],
+      "sectors": [],
+      "ownership_status": null
+    },
+    {
+      "name": "Sarvam AI",
+      "domain": "sarvam.ai",
+      "website_url": "https://www.sarvam.ai/",
+      "address": "2nd Floor, 732 Urban Vault, Indiranagar Bangalore 560038, Karnataka, India",
+      "verified_at": "2026-10-06",
+      "evidence": {
+        "name": {
+          "url": "https://www.sarvam.ai/privacy-policy",
+          "quote": "Registered Office: Sarvam AI, 2nd Floor, 732 Urban Vault, Indiranagar Bangalore 560038, Karnataka, India"
+        },
+        "website": {
+          "url": "https://www.sarvam.ai/privacy-policy",
+          "quote": "Registered Office: Sarvam AI, 2nd Floor, 732 Urban Vault, Indiranagar Bangalore 560038, Karnataka, India"
+        },
+        "address": {
+          "url": "https://www.sarvam.ai/privacy-policy",
+          "quote": "2nd Floor, 732 Urban Vault, Indiranagar Bangalore 560038, Karnataka, India"
+        },
+        "description": {
+          "url": "https://www.sarvam.ai/",
+          "quote": "State-of-the-art models trained on sovereign data, delivering strong performance across Indian languages."
+        },
+        "types": {
+          "url": "https://www.sarvam.ai/",
+          "quote": "State-of-the-art models trained on sovereign data, delivering strong performance across Indian languages."
+        },
+        "sectors": {
+          "url": "https://www.sarvam.ai/",
+          "quote": "State-of-the-art models trained on sovereign data, delivering strong performance across Indian languages."
+        }
+      },
+      "dropped": {},
+      "research_note": "(Website quote replaced with one containing the full name, as the agent advised.) The site gives the address in several forms with conflicting PIN codes (560038 and 560025); a reviewer should confirm.",
+      "description": "Sarvam AI builds AI models and platforms for Indian languages.",
+      "types": [
+        "product"
+      ],
+      "sectors": [
+        "ai-data"
       ],
       "ownership_status": null
     },
