@@ -53,6 +53,26 @@ export async function openExplorer(page: Page, url: string, { map = true }: { ma
 }
 
 /** Waits until nothing is moving and the layer has drawn at least one frame. */
+/**
+ * Waits until every stylesheet the page links has loaded, and fails if one did not (DEF-1). A test that routes requests
+ * runs without the HTTP cache, and a tap before hydration makes a full page load, so under load a stylesheet can still
+ * be in flight when a test measures a control. Layout read then is unstyled (an Apply link measures 17 px), but the
+ * browser never paints it: a linked stylesheet blocks rendering. Measure sizes only after this.
+ */
+export async function stylesheetsLoaded(page: Page, timeout = 30_000) {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() =>
+          [...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')]
+            .filter((l) => !l.sheet)
+            .map((l) => l.href.split("/").pop()),
+        ),
+      { message: "every linked stylesheet loads (one still pending or failed)", timeout },
+    )
+    .toEqual([]);
+}
+
 export async function settle(page: Page) {
   await expect
     .poll(() => page.evaluate(() => !window.__explorer!.map.layer.stats.animating && window.__explorer!.map.layer.stats.drawn > 0), { timeout: 30_000 })

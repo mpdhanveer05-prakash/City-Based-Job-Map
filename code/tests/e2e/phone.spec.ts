@@ -15,6 +15,7 @@ import {
   rowSlugs,
   settle,
   shownCounts,
+  stylesheetsLoaded,
   type CityData,
   type Selection,
 } from "./explorer-helpers";
@@ -133,6 +134,8 @@ for (const city of CITIES) {
             hrefCount: document.querySelectorAll(`[data-testid="apply-link"]`).length,
           };
         });
+      // Measure once the jobs page's stylesheets have loaded: see stylesheetsLoaded (DEF-1).
+      await stylesheetsLoaded(page);
       await expect
         .poll(heightOf(apply), { message: `Apply is a 44 px target (failed same-origin requests: ${JSON.stringify(failures)})`, timeout: 10_000 })
         .toBeGreaterThanOrEqual(44)
