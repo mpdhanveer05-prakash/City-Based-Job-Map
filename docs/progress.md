@@ -15,6 +15,24 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-06 (later): pilot round 3, report corrections, release-criteria proposals
+- **Pilot (P9-20):** research groups J and K added. `verify_research`: 143 researched, **51 with a verified name, website, and Bengaluru address** (pilot target 50 met for verification); 394 evidence items verified. `build_import --import` (local only): 9 more created, **46 draft companies locally**, 0 reviewed, 0 published. Atlassian, BYJU'S, InMobi, ThoughtSpot and Wipro could not be placed by the geocoder. BYJU'S needs a human check of its operating status. Launch coverage (how many companies a city needs) remains **undecided**. Unbox Robotics dropped (no Bengaluru office).
+- **Correction to the 6 Oct status report: publication rule.** The report said "every published fact has reviewed evidence". That is wrong. The enforced rule is:
+  - a company needs **reviewed** name, website, and at least one office with **reviewed** address and location;
+  - its other populated facts need evidence that is **claimed or reviewed**;
+  - a published office needs reviewed address and location, and a published founder a reviewed name;
+  - an admin-published job needs all four job fields reviewed, while feed jobs carry pipeline *claims*;
+  - for launch, `job_evidence_complete` and `company_evidence_complete` apply;
+  - the gates apply to signed-in users; the seed and the migration owner are exempt, which `RELEASE_BUILD` and the launch gate cover.
+- **Correction: coordinate licensing and accuracy are separate issues.**
+  - *Licensing:* the pilot coordinates come from OSM Nominatim (ODbL). They stay local and uncommitted until D-07 (the geocoding provider) is decided.
+  - *Accuracy:* almost all matched only at locality level (fallback queries), so each point needs manual placement whatever the provider decision.
+- **External push history (confirmed from the origin/main reflog):** the latest push was 2026-10-06 13:06:35 +0530 (`883de71`), with earlier pushes on 4 Oct (`d55c016`, `2aa3f60`), 2 Oct and 1 Oct, all from this clone. This session pushed nothing. Commits `5812ed2`/`b55857e`, which once contained and then removed OSM-derived files, are local only; squashing them **awaits authorization**.
+- **Release criteria: proposals, not approved requirements.**
+  - three consecutive green full e2e suites before a release candidate;
+  - OSM-derived coordinates re-derived or hand-placed with the D-07 provider before publication;
+  - DEF-1 (Apply height) either explained or shown absent across those suites.
+
 ### 2026-10-06: Bengaluru pilot (research, verification, local draft import), feed admin, device procedure, export-repair proof
 - **Pilot (P9-20, in progress):** 119 candidates researched by AI agents. Every quote was re-checked against the raw page by `scripts/pilot/verify_research.py`: 306 evidence items verified, 43 quotes not found, 9 pages unreadable. **41 companies have a verified name, website, and full Bengaluru address (target 50).** 37 were geocoded and imported **locally** as drafts with 205 evidence claims: 0 reviewed, 0 published. Coordinates are from Nominatim for local review only (ODbL; provider is D-07), and 36 of 37 matched at locality level, so all sit in the review queue. Details, caveats, and the reviewer's to-do list: `code/data/pilot/bangalore/README.md`. Chennai has not started.
 - **Feed admin (P9-19):** `/admin/feeds`.
