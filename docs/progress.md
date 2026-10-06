@@ -17,9 +17,9 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ### 2026-10-06 (later): pilot round 3, report corrections, release-criteria proposals
 - **Pilot (P9-20):** research groups J and K added. `verify_research`: 143 researched, **51 with a verified name, website, and Bengaluru address** (pilot target 50 met for verification); 394 evidence items verified. `build_import --import` (local only): 9 more created, **46 draft companies locally**, 0 reviewed, 0 published. Atlassian, BYJU'S, InMobi, ThoughtSpot and Wipro could not be placed by the geocoder. BYJU'S needs a human check of its operating status. Launch coverage (how many companies a city needs) remains **undecided**. Unbox Robotics dropped (no Bengaluru office).
-- **Correction to the 6 Oct status report: publication rule.** The report said "every published fact has reviewed evidence". That is wrong. The enforced rule is:
+- **Publication rule (superseded the same day; see the 7 Oct entry):** the enforced rule at this point was the following. It was a regression from the agreed rule, and it has been fixed in the database:
   - a company needs **reviewed** name, website, and at least one office with **reviewed** address and location;
-  - its other populated facts need evidence that is **claimed or reviewed**;
+  - its other populated facts needed evidence that was claimed or reviewed (the regression);
   - a published office needs reviewed address and location, and a published founder a reviewed name;
   - an admin-published job needs all four job fields reviewed, while feed jobs carry pipeline *claims*;
   - for launch, `job_evidence_complete` and `company_evidence_complete` apply;
