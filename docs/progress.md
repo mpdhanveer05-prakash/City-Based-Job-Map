@@ -18,7 +18,7 @@ Update this after every task: what changed, how it was verified (the commands ac
 ### 2026-10-07 (evening): pilot drafts restored, staging smoke failure explained, environment separation prepared
 - **Pilot drafts erased, then restored.** Two `npx supabase db reset` runs for the pgTAP and admin suites wiped the 46 local pilot drafts. Owner rule from now on: database and admin tests use an isolated disposable stack, or a `pg_dump` backup and restore; never `db reset` on the main local database.
   - Backup before restoring: `.local-backups/pre-pilot-restore-20261007-094628.dump` (git-ignored).
-  - Import inspected first: it only inserts (no delete or update); 46 unique domains, none already in the database; the regenerated files matched the committed ones.
+  - Import inspected first: it only inserts (no delete or update); 46 unique domains, none already in the database; the regenerated files are git-ignored (OSM-derived, since `b55857e`), so they could not be compared with a committed copy; the row count (46) and the 5 geocoder skips matched the earlier run.
   - `build_import --import` result: 46 created, 0 errors. All 46 companies and 46 offices are drafts, and the offices are unverified. 262 evidence items, all claims (0 reviewed). All 46 offices are in the review queue (44 locality accuracy, 2 building not verified). Nothing published.
 - **Pilot preview** built from a scratch copy against the `pilot_preview` database copy, served on :8789. The synthetic preview on :8788 is unchanged.
 - **Staging (read only).** `883de71` was deployed by the nightly `schedule` trigger on 7 Oct. Its deploy succeeded and the smoke test after it failed, so the build is live. Last green hosted run: 30 Sep, `687cd3e`.
