@@ -2,18 +2,34 @@
 
 **Rule:** a test counts as passing only if it was run and its output was recorded. In [progress.md](progress.md), mark each check as *run (pass/fail)*, *not run*, or *not applicable*.
 
+## Test databases: the disposable test stack only (owner, 7 Oct 2026)
+**Never reset, test against, or fill the main local database** (project `company-map`, port 54322): it holds the Bengaluru pilot drafts. Every database or admin test runs on the **disposable test stack**, a second Supabase project (`company-map-test`, every port +1000: database 55322, API 55321) built from the same `supabase/` folder:
+
+| Step | Command (from `code/`) |
+| --- | --- |
+| Start (full stack, for admin e2e and the Storage tests) | `node scripts/test-stack.mts start` |
+| Start (Postgres only, as CI) | `node scripts/test-stack.mts start --db-only` |
+| Reset it (migrations, seed, marker) before each admin run | `node scripts/test-stack.mts reset` |
+| pgTAP | `npm run test:db` |
+| Parity | `npm run test:parity` (defaults to port 55322; `TEST_DATABASE_URL` to override) |
+| Pipeline pytest | `TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres python -m pytest scripts/pipeline/tests` |
+| Admin e2e | `npm run test:admin` (reads the test stack's keys; its global setup deletes `admin_user` rows, so it must never see the main database) |
+| Stop it and discard its data | `node scripts/test-stack.mts stop` |
+
+Every one of these refuses a database that is on port 54322, lacks the `test_stack.marker` table the test stack's seed creates, or holds real (non-synthetic, non-`.test`) companies (`tests/disposable-db.ts`, `scripts/pipeline/tests/conftest.py`; unit-tested). Never run `npx supabase db reset` or `npx supabase test db` without `--workdir .test-stack`. With little free memory, stop the main stack first with a plain `npx supabase stop` (it keeps its data volume; never `--no-backup`) after a `pg_dump` to `.local-backups/`.
+
 ## Layers
 | Layer | Tool | Scope |
 | --- | --- | --- |
 | Unit | Vitest | URL-state schema, filter reducer (clearing incompatible filters), worker lineage, animator interpolation, atlas packing, hit-test tie-breaks, design-token contrast pairs ([design-system.md §1](design-system.md#contrast-wcag-22-computed-30-sep-2026)) |
-| Database | pgTAP via `supabase test db` | RLS for every role and table, the city-boundary trigger, shared-filter consistency across points, list, and facets |
-| Edge Functions | Deno tests against local Supabase (`supabase functions serve`) | Zod validation, Turnstile rejection, rate limit, `click` counter, `request-rebuild` role check |
+| Database | pgTAP via `npm run test:db` (the test stack) | RLS for every role and table, the city-boundary trigger, shared-filter consistency across points, list, and facets, the evidence and publication gates, and the security-gap regressions (`16_security_gaps`: each as the role that could reach it) |
+| Edge Functions | Vitest over the handler logic (`tests/unit/*-handler.test.ts`), plus the admin e2e through the real functions served by the test stack | Zod validation, Turnstile rejection, rate limit, `click` counter, `request-rebuild` role check |
 | Build output | `scripts/check-static-limits.mts` (runs as `postbuild`) + unit tests | Workers static assets Free limits (≤ 18,000 files as the guard, < 25 MiB per file, ≤ 2,000 static / 100 dynamic redirects, ≤ 100 header rules); outbound URL validation; no secret-looking strings in `out/` |
 | E2E journeys | Playwright | AC01–AC10 (IDs from the BRD, whose text isn't in the repo), for both cities |
 | Accessibility | @axe-core/playwright + manual pass | Zero serious or critical axe violations (the `color-contrast` rule stays enabled); keyboard-only journey; screen-reader smoke test (NVDA + TalkBack) |
 | Map gate | Playwright + real devices | [map-spec.md §10](map-spec.md#10-validation-gate-reproducible) |
-| Pipeline | pytest | Parsers, dedup, two-strike expiry, retry/backoff |
-| Admin and Edge Functions, end to end | Playwright against the real local stack (`npm run test:admin`) | **As built (P7, P8, P9-02):** sign-in and roles, the forms, CSV import, the review queue, Publish now (through the real `request-rebuild` function and a stand-in for GitHub), the audit log, the public forms (through the real `submit-feedback` function and a stand-in for Cloudflare `siteverify`, with the rate limit), the anonymous-API probe, and no CSP violation on the admin dashboard. Needs the full stack (about 2 GB), so it is **not in CI**; run it before a release (`db reset` first). The local Edge runtime is occasionally flaky (`503 name resolution failed`); the one place it matters retries that exact answer |
+| Pipeline | pytest | Parsers, dedup, two-strike expiry, the approved-feed rule (there is no retry/backoff code yet) |
+| Admin and Edge Functions, end to end | Playwright against the disposable test stack (`npm run test:admin`) | **As built (P7, P8, P9-02):** sign-in and roles, the forms, CSV import, the review queue, Publish now (through the real `request-rebuild` function and a stand-in for GitHub), the audit log, the public forms (through the real `submit-feedback` function and a stand-in for Cloudflare `siteverify`, with the rate limit), the anonymous-API probe, and no CSP violation on the admin dashboard. Needs the full stack (about 2 GB), so it is **not in CI**; run it before a release, after `node scripts/test-stack.mts reset`. The local Edge runtime is occasionally flaky (`503 name resolution failed`); the one place it matters retries that exact answer |
 | CSP | Playwright (`tests/e2e/csp.spec.ts`, in the normal e2e run) | No `securitypolicyviolation` on the key public pages; every page has a policy with no `unsafe-inline` or `unsafe-eval` for scripts and no wildcard; an injected inline script and a foreign script are blocked ([ADR-0014](decisions/0014-content-security-policy.md)) |
 
 ## Required consistency tests (confirmed brief)
@@ -31,12 +47,13 @@ Lint, typecheck, Vitest, pgTAP (local Supabase in CI), dependency audit, secret 
 | --- | --- |
 | `checks` | `npm ci`, lint, typecheck, Vitest, build, then `npm run audit` (`scripts/audit-gate.mts`, ADR-0019): `npm audit` over **every** dependency fails on any high or critical finding not covered by a current, reviewed entry in `code/security/audit-exceptions.json` (at most 90 days; expired and stale entries also fail). The split audit of [ADR-0015](decisions/0015-dependency-audit-gate.md) was not accepted. |
 | `e2e` | Chromium install, then `npm run test:e2e` (Playwright + axe, desktop and Pixel 7). The HTML report is uploaded on failure |
-
-To run the same Playwright suite against a server that's already running (`wrangler dev`, or a preview Worker URL), set `PLAYWRIGHT_BASE_URL`; the built-in `next start` server is then skipped.
+| `database` | `node scripts/test-stack.mts start --db-only`, `npm run test:db` (pgTAP), `npm run test:parity`, `npm run data` against the test stack, pipeline pytest, and `npm run data -- --export-seed` with a diff of the committed seed snapshots |
 | `secret-scan` | gitleaks 8.30.1 (checksum-verified) over the full git history |
 
+To run the same Playwright suite against a server that's already running (`wrangler dev`, or a preview Worker URL), set `PLAYWRIGHT_BASE_URL`; the suite's own server (`npm run build && npx wrangler dev`) is then skipped. Tests of a feature that build lacks (`public/build-info.json`: a synthetic staging build has no beacon or forms) are skipped with that reason.
+
 - Actions are pinned to commit SHAs. Dependabot (`.github/dependabot.yml`) bumps them weekly, along with the npm dependencies in `code/`: minor and patch grouped into one PR, majors separate.
-- **Not yet in CI:** pgTAP (arrives with P1-03). `npm audit` covers dependencies.
+- **Not in CI:** the admin e2e and the Storage-backed logo tests (they need the full stack); `15_logo_assets` skips its storage part in CI's Postgres-only database.
 - The repository became public on 30 Sep 2026, so standard GitHub-hosted runners are free. The first run took 1.7 job-minutes in total (checks 0.6, e2e 1.0, secret scan 0.1). GitHub's dependency-review action is now available on the public repository and could be added in a later PR.
 
 ## Release checklist

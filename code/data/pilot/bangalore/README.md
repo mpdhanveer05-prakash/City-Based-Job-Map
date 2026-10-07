@@ -23,7 +23,7 @@ Started 6 Oct 2026. **Nothing here is reviewed, approved, or published.** These 
 | Source-checked candidates (name, website, and Bengaluru address found on the company's own pages), awaiting human review | **51** |
 | Placed by the geocoder | **46** imported. Atlassian, BYJU'S, InMobi, ThoughtSpot and Wipro could not be placed and need a person to place them |
 | Imported locally | 46 companies, 46 offices (draft); every evidence item a claim; 0 reviewed, 0 published |
-| Optional facts found on the cited page | description 21, sectors 22, type tags 14, listing status 0 |
+| Optional facts found on the cited page | across the 51 candidates: description 32, sectors 30, type tags 23, listing status 2; across the 46 imported: description 30, sectors 28, type tags 20, listing status 0 |
 
 **The pilot target is 50: there are 51 source-checked candidates awaiting human review, and 46 are imported as drafts.** None is verified by a person, reviewed, or published. Earlier rounds fell short because of:
 - sites that serve their text only through JavaScript;
@@ -53,12 +53,17 @@ LOCAL_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres pytho
 
 `--import` refuses any database that is not local. The local database also holds the synthetic sample, and a build refuses a mix of real and synthetic companies, so the pilot records are reviewed in the admin.
 
-To **look at** them in the built site, use the pilot-only preview (local only, never deployed):
+To **look at** them in the built site, use the pilot-only preview (local only, never deployed). Do **not** build it in `code/` itself: a plain `npm run build` there, then `npm run preview`, overwrites `code/out/`, which is the synthetic preview.
+
+1. From `code/`, make the scratch database: `node scripts/pilot/preview-db.mts`.
+2. Copy `code/`, `node_modules` included, to another folder with robocopy (for example `robocopy code <another folder> /E` from the repository root). **Never junction or symlink `node_modules`** into the copy: removing the copy later can follow the link and delete the real packages.
+3. In the copy, build and serve it on its own port:
 
 ```
-node scripts/pilot/preview-db.mts
 PILOT_PREVIEW=1 SITE_ENV=pilot-preview LOCAL_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/pilot_preview npm run build
-npm run preview
+npx wrangler dev --port 8789
 ```
+
+Preserved previews live in the git-ignored folder `.local-previews/` at the repository root: `.local-previews/synthetic/` and `.local-previews/pilot/`, each with its own `out/` and `wrangler.jsonc`. Serve one from `code/` with `npx wrangler dev --config ../.local-previews/synthetic/wrangler.jsonc --port 8788` or `npx wrangler dev --config ../.local-previews/pilot/wrangler.jsonc --port 8789`.
 
 `preview-db.mts` copies the local database into a scratch database, `pilot_preview`. In the copy only, it deletes the synthetic companies and marks the pilot drafts as published, as the database owner: no approval or review is recorded, and the real database is unchanged. The build then carries a banner on every page ("Pilot preview, not published"), is not indexed, and `RELEASE_BUILD=1` refuses it. Chennai is empty in the preview.

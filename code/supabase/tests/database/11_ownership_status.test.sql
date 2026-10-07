@@ -79,6 +79,9 @@ insert into company_type_tag (company_id, type) values
   ('00000000-0000-4000-8000-000000000005', 'mnc');
 insert into office (company_id, city_id, address, geom, accuracy, verification, status)
 select id, 1, 'Somewhere road', 'SRID=4326;POINT(77.6 12.97)', 'building', 'reviewed', 'published' from company;
+insert into field_evidence (office_id, field, source_url, verified_at, reviewed_at, reviewed_by)
+select o.id, f, 'https://fixture.test/office', date '2026-09-01', now(), '00000000-0000-0000-0000-00000000e0ff'
+from office o, unnest(array['address', 'location']) f;
 set local app.skip_audit = 'off';
 set constraints all immediate;
 set constraints all deferred;

@@ -79,6 +79,10 @@ select case when f in ('address', 'location') then null else '00000000-0000-4000
        case when f in ('address', 'location') then '00000000-0000-4000-8000-0000000000a1'::uuid end,
        f, 'https://acme.test/about', date '2026-09-01', now(), '00000000-0000-0000-0000-00000000e003'
 from unnest(array['name', 'website', 'sectors', 'address', 'location']) f;
+-- Legacy's office has reviewed evidence, so it is listed; its company facts have none, so it is flagged incomplete.
+insert into field_evidence (office_id, field, source_url, verified_at, reviewed_at, reviewed_by)
+select '00000000-0000-4000-8000-0000000000a2'::uuid, f, 'https://legacy.test/contact', date '2026-09-01', now(), '00000000-0000-0000-0000-00000000e003'
+from unnest(array['address', 'location']) f;
 set local app.skip_audit = 'off';
 set constraints all immediate;
 set constraints all deferred;

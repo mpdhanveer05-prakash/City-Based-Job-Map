@@ -132,7 +132,7 @@ export function EvidencePanel({ companyId, jobId }: { companyId?: string; jobId?
         Every fact needs a source someone checked. Recorded evidence is a claim until a reviewer reviews it.{" "}
         {isJob
           ? "Publishing a job needs reviewed evidence for its title, employer, location and work arrangement, and application link. The company's own verification says nothing about whether its jobs are open."
-          : "Publishing needs a reviewed name, website, and office address and location; every other fact needs evidence."}{" "}
+          : "Publishing needs a reviewed name and website, a published office with reviewed address and location, and reviewed evidence for every other fact it shows (or leave that fact empty)."}{" "}
         Once a record is public, a changed fact needs reviewed evidence for the new value first: record it below with the proposed value.
       </p>
       {problems.length > 0 ? (

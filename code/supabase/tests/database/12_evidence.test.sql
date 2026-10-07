@@ -167,7 +167,7 @@ reset role;
 
 select tests.become('00000000-0000-0000-0000-00000000e002');
 select matches(tests.commit_check($$ update company set status = 'published' where id = '00000000-0000-4000-8000-000000000001' $$),
-  'the name needs reviewed evidence \(it is stale\).*the website needs reviewed evidence \(it is claimed\).*at least one office.*description needs reviewed evidence for its current value \(it is missing\)',
+  'the name needs reviewed evidence \(it is stale\).*the website needs reviewed evidence \(it is claimed\).*at least one published office.*description needs reviewed evidence for its current value \(it is missing\)',
   'publishing is refused, with every reason');
 select is((select status from company where id = '00000000-0000-4000-8000-000000000001'), 'draft', 'and the company stays a draft');
 
@@ -177,11 +177,11 @@ insert into ids values ('desc', tests.ev('00000000-0000-4000-8000-000000000001',
 insert into ids values ('types', tests.ev('00000000-0000-4000-8000-000000000001', null, 'types', date '2026-09-06'));
 select review_evidence(array(select id from field_evidence where company_id = '00000000-0000-4000-8000-000000000001' and field in ('name', 'website') and reviewed_at is null));
 select matches(array_to_string(publication_problems('00000000-0000-4000-8000-000000000001'), '; '),
-  'at least one office.*the description needs reviewed evidence for its current value \(it is claimed\).*the types needs reviewed evidence for its current value \(it is claimed\)',
+  'at least one published office.*the description needs reviewed evidence for its current value \(it is claimed\).*the types needs reviewed evidence for its current value \(it is claimed\)',
   'claimed optional facts are not enough: each needs reviewed evidence');
 select review_evidence(array[(select id from ids where k = 'desc'), (select id from ids where k = 'types')]);
 select is(publication_problems('00000000-0000-4000-8000-000000000001'),
-  array['at least one office needs reviewed evidence for its address and location'], 'with the optional facts reviewed, only the office is missing');
+  array['at least one published office needs reviewed evidence for its address and location (publish the office first)'], 'with the optional facts reviewed, only the office is missing');
 
 select matches(tests.commit_check($$ update office set status = 'published' where id = '00000000-0000-4000-8000-0000000000a1' $$),
   'address and location need reviewed evidence', 'an office cannot be published without reviewed evidence');

@@ -69,9 +69,22 @@ describe("manifest", () => {
     const manifest = buildManifest([set]);
     expect(manifest.version).toBe(1);
     expect(manifest.cities.chennai.data_version).toBe(3);
-    expect(manifest.cities.chennai.files.companies.path).toBe("/data/chennai/3/companies.json");
+    expect(manifest.cities.chennai.files.companies.path).toMatch(/^\/data\/chennai\/3-[0-9a-f]{12}\/companies\.json$/);
+    expect(manifest.cities.chennai.dataset_version).toBe(set.datasetVersion);
     expect(manifest.cities.chennai.files.details.bytes).toBe(new TextEncoder().encode(set.files.details).length);
-    expect(datasetPath("bangalore", 12, "offices")).toBe("/data/bangalore/12/offices.json");
+    expect(datasetPath("bangalore", "12-0123456789ab", "offices")).toBe("/data/bangalore/12-0123456789ab/offices.json");
+  });
+
+  it("gives changed content a new version folder even when data_version did not move (ADR-0025)", () => {
+    const a = serializeDataset(snapshot);
+    const same = serializeDataset(structuredClone(snapshot));
+    const changed = structuredClone(snapshot);
+    changed.jobs[0].title = "Staff Backend Engineer"; // what a pipeline rebuild changes, with no Publish now
+    const b = serializeDataset(changed);
+    expect(same.datasetVersion).toBe(a.datasetVersion);
+    expect(b.dataVersion).toBe(a.dataVersion);
+    expect(b.datasetVersion).not.toBe(a.datasetVersion);
+    expect(b.datasetVersion.startsWith("3-")).toBe(true);
   });
 
   it("counts bytes, not characters", () => {

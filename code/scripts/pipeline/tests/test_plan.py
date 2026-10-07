@@ -144,3 +144,13 @@ def test_an_ats_link_must_be_under_this_employers_board():
     assert employer_link("https://acme.recruitee.com/o/engineer", "acme.example", "acme")  # the board as a subdomain
     assert not employer_link("https://job-boards.greenhouse.io/othercorp/jobs/9", "acme.example", "acme")
     assert not employer_link("https://evil.example/jobs/1", "acme.example", "acme")
+
+
+def test_database_guard_refuses_anything_but_the_test_stack():
+    """conftest.refusal: the pipeline's database tests run only on the disposable test stack."""
+    from scripts.pipeline.tests.conftest import refusal
+
+    assert refusal(55322, "company-map-test", 0) is None
+    assert "main local database" in refusal(54322, "company-map-test", 0)
+    assert "no test_stack.marker" in refusal(55322, None, 0)
+    assert "46 real" in refusal(55322, "company-map-test", 46)

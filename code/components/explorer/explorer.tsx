@@ -27,7 +27,8 @@ export type ExplorerCity = {
   name: string;
   centre: [number, number];
   defaultZoom: number;
-  dataVersion: number;
+  /** The published dataset folder (data_version plus a content hash, ADR-0025). */
+  dataVersion: string;
   synthetic: boolean;
   boundary: CityBoundary;
 };
@@ -69,6 +70,12 @@ export function Explorer({ city, paths }: ExplorerProps) {
     queryFn: ({ signal }) => fetchSearchFile(paths.search, signal),
     enabled: searchActive,
   });
+
+  // ---- newer data (ADR-0025) ---------------------------------------------------------------------------------
+  // A tab left open keeps the dataset it loaded. When it comes back into view (at most every five minutes), it reads the
+  // city's never-cached pointer; a different version means a rebuild published newer data, and the visitor is offered a
+  // reload. Nothing is replaced under their feet.
+  const newerData = useNewerDataCheck(city.slug, city.dataVersion);
 
   const index = useMemo(() => {
     if (!files.data) return null;
@@ -256,6 +263,14 @@ export function Explorer({ city, paths }: ExplorerProps) {
           Loading the companies in {city.name}…
         </p>
       )}
+      {newerData && !files.isError && (
+        <div role="status" data-testid="explorer-newer-data" className="absolute inset-x-4 bottom-4 mx-auto flex max-w-md flex-col items-start gap-3 border border-rule bg-milky p-4">
+          <p>The companies in {city.name} have been updated since this page loaded.</p>
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            Reload for the latest
+          </Button>
+        </div>
+      )}
       {files.isError && (
         <div role="alert" data-testid="explorer-error" className="absolute inset-x-4 top-1/2 mx-auto flex max-w-md -translate-y-1/2 flex-col items-start gap-3 border border-rule bg-milky p-4">
           <p>{files.error instanceof Error ? files.error.message : "The companies could not be loaded."}</p>
@@ -266,4 +281,40 @@ export function Explorer({ city, paths }: ExplorerProps) {
       )}
     </main>
   );
+}
+
+const NEWER_DATA_CHECK_MS = 5 * 60_000;
+
+/** True once the city's published dataset differs from the one this page was built with (ADR-0025). */
+function useNewerDataCheck(slug: CitySlug, version: string): boolean {
+  const [newer, setNewer] = useState(false);
+  useEffect(() => {
+    let last = Date.now();
+    let cancelled = false;
+    const check = async (force = false) => {
+      if (document.visibilityState !== "visible" || (!force && Date.now() - last < NEWER_DATA_CHECK_MS)) return;
+      last = Date.now();
+      try {
+        const response = await fetch(`/data/${slug}/current.json`, { cache: "no-store" });
+        if (!response.ok) return;
+        const body = (await response.json()) as { dataset_version?: unknown };
+        if (!cancelled && typeof body.dataset_version === "string" && body.dataset_version !== version) setNewer(true);
+      } catch {
+        // Offline or blocked: say nothing; the page keeps working with the data it has.
+      }
+    };
+    const onVisible = () => void check();
+    // A page restored from the back/forward cache may be old: check at once.
+    const onShow = (event: PageTransitionEvent) => {
+      if (event.persisted) void check(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onShow);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onShow);
+    };
+  }, [slug, version]);
+  return newer;
 }

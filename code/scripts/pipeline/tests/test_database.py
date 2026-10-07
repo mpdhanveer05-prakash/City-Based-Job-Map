@@ -1,4 +1,4 @@
-"""The pipeline against a real database, as the `pipeline` role (P8-01 to P8-03). Needs LOCAL_DATABASE_URL."""
+"""The pipeline against a real database, as the `pipeline` role (P8-01 to P8-03). Needs TEST_DATABASE_URL (the disposable test stack)."""
 import json
 
 import psycopg

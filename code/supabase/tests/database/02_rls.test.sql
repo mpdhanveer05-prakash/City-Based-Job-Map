@@ -340,13 +340,13 @@ select is(public.is_admin('editor'), true, 'a newly granted editor is recognised
 reset role;
 
 -- ---------------------------------------------------------------------------
--- service_role and the migration owner (no signed-in user) are not stopped by the publish rule
+-- service_role (no signed-in user) may not publish (SEC-4, 20261007150000); the migration owner may
 -- ---------------------------------------------------------------------------
 
 select tests.become(null, 'service_role');
 select is((select count(*)::int from company where status = 'draft'), 1, 'service_role bypasses RLS and sees draft companies');
 select is(tests.sqlstate_of($$ insert into company (slug, name, domain, website_url, status) values ('svc-pub', 'Svc Pub', 'svc.test', 'https://svc.test', 'published') $$),
-  null, 'service_role can create a published company (the pipeline path)');
+  '42501', 'service_role cannot create a published company: publishing needs a signed-in reviewer (SEC-4)');
 reset role;
 
 select * from finish();

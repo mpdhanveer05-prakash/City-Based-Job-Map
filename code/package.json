@@ -8,7 +8,7 @@
   "scripts": {
     "predev": "node scripts/copy-maplibre.mts && node scripts/build-datasets.mts --seed-fallback",
     "dev": "next dev",
-    "prebuild": "node scripts/copy-maplibre.mts && node scripts/build-datasets.mts --require && node -e \"require('node:fs').rmSync('.next/dev',{recursive:true,force:true})\"",
+    "prebuild": "node scripts/copy-maplibre.mts && node scripts/build-datasets.mts --require && node scripts/check-build-config.mts && node -e \"require('node:fs').rmSync('.next/dev',{recursive:true,force:true})\"",
     "build": "next build",
     "postbuild": "node scripts/fix-segment-files.mts out && node scripts/inject-csp.mts out && node scripts/check-static-limits.mts out",
     "lint": "eslint",
@@ -24,7 +24,9 @@
     "data": "node scripts/build-datasets.mts",
     "audit": "node scripts/audit-gate.mts",
     "gate": "playwright test --config playwright.gate.config.ts",
-    "test:admin": "playwright test --config playwright.admin.config.ts"
+    "test:admin": "playwright test --config playwright.admin.config.ts",
+    "test-stack": "node scripts/test-stack.mts",
+    "test:db": "node scripts/test-stack.mts test-db"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

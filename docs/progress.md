@@ -2,18 +2,74 @@
 
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
-## Current state
-- **One machine only (5 Oct 2026).** The owner will work on this Windows laptop for the whole project and is **not** moving to a Mac (this reverses the 4 Oct plan). The macOS steps in [setup-new-machine.md](setup-new-machine.md) are kept as a backup only. The map gate run needs about 4 GB of free memory, so close other apps before it.
-- **Done and verified on Windows, 3 to 4 Oct 2026:** Phase 3 (schema, RLS, filter functions, synthetic sample data: `npx supabase test db` 5 files, 292 tests), P4-04 (URL state), P4-01 (build-time datasets, the TypeScript filter, and the SQL/TypeScript parity test: `npm run test:parity` 8 of 8), and a fix to `CompanyLayer.getDrawn()` found by the gate harness. `npm test`: 411 passed; lint and typecheck clean. 
-- **Next checks on this laptop:** from `code/`, `npm run lint && npm run typecheck && npm test`; then with Docker running `npx supabase db start && npx supabase db reset && npx supabase test db && npm run test:parity`; then `npm run test:e2e` (about 9 minutes with a Geoapify key). Report any failure; do not assume its cause.
-- **Next tasks:** P4-02 (city selection page `/`; needs a decision on when `npm run data` runs in the build: it must either fail without data or fall back to the synthetic seed, and staging needs the Supabase URL and anon key as build variables). Then P5 (search, filters, Grid and List) once P4-03 is unblocked. P4-03 (the explorer shell) needs P2-09 passed or approved.
-- **P2-09 (map gate) is still Blocked, and its informal run is incomplete.** The harness is built (`npm run gate`, map-spec section 10) and was run once on the Windows laptop's Intel GPU, but the full S, M, L run at DPR 1 and 2 did not finish (low memory), so there is no report. On this laptop, with 4 GB or more free (close other apps first): `GATE_SIZES=S,M,L npm run gate -- tests/gate`, then `GATE_DPR=2 GATE_SIZES=S,M,L npm run gate -- tests/gate`, then `npm run gate -- tests/e2e/map-lifecycle.spec.ts`, then `node scripts/gate-report.mts > gate-results/results.md` and write `docs/map-gate-report.md` from it, labelled informal. This laptop is also not a named reference device: the real gate still needs the owner's devices and a gate owner (D-06). The 4 Oct log entry has the details and the numbers seen so far.
-- **CI on `2aa3f60` (4 Oct 2026, run 37146810719): 3 of 4 jobs green, 1 red.** Green: Playwright e2e + axe, **Database migrations + pgTAP (including the new `db reset`, `test:parity`, and `npm run data` steps)**, and the secret scan. Red: "Lint, types, unit tests, build, audit", and **only** its "Dependency audit" step failed (lint, types, unit tests, and build passed). Cause: `npm audit --audit-level=high` reports `braces` (GHSA-vfj7-8cjw-p6xm, published 18 Sep 2026) with no patched version, reached only through dev tooling (`shadcn`, `eslint-config-next`). It is the owner's call whether to loosen the audit gate (for example `--omit=dev` after moving `shadcn` to devDependencies, or an allowlist entry for this one advisory). The four Dependabot runs on the same commit passed.
-- **Owner decisions, 3 Oct 2026:** D-02 accepted (multi-tag types, OR within the group; ADR-0004). D-03: founders are in scope; no real founder data is loaded until legal settles source and privacy handling. D-06: an informal gate on a laptop, labelled informal; it cannot close P2-09.
-- **Owner actions open:** D-06 (reference devices and gate owner); D-05 (are Public and Acquired startup stages); legal sign-off on founder data before any is loaded; D-11 (restrict the Geoapify key by referrer and decide the basemap capacity path before launch); ADR-0009 (confirm rotation and tilt are off in the explorer); the real city boundaries and curated data (D-04); the audit-gate decision above.
-- **Blockers:** P2-09 (D-06 devices and gate owner).
+## Current state (7 Oct 2026; full detail in [PROJECT_HANDOVER.md](../PROJECT_HANDOVER.md))
+- **One machine:** this Windows laptop. About 2 GB of memory is often free: run one heavy job at a time.
+- **Built and tested locally:** the public site (city selection, explorer with WebGL map, Grid and List, search and filters, company and jobs pages, beacon, feedback forms), the admin (MFA, editing, CSV import, evidence review, publication gates, feeds, logos), the pipeline, and the build safeguards. Production has never been deployed; staging runs the synthetic sample.
+- **Databases:** the **main local database** (project `company-map`, port 54322) holds the 46 Bengaluru pilot drafts and must **never be reset or used by a test**. Every database and admin test runs on the **disposable test stack** (`node scripts/test-stack.mts start|reset|test-db|stop`, project `company-map-test`, port 55322); the tests refuse any other database. Backups: `.local-backups/` (git-ignored).
+- **Previews:** preserved copies of the synthetic and pilot builds are in `.local-previews/{synthetic,pilot}` (git-ignored). Serve them from `code/` with `npx wrangler dev --config ../.local-previews/synthetic/wrangler.jsonc --port 8788` or `.../pilot/... --port 8789`.
+- **Latest checks:** see the newest log entry below.
+- **Owner actions open:** the GitHub `staging` and `production` environments and their variables ([deploy-environments.md](deploy-environments.md)); the production rebuild policy ([ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md)); D-04 coverage and gate thresholds; D-06 devices and gate owner; D-07 geocoding provider; a human data reviewer for the pilot; the logo permitted-use categories; hosted MFA; an independent approver for the audit exception; which project the pipeline serves; whether to push, and the squash of `5812ed2`/`b55857e` first.
+- **Blockers:** P2-09 (devices), P9-20 (a human reviewer), hosted work (no hosted Supabase project yet).
 
 ## Log
+
+### 2026-10-07 (night): SEC-1 to SEC-4, the publication loophole, listings, test isolation, build configuration, dataset versions
+- **Test isolation first.** `scripts/test-stack.mts` builds a disposable second Supabase stack (`company-map-test`, ports +1000, database 55322) from `supabase/`, with a `test_stack.marker` in its seed.
+  - pgTAP (`npm run test:db`), parity, pipeline pytest, and admin e2e refuse any database on port 54322, without the marker, or holding real companies: `tests/disposable-db.ts`, `conftest.py`.
+  - Demonstrated live: an unmarked database is refused by parity, pytest, and the pgTAP runner.
+  - CI's database job moved onto the test stack (not yet run on GitHub).
+  - The main stack was stopped with a plain `supabase stop` (data kept) after a `pg_dump` (`.local-backups/pre-sec-fixes-20261007-115645.dump`), and never reset.
+- **Previews preserved** in `.local-previews/{synthetic,pilot}` (git-ignored, each with its own `wrangler.jsonc`), because test builds rewrite `code/out`.
+- **Each gap demonstrated first, as the role that can reach it, on the test stack** (scratch script; before and after transcripts kept outside the repo):
+
+  | Gap | Role and action | Before | After |
+  | --- | --- | --- | --- |
+  | SEC-1 | aal2 editor UPDATEs a public company's type tag | committed | refused |
+  | SEC-2 | reviewer copies an undecided logo to the public bucket, then rejects it | public copy left | copy refused (RLS) |
+  | SEC-3 | `pipeline` inserts an active job with no feed and no evidence | committed | refused at commit |
+  | SEC-4a | `service_role` inserts pre-reviewed evidence | committed | refused |
+  | SEC-4b | `service_role` publishes a draft | committed | refused |
+  | SEC-4c | `service_role` approves a feed | committed | refused |
+  | SEC-4d | `service_role` sets a logo key | committed | refused |
+  | Loophole | reviewer publishes a company whose only reviewed office is a draft | published | refused |
+  | Listing | owner-published real office without evidence | listed | not listed |
+
+- **Fix:** migration `20261007150000_security_gaps.sql`.
+  - **Caller identity:** `caller_role()`, `caller_is_owner()`, `caller_is_pipeline()`. Only the database owner is trusted without a signed-in user.
+  - **SEC-1:** the change gate fires on UPDATE of tags, sectors and job cities, checking the old and new parent.
+  - **SEC-3:** `pipeline_job_gate` holds pipeline jobs to the approved-feed rule. Feed automation is preserved: approved feed plus claimed evidence still lists a job.
+  - **SEC-4:** the evidence, feed, logo and publish guards apply to untrusted callers with no signed-in user.
+  - **Loophole:** a company needs a **published** reviewed office.
+  - **Listing:** `listed_office()` limits listings, points, search fields and the snapshot to published offices with reviewed address and location. Synthetic sample records are excepted.
+  - **SEC-2:** the admin panel now does approve → copy → `activate_logo`, which compares the public copy with the upload.
+- **Regression tests:**
+  - pgTAP `16_security_gaps` (39 tests, each as the role that could reach the gap); `15_logo_assets` rewritten (28).
+  - Fixtures in `02`, `03`, `08`, `11`, `12` and `13` updated to the new rules (published reviewed offices; `service_role` may not publish).
+  - Admin e2e: the reviewer publishes the office first; Storage API copies of undecided and rejected logos are refused.
+- **DEP-1:**
+  - Both deploy workflows map `GEOAPIFY_KEY` and `TURNSTILE_SITE_KEY`.
+  - `lib/build-features.ts` defines the required features per build kind; `check-deploy-env` and a new prebuild check (`scripts/check-build-config.mts`) fail a hosted build that lacks one.
+  - `public/build-info.json` (booleans only) lets the beacon and form tests skip with a reason on a build that has those features off.
+- **DEP-2** ([ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md), proposed):
+  - Dataset folders are `<data_version>-<content hash>`, so changed content always gets new URLs.
+  - Version files are `immutable`; `/data/<city>/current.json` is `no-cache`.
+  - An open explorer tab checks the pointer when it becomes visible again and offers a reload.
+  - The production rebuild options (A manual, B scheduled with approval, C data-only refresh of the last approved release, recommended) await the owner.
+- **Docs corrected:**
+  - architecture, data-pipeline, release-checklist, backup-restore, real-device procedure, setup guide, pilot README, `.env.example`, the memory copy and the ADR index (a documentation agent; every claim checked against the code);
+  - testing, security, data-model, curation guide, filters, deploy-environments, CLAUDE.md, plan.md, the "Current state" above, and the handover. The handover now quotes the exact Startup, MNC and Product definitions. Three green full suites stays a proposal.
+- **Checks run (7 Oct 2026, from `code/`):**
+  - On the test stack: `npm run test:db` 17 files, 708 passed; `npm run test:parity` 8 passed; pipeline pytest 89 passed; `npm run test:admin` 57 passed (third run; the first two each stopped on a test that encoded the old publish order or a letter case, both fixed).
+  - Seed snapshots unchanged (`npm run data -- --export-seed`, no diff).
+  - `npm run lint` clean; `npm run typecheck` clean; `npm test` 42 files, 658 passed.
+  - `npm run test:e2e` on the final code: **280 passed, 0 failed, 56 skipped** (21.5 min; the 56 are the by-design project skips, as before).
+  - **A bug of mine, caught by the skip count:** the first full run on this work had 269 passed and 67 skipped. The new `build-info.json` wrongly marked the beacon and forms as off, because the rule demanded the anon key and the prebuild script did not read `.env.local`. So 11 beacon and form tests skipped instead of running. Fixed: the rule now matches the app's own checks (unit test `build-features.test.ts`) and the script loads the `.env` files as `next build` does. A targeted rerun gave 61 passed and 5 by-design skips; then the full run above.
+  - Main local database after restarting the main stack: 46 pilot drafts, 46 offices, 262 claims, unchanged. Both guards refuse it by port (read-only check). It is still at migration `20261007140000`: the new migration was applied only to the test stack.
+- **Not verified:**
+  - anything on a hosted project (RLS with real JWTs, Storage copy metadata, the `role` setting under hosted PostgREST);
+  - the CI database job on GitHub;
+  - the open-tab notice (no automated test);
+  - the `_headers` placeholder rules on a deployed Worker (checked only under `wrangler dev`).
 
 ### 2026-10-07 (evening): pilot drafts restored, staging smoke failure explained, environment separation prepared
 - **Pilot drafts erased, then restored.** Two `npx supabase db reset` runs for the pgTAP and admin suites wiped the 46 local pilot drafts. Owner rule from now on: database and admin tests use an isolated disposable stack, or a `pg_dump` backup and restore; never `db reset` on the main local database.

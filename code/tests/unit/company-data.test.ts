@@ -34,7 +34,7 @@ function city(spec: Spec): CityFiles {
     jobs: spec.jobs.map((j) => ({ id: id(j.n), company_id: id(j.company), title: j.title, apply_url: j.url, status: j.status ?? "active", last_checked_at: j.checked ?? null, last_ok_at: j.checked ?? null, evidence_complete: true })),
   });
   const files = splitSnapshot(snapshot);
-  return { slug: spec.slug as CityFiles["slug"], dataVersion: 1, synthetic: true, ...files };
+  return { slug: spec.slug as CityFiles["slug"], dataVersion: 1, datasetVersion: "1-000000000000", synthetic: true, ...files };
 }
 
 const bangalore = city({

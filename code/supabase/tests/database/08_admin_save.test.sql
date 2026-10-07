@@ -141,7 +141,7 @@ reset role;
 select set_config('request.jwt.claims', '', true);
 set local app.skip_audit = 'on';
 insert into office (company_id, city_id, address, geom, accuracy, verification, status)
-values ((select id from saved), 1, '1 Evidence Road', 'SRID=4326;POINT(77.6 12.97)', 'building', 'reviewed', 'draft');
+values ((select id from saved), 1, '1 Evidence Road', 'SRID=4326;POINT(77.6 12.97)', 'building', 'reviewed', 'published');
 insert into field_evidence (company_id, office_id, field, source_url, verified_at, reviewed_at, reviewed_by)
 select case when f in ('address', 'location') then null else (select id from saved) end,
        case when f in ('address', 'location') then (select id from office where address = '1 Evidence Road') end,

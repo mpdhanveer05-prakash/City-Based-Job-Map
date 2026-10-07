@@ -29,7 +29,7 @@ Docker Desktop on Apple Silicon runs the Supabase images fine. Allow it at least
 ```
 git clone https://github.com/mpdhanveer05-prakash/City-Based-Job-Map.git
 cd City-Based-Job-Map
-git pull          # always, before starting; the other laptop may have pushed
+git pull          # always, before starting
 ```
 
 The first push or pull asks you to sign in to GitHub (Git Credential Manager opens a browser).
@@ -63,24 +63,29 @@ From `code/`:
 npm run lint
 npm run typecheck
 npm test            # Vitest; expect all tests to pass
-npm run build       # static export into out/, 36 files
-npm run test:e2e    # builds with DEV_ROUTES=on and runs Playwright: about 9 minutes with a Geoapify key, all projects
+DATA_SOURCE=seed npm run build   # static export into out/ (a build needs a data source; seed = the committed synthetic sample)
+npm run test:e2e    # builds with DEV_ROUTES=on and runs Playwright: about 18 minutes with a Geoapify key, all projects
 npm run dev         # http://localhost:3000, and /dev/map-layer, /dev/tokens, /dev/basemap
 ```
 
-To run the browser tests the way CI does (no key, 2 workers, 1 retry, map specs on desktop only), use `CI=true NEXT_PUBLIC_GEOAPIFY_KEY= npm run test:e2e` (PowerShell: set `$env:CI='true'; $env:NEXT_PUBLIC_GEOAPIFY_KEY=''` first). It takes about 2 minutes here. Run both before pushing.
+To run the browser tests the way CI does (no key, 2 workers, 1 retry, map specs on desktop only), use `CI=true NEXT_PUBLIC_GEOAPIFY_KEY= npm run test:e2e` (PowerShell: set `$env:CI='true'; $env:NEXT_PUBLIC_GEOAPIFY_KEY=''` first). Run both before pushing. The latest test counts and run times are in `docs/progress.md` (7 Oct 2026: unit 40 files; full e2e about 18 minutes with a Geoapify key; pgTAP 17 files, 708 passed).
 
-Database and data (Phase 3 and later). Start Docker Desktop first, then, from `code/`:
+Database and data (Phase 3 and later). Start Docker Desktop first, then, from `code/`.
+
+**Never reset the main local database** (`npx supabase db reset` against project `company-map`, port 54322). Owner rule, 7 Oct 2026: it holds the Bengaluru pilot drafts and owner work. Database tests run on a **disposable test stack** (project `company-map-test`, database port 55322, API 55321), and the test guards (`tests/disposable-db.ts`, `scripts/pipeline/tests/conftest.py`) refuse any other database. If something must touch the main database, take a `pg_dump` backup to `.local-backups/` (git-ignored) first.
 
 ```
-npx supabase db start      # Postgres only, the way CI runs it
-npx supabase db reset      # applies every migration and loads the synthetic sample data (supabase/seed)
-npx supabase test db       # pgTAP: schema, RLS for each role, filter functions, seed (292 tests)
-npm run test:parity        # the TypeScript filter against the SQL functions over the seeded database (about 35 s)
-LOCAL_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres npm run data   # writes public/data/ (git-ignored)
+node scripts/test-stack.mts start --db-only   # copies supabase/ into .test-stack/, starts Postgres only, applies every migration and the synthetic seed
+node scripts/test-stack.mts reset             # re-applies migrations and seed, on the test stack only
+node scripts/test-stack.mts test-db           # pgTAP: schema, RLS for each role, filter functions, seed (or npm run test:db)
+npm run test:parity                           # the TypeScript filter against the SQL functions over the test stack (TEST_DATABASE_URL, default :55322)
+LOCAL_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres npm run data   # writes public/data/ (git-ignored) from the test stack
+node scripts/test-stack.mts stop              # stops it and discards its data
 ```
 
-`npm test` does not need Docker; `npm run test:parity` and `npm run data` do. The sample data is **synthetic** (every company name ends in "(synthetic)", domains end in `.example`); never load it into production.
+`npm run test:admin` (the admin e2e) needs the full test stack: `node scripts/test-stack.mts start` once, then `node scripts/test-stack.mts reset` before **each** run (the specs change data), then `npm run test:admin`. The pipeline's database tests use `TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres`.
+
+`npm test` does not need Docker; `npm run test:parity`, `npm run data` from a database, and the database tests do. The pilot drafts are unpublished, so no ordinary build shows them; to look at them, use the pilot-only preview in `code/data/pilot/bangalore/README.md`. The sample data is **synthetic** (every company name ends in "(synthetic)", domains end in `.example`); never load it into production.
 
 The map validation gate (`npm run gate`, see `docs/map-spec.md` section 10) needs the installed Google Chrome and **about 4 GB of free memory**: a Next.js build, Chrome, and Wrangler run at once. Close other apps first. It writes raw numbers to `code/gate-results/` (git-ignored). Run it on the machine you want numbers for: the first attempt was on a Windows laptop with an Intel GPU and ran out of memory (see `docs/progress.md`, 4 Oct 2026).
 
@@ -92,7 +97,7 @@ Deploying to the staging Worker needs `npx wrangler login` (or the GitHub Action
 
 Claude Code keeps a per-project memory folder outside the repository, under your home directory, in a folder whose name encodes the project path. That is why it does not sync by itself. A copy of this project's memory is in [`docs/claude-memory/`](claude-memory/README.md); its README has the copy commands for Windows and macOS/Linux.
 
-Do this once on the new laptop, and again whenever the memory changes on either laptop.
+Do this once on the new laptop, and again whenever the memory changes.
 
 ## 7. Continue where the work stopped
 

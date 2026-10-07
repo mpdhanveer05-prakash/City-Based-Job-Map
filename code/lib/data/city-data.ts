@@ -32,6 +32,8 @@ export function loadManifest(): Manifest {
 export type CityFiles = {
   slug: CitySlug;
   dataVersion: number;
+  /** The published folder: data_version plus a content hash (ADR-0025). */
+  datasetVersion: string;
   synthetic: boolean;
   companies: CompaniesFile;
   offices: OfficesFile;
@@ -52,6 +54,7 @@ export function loadCity(slug: CitySlug): CityFiles {
   const files: CityFiles = {
     slug,
     dataVersion: entry.data_version,
+    datasetVersion: entry.dataset_version,
     synthetic: entry.synthetic,
     companies: readJson<CompaniesFile>(file("companies")),
     offices: readJson<OfficesFile>(file("offices")),

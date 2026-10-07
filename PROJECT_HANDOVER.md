@@ -2,7 +2,7 @@
 
 > **Purpose.** A self-contained briefing for an assistant (ChatGPT) that has **no repository access**, so it can understand the application and guide the rest of its development.
 >
-> **Prepared:** 7 Oct 2026. **Reviewed code:** commit **`04aa427`** on branch `main` (local; not pushed).
+> **Prepared:** 7 Oct 2026. **Reviewed code:** commit **`04aa427`** on branch `main` (local; not pushed); updated the same night for the security, test-isolation, configuration and versioning work (see the update in §0).
 >
 > **How it was checked:** I read the code, the 25 migrations, the workflows, the tests, `CLAUDE.md`, `plan.md`, every ADR and the whole progress log, and compared them with each other. Live facts (database counts, git, GitHub runs, hosted URLs) were checked the same day with read-only commands. Where a document disagrees with the implementation, **the implementation is described** and the disagreement is listed in [§13](#13-unresolved-inconsistencies-documentation-vs-implementation).
 >
@@ -35,15 +35,26 @@
 | Launch readiness | **Not ready.** Launch blockers: real-data volume and human review (D-04), a geocoding provider (D-07), hosted projects and their configuration, the map performance gate on real devices (D-06), an independent security approval of the audit exception, a screen-reader pass, the domain, monitoring and backups. |
 | Git | `main` is **18 commits ahead** of GitHub (`origin/main` = `883de71`). Two of those commits contain OSM-derived files and **should be squashed before any push** (owner decision pending). |
 
-**Biggest risks to know first.**
-1. **The deploy workflows never pass `NEXT_PUBLIC_GEOAPIFY_KEY` or `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.** Hosted builds therefore draw the map on a blank background and hide the feedback forms ([§7.4](#74-configuration-variables)).
-2. **Four real database gaps** ([§5.6](#56-known-security-gaps-found-in-the-final-sql)):
-   - editors can UPDATE tag, sector and job-city rows of public records without passing the reviewed-evidence gate;
-   - a logo can be left in the public bucket without approval;
-   - jobs written by the pipeline are not evidence-gated in SQL, only in the release build;
-   - callers with no signed-in user can insert pre-reviewed evidence.
-3. **The admin e2e suite is destructive.** Its global setup runs `delete from admin_user` and writes test companies into whichever local database is running. The owner has ruled that **the main local database must never be reset** ([§9](#9-local-operation-and-recovery)).
-4. **Publish now and the pipeline only ever rebuild staging.** Production has no automatic rebuild path. The pipeline's rebuilds don't bump `data_version`, so the dataset URLs don't change when the data does ([§4.5](#45-static-snapshots-versions-caching-and-freshness)).
+**Update, later on 7 Oct 2026 (local, not pushed).** The four risks first listed here have been worked on. All of the
+following is verified only locally; see `docs/progress.md`:
+1. **Build configuration (DEP-1): fixed locally.** The deploy workflows now pass the Geoapify and Turnstile site keys, and
+   a hosted build fails clearly if a required visitor feature lacks its configuration (`lib/build-features.ts`, run by both
+   `check-deploy-env` and the prebuild step).
+2. **The four database gaps (SEC-1 to SEC-4), the publication loophole and the listing rule: fixed locally** in migration
+   `20261007150000`. Each was demonstrated first as the role that could reach it. A company now needs a *published* reviewed
+   office, and a city lists a company only through a published office there with reviewed address and location.
+3. **Test isolation (OPS-1/2): done locally.** Every database and admin test runs on a disposable second stack
+   (`scripts/test-stack.mts`) and refuses any other database. The main local database, which holds the pilot drafts, is
+   never reset.
+4. **Dataset freshness (DEP-2): part 1 built locally.** Content-versioned dataset folders, immutable caching, and an
+   open-tab update notice (ADR-0025). **Still open (owner):** how production rebuilds at all (ADR-0025 part 2, options A–C).
+
+Latest checks, run 7 Oct 2026 from `code/`:
+- **On the disposable test stack:** pgTAP 17 files, 708 passed; parity 8 passed; pipeline pytest 89 passed; admin e2e 57 passed.
+- **Without a database:** unit 42 files, 658 passed; full e2e 280 passed, 0 failed, 56 skipped (by design).
+
+Sections below were written at `04aa427` and updated where these changes apply. Where a row still says "open" for these
+items, the status tables in §2.2 and §10 take precedence.
 
 ---
 
@@ -147,11 +158,11 @@ flowchart LR
 - **Real data only, with evidence.** Every published fact must have **evidence**: a source URL and a date. Publishing requires a **human-reviewed** source. AI may extract and organise data, but **never invents** companies, founders, locations, jobs, verification dates or logos.
 - **Synthetic data** must always be labelled synthetic. **Production refuses it.**
 - **Founders** are in scope as verified professional facts only, with a public correction and removal process (P9-08, not built). No founder data has been loaded.
-- **Definitions (ADR-0023, owner baseline):**
-  - *Startup:* young and independent, with documented evidence.
-  - *MNC:* a multinational with operations in several countries.
-  - *Product company:* sells its own software or product (ADR-0016).
-  - The types overlap.
+- **Definitions (exact owner wording; ADR-0023 for Startup and MNC, ADR-0016 for Product). Use these words verbatim; do not paraphrase them:**
+  - **Startup:** "A company founded to develop and scale a repeatable business model under substantial uncertainty. Apply this classification using documented evidence; funding stage alone does not determine it."
+  - **MNC:** "A company with established business operations in more than one country. Overseas customers alone do not qualify it."
+  - **Product:** "A company that develops and sells its own repeatable software or technology product. Companies may also offer services."
+  - Company type, funding stage and ownership status stay separate, and none is inferred from another. The type tags overlap.
 
 ### 1.7 Approved, proposed, deferred and superseded
 
@@ -250,15 +261,15 @@ For each item, the table separates these levels:
 | DEF-1 | "Apply" measured 17 px tall in full e2e runs | **Fixed in the test harness.** The cause was shown to be the tests reading layout while the stylesheet was pending. The page is never painted unstyled. ([§8.4](#84-defects-def-1-def-2-def-3)) |
 | DEF-2 | Map-load timeouts under parallel e2e load | **Mitigated.** At most one map-heavy test runs at a time. Not proven gone. |
 | DEF-3 | A tapped cluster was still drawn after the camera flight | **Test bug fixed** with `settleOnView()`; passes in the full suite. `plan.md` still says "Open". |
-| SEC-1 | Updates to tag, sector and job-city rows bypass the reviewed-evidence change gate | **New, open** ([§5.6](#56-known-security-gaps-found-in-the-final-sql)) |
-| SEC-2 | A logo can sit in the public bucket without being approved | **New, open** |
-| SEC-3 | Pipeline-written jobs are not evidence- or feed-gated in SQL | **New, open** (only the release build and launch gate catch it) |
-| SEC-4 | Callers with no signed-in user (owner, service role) can insert pre-reviewed evidence | **New, open** (by design for the seed; document or restrict) |
-| DEP-1 | Deploy workflows don't pass the Geoapify or Turnstile site keys | **New, open** |
-| DEP-2 | Pipeline and nightly rebuilds don't bump `data_version`; no cache rule for `/data/*` | **New, open** |
-| DEP-3 | The staging smoke test runs the whole synthetic-data desktop suite, so it fails on a real-data or keyless staging site | **Open** |
+| SEC-1 | Updates to tag, sector and job-city rows bypassed the reviewed-evidence change gate | **Fixed locally** (`20261007150000`; [§5.6](#56-known-security-gaps-found-in-the-final-sql)) |
+| SEC-2 | A logo could sit in the public bucket without being approved | **Fixed locally** (approve, copy, activate) |
+| SEC-3 | Pipeline-written jobs were not evidence- or feed-gated in SQL | **Fixed locally** (`pipeline_job_gate`; feed automation preserved) |
+| SEC-4 | Callers with no signed-in user (service role) could insert pre-reviewed evidence, publish, approve feeds, set logos | **Fixed locally** (only the database owner is trusted) |
+| DEP-1 | Deploy workflows didn't pass the Geoapify or Turnstile site keys | **Fixed locally** (workflows map them; deploy and prebuild checks fail without them) |
+| DEP-2 | Rebuilds could change data under the same URL; no cache rule for `/data/*` | **Fixed locally** (content-hashed folders, ADR-0025 part 1); production rebuild policy awaits the owner |
+| DEP-3 | The staging smoke test runs the whole synthetic-data desktop suite | **Partly fixed**: tests of a feature the build lacks now skip with a reason (`build-info.json`); the suite still assumes synthetic fixtures |
 | DEP-4 | Staging deploys before its smoke test, so a failing build stays live | **Open** |
-| OPS-1 | Admin e2e global setup deletes all `admin_user` rows and adds test companies to the running local database | **Open** (blocks safe testing; see [§9](#9-local-operation-and-recovery)) |
+| OPS-1 | Admin e2e global setup deletes all `admin_user` rows and adds test companies | **Fixed locally**: it now runs only on the disposable test stack and refuses any other database |
 | UX-1 | "Open jobs" counts differ: the explorer counts active jobs only; the company page and jobs page include *suspect* jobs | **Open** (owner decision) |
 
 ### 2.3 The running local previews (as of 7 Oct 2026)
@@ -765,7 +776,9 @@ flowchart LR
   - `npm run audit -- --release` (run by the production workflow) also requires an approval by a **named human on the approvers list who is neither the assessor nor an AI**, plus a confirmed owner.
   - **Today the technical gate passes and the release gate fails.**
 
-### 5.6 Known security gaps found in the final SQL
+### 5.6 Known security gaps found in the final SQL (fixed locally, 7 Oct 2026)
+
+**Update:** all four, the publication loophole, and the listing rule were demonstrated on the disposable test stack as the role that could reach them, then fixed in migration `20261007150000_security_gaps.sql` with regression tests in `supabase/tests/database/16_security_gaps.test.sql`. The table below is the original finding; see the status table in §2.2. Residuals: Storage's copy is trusted for the bytes (the database compares size, type and content tag); pre-migration public copies of undecided logos, if any, are not removed automatically (only local test data had them); nothing is verified on a hosted project.
 These were found while preparing this handover. I confirmed them by reading the live policies and grants; none was exploited.
 
 | ID | Gap | Suggested fix |
@@ -1020,7 +1033,7 @@ All runs were on 7 Oct 2026, on Windows 11 with Node 24, from `code/`.
 | CI | GitHub Actions on push | 4/4 jobs green on `883de71` | 6 Oct |
 | Staging smoke | `883de71`'s own tests: `npx playwright test --project=desktop` with `PLAYWRIGHT_BASE_URL` set to the staging URL | **134 passed, 7 failed, 8 skipped** | 7 Oct, live staging |
 
-**Not yet met:** the proposed release criterion of **three** consecutive green full suites (one so far). Earlier full runs on 7 Oct had 4 and 2 failures (a slot-timeout bug, then DEF-3), and one 275/1 run (the first DEF-1 user-side test).
+**Proposal, not an approved requirement:** three consecutive green full suites before a release candidate (one recorded so far). Earlier full runs on 7 Oct had 4 and 2 failures (a slot-timeout bug, then DEF-3), and one 275/1 run (the first DEF-1 user-side test).
 
 ### 8.2 Skips and coverage gaps
 - **The 56 e2e skips are all by design.** Each test runs only on the project (desktop or emulated phone) it applies to:
@@ -1185,8 +1198,8 @@ The pilot README's instructions (plain `npm run build`, then `npm run preview`) 
 | --- | --- | --- | --- | --- | --- | --- |
 | ENV-1 | Create hosted Supabase **staging** and **production** projects; apply migrations; disable sign-ups; enable TOTP; create admins and enrol MFA; pipeline login; Edge Function secrets; deploy the 3 functions | Not started | P0 | — | `supabase db push` clean; admin sign-in with TOTP works on each; hosted RLS/MFA checks pass | Owner, Dev |
 | ENV-2 | GitHub `staging` and `production` environments (required reviewers, `main` only, variables, secrets); delete repository-level Supabase and site variables; push `04aa427` | Prepared locally | P0 | ENV-1, push approval | Staging run waits for approval and passes `check-deploy-env` | Owner |
-| DEP-1 | Map `NEXT_PUBLIC_GEOAPIFY_KEY` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in both deploy workflows and add them to `check-deploy-env` | Open | P0 | ENV-2 | Hosted builds show the basemap and the forms | Dev |
-| DEP-2 | Decide data freshness and caching: bump `data_version` on every data rebuild, or a short cache for `/data/*` | Open | P1 | — | Documented policy and a test | Dev, Owner |
+| DEP-1 | Map `NEXT_PUBLIC_GEOAPIFY_KEY` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in both deploy workflows and add them to `check-deploy-env` | Done locally; needs the environment variables | P0 | ENV-2 | Hosted builds show the basemap and the forms | Dev |
+| DEP-2 | Content-versioned datasets, caching, open-tab update notice (ADR-0025 part 1) | Done locally; not deployed | P1 | — | Documented policy and a test | Dev |
 | DEP-3/4 | Staging smoke suite fit for a real-data staging site; test before going live | Open | P1 | ENV-1 | Smoke passes on real-data staging; a failing build does not go live | Dev |
 | PIPE-1 | Decide which project the pipeline serves; set `PIPELINE_DATABASE_URL` (per environment); give the jobs an `environment:` | Open | P0 | ENV-1 | `pipeline.yml` and `monitor.yml` green | Owner, Dev |
 | REBUILD-1 | Decide how production rebuilds after a publication (manual release only, or an approved trigger) | Open | P0 | — | Documented and implemented | Owner |
@@ -1209,7 +1222,7 @@ The pilot README's instructions (plain `npm run build`, then `npm run preview`) 
 
 | ID | Deliverable | Status | Pri | Depends on | Acceptance | Who |
 | --- | --- | --- | --- | --- | --- | --- |
-| SEC-1…4 | Close the SQL gaps in [§5.6](#56-known-security-gaps-found-in-the-final-sql) | Open | P0 (SEC-1, 3), P1 (SEC-2, 4) | — | New migrations and pgTAP tests | Dev |
+| SEC-1…4 | Close the SQL gaps in [§5.6](#56-known-security-gaps-found-in-the-final-sql) | Done locally (`20261007150000`, `16_security_gaps`); verify on hosted projects | P0 | ENV-1 | New migrations and pgTAP tests | Dev |
 | P9-09 / SEC-APPROVAL | Name the exception owner; add an independent human approver; approve or replace the `braces` exception | Pending | P0 | — | `npm run audit -- --release` passes | Owner (+ independent approver) |
 | P9-13 hosted | MFA on hosted projects | Blocked on owner | P0 | ENV-1 | Admins can act only at aal2 on hosted | Owner |
 
@@ -1228,8 +1241,8 @@ The pilot README's instructions (plain `npm run build`, then `npm run preview`) 
 | P9-14 | Automated off-site backups (database and Storage) with retention; restore drill on a hosted project | Not started | P0 | ENV-1, storage target | Scheduled backup plus a successful hosted restore drill | Owner, Dev |
 | P9-04 | Hosted backup drill; launch gate on real data for each city | In progress (local only) | P0 | ENV-1, DATA-1 | Report files committed | Dev |
 | P9-01 | Manual screen-reader pass (NVDA, TalkBack), admin accessibility | In progress | P0 | — | Findings fixed and documented | Dev / tester |
-| OPS-1/2 | Make admin e2e safe (disposable stack; no `delete from admin_user` on the main database) | Open | P1 | — | Tests never touch the main database | Dev |
-| TEST-1 | Three consecutive green full suites; hosted integration tests (RLS with real JWTs, functions, Turnstile) | Open (1 of 3) | P0 | ENV-1 | Recorded runs | Dev |
+| OPS-1/2 | Make database and admin tests safe (disposable stack, guards) | Done locally; CI change not yet run on GitHub | P1 | — | Tests never touch the main database | Dev |
+| TEST-1 | Hosted integration tests (RLS with real JWTs, functions, Turnstile); and, **if the owner adopts the proposal**, three consecutive green full suites | Open (proposal: 1 of 3 recorded) | P0 | ENV-1 | Recorded runs | Dev |
 | DOC-1 | Fix the stale docs in [§13](#13-unresolved-inconsistencies-documentation-vs-implementation) | Open | P1 | — | Docs match the code | Dev |
 | UX-1 | Decide whether "open jobs" includes suspect jobs (consistent everywhere) | Open | P2 | — | One definition | Owner |
 
@@ -1322,7 +1335,7 @@ P6-04, P5-05, P4-03, Phase 10, the PMTiles migration, Chennai (as the second rel
    - P2-09 on the three device classes;
    - P9-12 (650 KB);
    - the screen-reader pass (P9-01);
-   - three consecutive green full suites plus hosted integration tests (TEST-1);
+   - hosted integration tests (TEST-1), plus three consecutive green full suites if the owner adopts that proposal;
    - Sentry and analytics (P9-10);
    - off-site backups and a hosted restore drill (P9-14, P9-04);
    - the independent audit-exception approval.

@@ -18,6 +18,11 @@ synthetic sample. The rules are unit-tested in `tests/unit/check-deploy-env.test
 | Supabase | `SUPABASE_URL` must be `https://<SUPABASE_PROJECT_REF>.supabase.co`; anon key set; `OTHER_ENV_SUPABASE_PROJECT_REF` set and different | the same |
 | Synthetic sample | only with `ALLOW_SYNTHETIC_DATA=true` **and no** Supabase values (explicit opt-in, no silent fallback) | refused (`ALLOW_SYNTHETIC_DATA`, `DATA_SOURCE`); `RELEASE_BUILD=1` also refuses it at build |
 | `/dev` pages | built (`DEV_ROUTES=on`) | refused if `DEV_ROUTES=on`; the post-deploy check fails if `/dev/tokens` answers 200 |
+| Visitor features (DEP-1, `lib/build-features.ts`) | with a Supabase project: basemap, admin, beacon and forms all required (`GEOAPIFY_KEY`, Supabase values, `TURNSTILE_SITE_KEY`); with `ALLOW_SYNTHETIC_DATA`: basemap only, the rest are off by design | all four required |
+
+The same feature rule runs twice: in `check-deploy-env` before anything is installed, and in the build itself
+(`scripts/check-build-config.mts`, prebuild), which also writes `public/build-info.json` (the build kind and which features
+it has, booleans only). The smoke tests skip a feature the build says it lacks, with that reason, instead of failing.
 
 `DEPLOY_ENV` and the two project refs exist so that a value set at **repository** level, which both jobs would see, cannot
 satisfy both environments.
@@ -29,15 +34,16 @@ afterwards. Leaving them there is how one project could end up serving both envi
 
 **Environment `staging`**
 - Protection: *Required reviewers* (you); *Deployment branches*: `main` only.
-- Variables: `DEPLOY_ENV=staging`; `SITE_URL=https://company-map-staging.company-map.workers.dev`; and either
-  - `SUPABASE_PROJECT_REF` (staging project), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `OTHER_ENV_SUPABASE_PROJECT_REF` (the production project's ref), or
+- Variables: `DEPLOY_ENV=staging`; `SITE_URL=https://company-map-staging.company-map.workers.dev`; `GEOAPIFY_KEY` (public, restricted by referrer to the staging host); and either
+  - `SUPABASE_PROJECT_REF` (staging project), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `OTHER_ENV_SUPABASE_PROJECT_REF` (the production project's ref), `TURNSTILE_SITE_KEY` (public), or
   - `ALLOW_SYNTHETIC_DATA=true` alone, until the staging project exists.
 - Secrets: `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit; ideally a token used only for staging), `CLOUDFLARE_ACCOUNT_ID`.
 
 **Environment `production`**
 - Protection: *Required reviewers* (a second person if possible, and *Prevent self-review*); *Deployment branches*: `main` only.
 - Variables: `DEPLOY_ENV=production`; `SITE_URL=https://officemap.tech`; `SUPABASE_PROJECT_REF` (production), `SUPABASE_URL`,
-  `SUPABASE_ANON_KEY`, `OTHER_ENV_SUPABASE_PROJECT_REF` (staging's ref). Never `ALLOW_SYNTHETIC_DATA`.
+  `SUPABASE_ANON_KEY`, `OTHER_ENV_SUPABASE_PROJECT_REF` (staging's ref), `GEOAPIFY_KEY` (restricted to officemap.tech),
+  `TURNSTILE_SITE_KEY`. Never `ALLOW_SYNTHETIC_DATA`.
 - Secrets: `CLOUDFLARE_API_TOKEN` (a separate production token), `CLOUDFLARE_ACCOUNT_ID`.
 
 The anon keys are public by design, which is why they are variables and not secrets. Nothing privileged goes in either
@@ -47,10 +53,10 @@ environment's variables.
 
 - **Two Supabase projects**: their own database, Storage buckets (`company-logos`, `company-logos-pending`), Auth users,
   allowlisted `admin_user` rows, and enrolled MFA factors. Create administrators separately in each; don't copy them.
-- **Edge Function secrets in each project**: `TURNSTILE_SECRET_KEY`, `ALLOWED_ORIGINS` (that environment's site only),
-  and `GITHUB_DISPATCH_TOKEN`. Publish now sends a `rebuild` event that only `deploy-staging.yml` listens for, and
+- **Edge Function secrets in each project**: `TURNSTILE_SECRET_KEY`, `FEEDBACK_SALT` (rate-limit hash; random, per project),
+  `ALLOWED_ORIGINS` (that environment's site only), `GITHUB_DISPATCH_TOKEN` and `GITHUB_REPOSITORY`. Publish now sends a `rebuild` event that only `deploy-staging.yml` listens for, and
   production has no dispatch or schedule trigger. So the production project's Publish now cannot deploy production
-  until the owner decides how production rebuilds work (docs/release-checklist.md).
+  until the owner decides how production rebuilds work: the options are in [ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md) (proposed; option C recommended).
 - **Pipeline and monitor** (`pipeline.yml`, `monitor.yml`) read the repository secret `PIPELINE_DATABASE_URL`, which isn't
   set yet, so both fail at "Check the secret is set". **Open:** which project the pipeline serves. When it is decided,
   give the job an `environment:` so the secret lives in one environment only.

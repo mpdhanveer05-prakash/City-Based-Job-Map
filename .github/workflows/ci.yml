@@ -90,19 +90,22 @@ jobs:
           cache: npm
           cache-dependency-path: code/package-lock.json
       - run: npm ci
-      # Postgres only (no API, Auth, or Studio), with every migration applied from scratch.
-      - run: npx supabase db start
-      # Re-applies every migration and loads the synthetic sample data (supabase/seed), which
-      # tests/database/04_seed.test.sql checks. The other database tests empty the tables first.
-      - run: npx supabase db reset
-      - run: npx supabase test db
+      # The disposable test stack, Postgres only (no API, Auth, or Studio): scripts/test-stack.mts copies supabase/ into
+      # .test-stack/ with project_id company-map-test and every port moved up by 1000, starts it, and resets it (every
+      # migration from scratch, the synthetic seed, and the test_stack.marker the test guards require). The same commands
+      # run locally, where the main database must never be reset (it holds the pilot drafts).
+      - run: node scripts/test-stack.mts start --db-only
+      # tests/database/04_seed.test.sql checks the seed; the other database tests empty the tables first.
+      - run: npm run test:db
       # The TypeScript filter returns the same results as the SQL functions over the seeded data
       # (ADR-0006; tests/parity). Needs the database above.
       - run: npm run test:parity
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55322/postgres
       # The build-time dataset writer works against the same database and writes valid files.
       - run: npm run data -- --out "$RUNNER_TEMP/data" --require
         env:
-          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55322/postgres
       # The pipeline's Python tests, against the same database, as the pipeline role (scripts/pipeline/tests).
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -112,11 +115,11 @@ jobs:
       - run: pip install -r scripts/requirements.txt
       - run: python -m pytest scripts/pipeline/tests -q
         env:
-          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55322/postgres
       # The committed synthetic snapshot (what builds without a database read) is the seed's output.
       - run: npm run data -- --export-seed
         env:
-          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55322/postgres
       - run: git diff --exit-code -- supabase/seed/snapshots
 
   secret-scan:

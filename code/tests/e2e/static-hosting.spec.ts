@@ -26,6 +26,17 @@ test("hashed build assets are cached as immutable", async ({ page, request }) =>
   expect(response.headers()["cache-control"]).toContain("immutable");
 });
 
+test("city datasets are immutable under a content-versioned folder; the current pointer is always revalidated (ADR-0025)", async ({ request }) => {
+  const pointer = await request.get("/data/bangalore/current.json");
+  expect(pointer.status()).toBe(200);
+  expect(pointer.headers()["cache-control"]).toBe("no-cache");
+  const { dataset_version } = (await pointer.json()) as { dataset_version: string };
+  expect(dataset_version).toMatch(/^\d+-[0-9a-f]{12}$/);
+  const file = await request.get(`/data/bangalore/${dataset_version}/companies.json`);
+  expect(file.status()).toBe(200);
+  expect(file.headers()["cache-control"]).toContain("immutable");
+});
+
 test("robots.txt and sitemap.xml are served", async ({ request }) => {
   const robots = await request.get("/robots.txt");
   expect(robots.status()).toBe(200);

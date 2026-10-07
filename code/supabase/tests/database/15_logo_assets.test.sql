@@ -6,7 +6,7 @@ create extension if not exists pgtap with schema extensions;
 -- A Postgres-only database (CI's `supabase db start`) has no storage schema, so the bucket does not exist there: skip.
 select to_regclass('storage.objects') is not null and to_regclass('storage.buckets') is not null as has_storage \gset
 \if :has_storage
-select plan(23);
+select plan(28);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated, service_role;
@@ -60,7 +60,9 @@ select ok((select not public and file_size_limit = 1048576 from storage.buckets 
 select tests.become('00000000-0000-0000-0000-00000000109e');
 select is(tests.sqlstate_of(tests.record(1)), '23514', 'a record without its file in the bucket is refused');
 reset role;
-insert into storage.objects (bucket_id, name) values ('company-logos-pending', tests.key(1)), ('company-logos-pending', tests.key(2));
+insert into storage.objects (bucket_id, name, metadata) values
+  ('company-logos-pending', tests.key(1), '{"size": 1200, "mimetype": "image/png", "eTag": "\"e1\""}'),
+  ('company-logos-pending', tests.key(2), '{"size": 1300, "mimetype": "image/png", "eTag": "\"e2\""}');
 
 select tests.become('00000000-0000-0000-0000-00000000109e', 'aal1');
 select is(tests.sqlstate_of(tests.record(1)), '42501', 'a password-only session cannot record a logo');
@@ -89,12 +91,24 @@ reset role;
 select tests.become('00000000-0000-0000-0000-00000000109f');
 select is(tests.sqlstate_of(format('select review_logo(%s, %L, %L)', (select max(id) from logo_asset), 'approved', ' ')), '22023',
   'a decision needs a note');
-select is(tests.sqlstate_of(format('select review_logo(%s, %L, %L)', (select max(id) from logo_asset), 'approved', 'Brand page checked; current logo')), '23514',
-  'approving needs the public copy first');
-select is(tests.sqlstate_of(format($q$insert into storage.objects (bucket_id, name) values ('company-logos', %L)$q$, tests.key(1))), null,
-  'a reviewer copies an undecided upload into the public bucket');
+-- SEC-2 (20261007150000): nothing reaches the public bucket before approval.
+select is(tests.sqlstate_of(format($q$insert into storage.objects (bucket_id, name, metadata) values ('company-logos', %L, '{"size": 1200, "mimetype": "image/png", "eTag": "\"e1\""}')$q$, tests.key(1))), '42501',
+  'a reviewer cannot copy an undecided upload into the public bucket');
 select is(tests.sqlstate_of(format('select review_logo(%s, %L, %L)', (select max(id) from logo_asset), 'approved', 'Brand page checked; current logo')), null,
-  'then approves it');
+  'a reviewer approves the upload');
+select is((select logo_key from company where id = (select company from t)), null, 'approving alone does not change the company''s logo');
+select is(tests.sqlstate_of(format('select activate_logo(%s)', (select max(id) from logo_asset))), '23514', 'activating needs the public copy');
+select is(tests.sqlstate_of(format($q$insert into storage.objects (bucket_id, name, metadata) values ('company-logos', %L, '{"size": 999, "mimetype": "image/png", "eTag": "\"other\""}')$q$, tests.key(1))), null,
+  'once approved, a reviewer may copy it into the public bucket');
+select is(tests.sqlstate_of(format('select activate_logo(%s)', (select max(id) from logo_asset))), '23514',
+  'a public copy that does not match the reviewed upload is not activated');
+reset role;
+set local storage.allow_delete_query = 'true';
+delete from storage.objects where bucket_id = 'company-logos' and name = tests.key(1);
+reset storage.allow_delete_query;
+insert into storage.objects (bucket_id, name, metadata) values ('company-logos', tests.key(1), '{"size": 1200, "mimetype": "image/png", "eTag": "\"e1\""}');
+select tests.become('00000000-0000-0000-0000-00000000109f');
+select is(tests.sqlstate_of(format('select activate_logo(%s)', (select max(id) from logo_asset))), null, 'a matching copy is activated');
 select is((select logo_key from company where id = (select company from t)), tests.key(1), 'and it becomes the company''s logo');
 select is((select self_reviewed from logo_asset order by id desc limit 1), false, 'reviewed by someone other than the uploader');
 select is(tests.sqlstate_of(format('select review_logo(%s, %L, %L)', (select max(id) from logo_asset), 'rejected', 'again')), '23514',
@@ -109,6 +123,8 @@ reset role;
 select tests.become('00000000-0000-0000-0000-00000000109f');
 select review_logo((select max(id) from logo_asset), 'rejected', 'Not the current logo');
 select is((select logo_key from company where id = (select company from t)), tests.key(1), 'rejecting another upload keeps the approved logo');
+select is(tests.sqlstate_of(format($q$insert into storage.objects (bucket_id, name, metadata) values ('company-logos', %L, '{"size": 1300, "mimetype": "image/png"}')$q$, tests.key(2))), '42501',
+  'a rejected upload can never be copied into the public bucket (SEC-2)');
 reset role;
 
 \else

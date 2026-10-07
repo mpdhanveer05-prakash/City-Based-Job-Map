@@ -1,6 +1,6 @@
 ---
 name: feedback-admin-e2e-and-local-stack
-description: "How to run npm run test:admin and the Playwright builds on this laptop without false failures (db reset, stray next dev, Docker DNS 503, memory)"
+description: "How to run npm run test:admin and the Playwright builds on this laptop without false failures (test-stack reset, stray next dev, Docker DNS 503, memory)"
 metadata:
   node_type: memory
   type: feedback
@@ -8,10 +8,10 @@ metadata:
   modified: 2026-10-05T10:30:56.880Z
 ---
 
-- `npx supabase db reset` before **every** `npm run test:admin` (the spec mutates data and is serial). Never run `supabase test db` at the same time.
+- `npm run test:admin` runs against the disposable test stack (project `company-map-test`, database :55322, API :55321): `node scripts/test-stack.mts start` once, then `node scripts/test-stack.mts reset` before **every** `npm run test:admin` (the spec mutates data and is serial). **Never reset the main local database** (owner, 7 Oct 2026; it holds the pilot drafts), see [[feedback-protect-local-db]]. Never run `node scripts/test-stack.mts test-db` at the same time.
 - A running `next dev` (the owner's) rewrites `.next/dev/types` and corrupts it, so `npm run build` fails with "Failed to type check". Do not kill their server: run `rm -rf .next/dev/types && npx next typegen` right before a build or Playwright run.
 - Kill stale `workerd` processes before a Playwright run (`Get-Process workerd | Stop-Process`), as in [[feedback-stale-test-server]].
-- The local Edge runtime sometimes answers `503 {"message":"name resolution failed"}` from its own DNS lookup, mostly on a run that starts right after another one (a stale `supabase_edge_runtime_company-map` container is shared). Global setup now removes that container before and after each run and warms the functions, and the Publish now calls retry that exact answer for 90 s. If it still fails, the message says what the function answered; the log is `%TEMP%/admin-e2e-functions.log`. It is a local fault, not a code bug.
+- The local Edge runtime sometimes answers `503 {"message":"name resolution failed"}` from its own DNS lookup, mostly on a run that starts right after another one (a stale `supabase_edge_runtime_company-map-test` container is shared). Global setup now removes that container before and after each run and warms the functions, and the Publish now calls retry that exact answer for 90 s. If it still fails, the message says what the function answered; the log is `%TEMP%/admin-e2e-functions.log`. It is a local fault, not a code bug.
 - Each Edge Function needs its own `deno.json` (zod import); the shared `import_map` path in `config.toml` was not applied for `submit-feedback`.
 - When the machine is low on memory Claude Code kills background commands and a Playwright test can wait for 28 minutes. Run heavy jobs one at a time and never start a second while one runs (even a grep timed out). Do not restart a killed run until asked; see [[feedback-playwright-wipes-test-results]].
 - A strict CSP turns library surprises into e2e failures: the dev pages' `blob:` logos and Zod's `Function("")` probe both showed up that way. `tests/e2e/csp.spec.ts` prints the source file and line of any violation.

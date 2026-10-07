@@ -1,5 +1,5 @@
 "use client";
-// A company's logo: upload with provenance, and a reviewer's decision (migration 20261007110000_logo_assets.sql). The file
+// A company's logo: upload with provenance, a reviewer's decision, then activation (migrations 20261007110000, 20261007150000). The file
 // goes to the public company-logos bucket under <company id>/<sha-256>.<ext>; its record says where it came from and on what
 // basis we may use it. Approving makes it the logo. The database checks all of this; the panel only collects and shows it.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +33,7 @@ type Asset = {
   decision: "approved" | "rejected" | null;
   decision_note: string | null;
   self_reviewed: boolean | null;
+  activated_at: string | null;
 };
 
 async function sha256Hex(file: File): Promise<string> {
@@ -137,20 +138,36 @@ export function LogoPanel({ companyId }: { companyId: string }) {
     }
   };
 
+  // SEC-2 (migration 20261007150000): approve first; only then may the file be copied to the public bucket, and
+  // activate_logo makes it the logo once the public copy matches the reviewed upload.
+  const activate = async (id: number): Promise<string | null> => {
+    const key = assets.data?.find((x) => x.id === id)?.storage_key;
+    if (!key) return "That upload is no longer listed. Reload the page.";
+    const copied = await supabase.storage.from("company-logos-pending").copy(key, key, { destinationBucket: "company-logos" });
+    if (copied.error && !/exists|duplicate/i.test(copied.error.message)) return `Approved, but the file could not be published: ${copied.error.message}`;
+    const { error } = await supabase.rpc("activate_logo", { p_id: id });
+    return error ? `Approved, but it is not the logo yet: ${describeError(error)}` : null;
+  };
+
   const decide = async (id: number, decision: "approved" | "rejected") => {
     setMessage(null);
     const why = (notes[id] ?? "").trim();
     if (!why) return setMessage({ kind: "error", text: "Write a note saying why." });
-    if (decision === "approved") {
-      // The public copy first: review_logo approves only a file that is already in the public bucket.
-      const key = assets.data?.find((x) => x.id === id)?.storage_key;
-      if (!key) return setMessage({ kind: "error", text: "That upload is no longer listed. Reload the page." });
-      const copied = await supabase.storage.from("company-logos-pending").copy(key, key, { destinationBucket: "company-logos" });
-      if (copied.error && !/exists|duplicate/i.test(copied.error.message)) return setMessage({ kind: "error", text: `The file could not be published: ${copied.error.message}` });
-    }
     const { error } = await supabase.rpc("review_logo", { p_id: id, p_decision: decision, p_note: why });
     if (error) return setMessage({ kind: "error", text: describeError(error) });
-    setMessage({ kind: "success", text: decision === "approved" ? "Approved: it is now the logo." : "Rejected." });
+    if (decision === "approved") {
+      const problem = await activate(id);
+      refresh();
+      return setMessage(problem ? { kind: "error", text: problem } : { kind: "success", text: "Approved: it is now the logo." });
+    }
+    setMessage({ kind: "success", text: "Rejected." });
+    refresh();
+  };
+
+  const retryActivate = async (id: number) => {
+    setMessage(null);
+    const problem = await activate(id);
+    setMessage(problem ? { kind: "error", text: problem } : { kind: "success", text: "It is now the logo." });
     refresh();
   };
 
@@ -257,6 +274,14 @@ export function LogoPanel({ companyId }: { companyId: string }) {
                       <>
                         {a.decision === "approved" ? "Approved" : "Rejected"}
                         {a.self_reviewed ? " (self-reviewed)" : ""}: {a.decision_note}
+                        {a.decision === "approved" && !a.activated_at && (
+                          <div className="mt-2">
+                            Not the logo yet: the public copy is missing or does not match.{" "}
+                            <Button size="sm" variant="outline" onClick={() => void retryActivate(a.id)} disabled={!can("reviewer")} data-testid="activate-logo">
+                              Make it the logo
+                            </Button>
+                          </div>
+                        )}
                       </>
                     ) : (
                       <div className="flex flex-col gap-2">

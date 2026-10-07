@@ -19,7 +19,7 @@ Until each tool has been run on its phone, the **manual protocol** below stays t
 
 | Name | What | Why |
 | --- | --- | --- |
-| **Pilot** | The Bengaluru pilot companies, once imported locally (`data/pilot/bangalore/`), built with `npm run data` from the local database | What visitors will actually see: real addresses, real spread, real logos when they exist |
+| **Pilot** | The Bengaluru pilot companies, once imported locally (`data/pilot/bangalore/`). A plain `npm run data` does not show them: they are unreviewed drafts, and a build refuses a mix of real and synthetic companies. Build the pilot-only preview instead: `node scripts/pilot/preview-db.mts`, then a build with `PILOT_PREVIEW=1 SITE_ENV=pilot-preview LOCAL_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/pilot_preview` **in a separate copy of `code/`**, so it does not overwrite the synthetic preview (steps in `code/data/pilot/bangalore/README.md`) | What visitors will actually see: real addresses, real spread, real logos when they exist |
 | **S** | 1,500 synthetic offices (the launch estimate), fixed seed | The launch-scale load |
 | **M** | 5,000 synthetic offices | Clustering under load |
 | **L** | 15,000 synthetic offices, with dense hotspots, 50 identical-coordinate groups, and a 30-company building | Headroom: the cluster, spider, and texture-atlas limits |

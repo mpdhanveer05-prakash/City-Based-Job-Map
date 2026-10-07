@@ -3,7 +3,8 @@
 //   node scripts/build-datasets.mts [--out public/data] [--require] [--seed-fallback] [--export-seed]
 //
 // Reads `city_build_snapshot(city)` once per launch city, validates it, and writes
-//   <out>/<city>/<data_version>/{companies,offices,search,details}.json   and   <out>/manifest.json
+//   <out>/<city>/<data_version>-<content hash>/{companies,offices,search,details}.json, <out>/<city>/current.json,
+//   and <out>/manifest.json
 // Older version folders of a city are removed, so the output holds only the current data.
 //
 // Where the snapshot comes from is decided by lib/api/data-source.ts (ADR-0010): a Supabase project,
@@ -135,11 +136,14 @@ async function main() {
     const cityDir = path.join(outDir, set.city);
     mkdirSync(cityDir, { recursive: true });
     for (const entry of readdirSync(cityDir)) {
-      if (entry !== String(set.dataVersion)) rmSync(path.join(cityDir, entry), { recursive: true, force: true });
+      if (entry !== set.datasetVersion) rmSync(path.join(cityDir, entry), { recursive: true, force: true });
     }
-    const versionDir = path.join(cityDir, String(set.dataVersion));
+    // data_version plus a content hash (ADR-0025): changed content always gets a new folder, so the files are immutable.
+    const versionDir = path.join(cityDir, set.datasetVersion);
     mkdirSync(versionDir, { recursive: true });
     for (const name of DATASET_FILE_NAMES) writeFileSync(path.join(versionDir, `${name}.json`), set.files[name]);
+    // The pointer an open tab checks (never cached, public/_headers) to learn that newer data exists.
+    writeFileSync(path.join(cityDir, "current.json"), JSON.stringify({ version: 1, dataset_version: set.datasetVersion }));
   }
   const manifest = buildManifest(sets);
   writeFileSync(path.join(outDir, "manifest.json"), JSON.stringify(manifest));

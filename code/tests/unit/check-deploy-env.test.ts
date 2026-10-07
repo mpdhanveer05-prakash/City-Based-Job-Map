@@ -11,6 +11,8 @@ const staging = {
   NEXT_PUBLIC_SUPABASE_URL: `https://${STAGING_REF}.supabase.co`,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
   OTHER_ENV_SUPABASE_PROJECT_REF: PROD_REF,
+  NEXT_PUBLIC_GEOAPIFY_KEY: "geo-public-key",
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: "turnstile-site-key",
 };
 const production = {
   ...staging,
@@ -57,7 +59,7 @@ describe("checkDeployEnv", () => {
   });
 
   it("lets staging show the synthetic sample only when it opts in explicitly", () => {
-    const opted = { DEPLOY_ENV: "staging", NEXT_PUBLIC_SITE_URL: staging.NEXT_PUBLIC_SITE_URL, ALLOW_SYNTHETIC_DATA: "true" };
+    const opted = { DEPLOY_ENV: "staging", NEXT_PUBLIC_SITE_URL: staging.NEXT_PUBLIC_SITE_URL, ALLOW_SYNTHETIC_DATA: "true", NEXT_PUBLIC_GEOAPIFY_KEY: "geo" };
     expect(checkDeployEnv("staging", opted)).toEqual({ problems: [], dataSource: "seed" });
     expect(checkDeployEnv("staging", { ...staging, ALLOW_SYNTHETIC_DATA: "true" }).problems.join()).toMatch(/choose one/);
   });
@@ -65,5 +67,15 @@ describe("checkDeployEnv", () => {
   it("refuses a staging site URL on a production host, and the reverse", () => {
     expect(checkDeployEnv("staging", { ...staging, NEXT_PUBLIC_SITE_URL: "https://officemap.tech" }).problems.join()).toMatch(/production host/);
     expect(checkDeployEnv("production", { ...production, NEXT_PUBLIC_SITE_URL: staging.NEXT_PUBLIC_SITE_URL }).problems.join()).toMatch(/not a production host/);
+  });
+
+  it("fails clearly when a hosted build lacks a visitor feature's public configuration (DEP-1)", () => {
+    const noMap = checkDeployEnv("production", { ...production, NEXT_PUBLIC_GEOAPIFY_KEY: "" }).problems.join();
+    expect(noMap).toMatch(/basemap feature: set NEXT_PUBLIC_GEOAPIFY_KEY/);
+    const noForms = checkDeployEnv("staging", { ...staging, NEXT_PUBLIC_TURNSTILE_SITE_KEY: "replace-with-site-key" }).problems.join();
+    expect(noForms).toMatch(/feedback feature/);
+    const syntheticNoMap = checkDeployEnv("staging", { DEPLOY_ENV: "staging", NEXT_PUBLIC_SITE_URL: staging.NEXT_PUBLIC_SITE_URL, ALLOW_SYNTHETIC_DATA: "true" });
+    expect(syntheticNoMap.problems.join()).toMatch(/staging-synthetic build needs the basemap/);
+    expect(syntheticNoMap.dataSource).toBe("");
   });
 });

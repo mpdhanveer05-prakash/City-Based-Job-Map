@@ -8,6 +8,7 @@
 // environment that opted in with ALLOW_SYNTHETIC_DATA=true, otherwise empty. Production never falls back to synthetic data.
 import { appendFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import { missingFeatures } from "../lib/build-features.ts";
 
 export type DeployTarget = "staging" | "production";
 
@@ -57,6 +58,8 @@ export function checkDeployEnv(target: DeployTarget, env: Readonly<Record<string
   const key = v("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   const anySupabase = ref !== "" || url !== "" || key !== "";
   if (synthetic && !anySupabase) {
+    // Explicitly synthetic staging: no Supabase project, so no admin, beacon or forms; the map still needs its key.
+    problems.push(...missingFeatures("staging-synthetic", env));
     return { problems, dataSource: problems.length === 0 ? "seed" : "" };
   }
   if (synthetic) problems.push("ALLOW_SYNTHETIC_DATA=true and Supabase settings are both set: choose one.");
@@ -67,6 +70,8 @@ export function checkDeployEnv(target: DeployTarget, env: Readonly<Record<string
   const other = v("OTHER_ENV_SUPABASE_PROJECT_REF");
   if (!other) problems.push("OTHER_ENV_SUPABASE_PROJECT_REF is missing: set the other environment's project ref so the two cannot match.");
   else if (other === ref) problems.push("SUPABASE_PROJECT_REF equals the other environment's project: staging and production must use separate projects.");
+  // Every visitor feature needs its public configuration (DEP-1): the basemap key, Supabase, and the Turnstile site key.
+  problems.push(...missingFeatures(target, env));
   return { problems, dataSource: "" };
 }
 

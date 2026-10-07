@@ -34,7 +34,7 @@ export default async function CityPage({ params }: PageProps<"/[city]">) {
     name: city.name,
     centre: city.centre,
     defaultZoom: city.default_zoom,
-    dataVersion: files.dataVersion,
+    dataVersion: files.datasetVersion,
     synthetic: files.synthetic,
     boundary: city.boundary,
   };

@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import pg from "pg";
 import { totp } from "./totp";
+import { assertDisposableDatabase } from "../disposable-db";
 
 export const FAKE_GITHUB_PORT = 4099;
 export const PASSWORD = "Test-password-1!";
@@ -41,7 +42,8 @@ async function enrolTotp(url: string, anon: string, email: string): Promise<stri
   return factor.totp.secret;
 }
 
-const DB_URL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+// The disposable test stack (playwright.admin.config.ts); assertDisposableDatabase refuses anything else.
+const DB_URL = process.env.ADMIN_E2E_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres";
 
 async function ensureUser(url: string, serviceKey: string, email: string): Promise<string> {
   const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" };
@@ -55,7 +57,7 @@ async function ensureUser(url: string, serviceKey: string, email: string): Promi
   return (await res.json()).id as string;
 }
 
-const EDGE_CONTAINER = "supabase_edge_runtime_company-map";
+const EDGE_CONTAINER = "supabase_edge_runtime_company-map-test";
 
 /**
  * Removes the Edge runtime container and waits until it is gone. `supabase functions serve` leaves it behind (and its
@@ -82,6 +84,8 @@ async function waitFor(check: () => Promise<boolean>, what: string, ms = 90_000)
 export default async function globalSetup() {
   const url = process.env.ADMIN_E2E_SUPABASE_URL!;
   const serviceKey = process.env.ADMIN_E2E_SERVICE_KEY!;
+  // Before anything is written: these specs delete admin_user rows and add companies.
+  await assertDisposableDatabase(DB_URL);
 
   removeEdgeContainer();
 
@@ -162,7 +166,7 @@ export default async function globalSetup() {
   const logFile = path.join(tmpdir(), "admin-e2e-functions.log");
   const log = openSync(logFile, "w");
   console.log(`Edge Functions log: ${logFile}`);
-  const functions: ChildProcess = spawn("npx", ["supabase", "functions", "serve", "--env-file", envFile], { shell: true, stdio: ["ignore", log, log] });
+  const functions: ChildProcess = spawn("npx", ["supabase", "functions", "serve", "--workdir", ".test-stack", "--env-file", `"${envFile}"`], { shell: true, stdio: ["ignore", log, log] });
   await waitFor(async () => {
     const res = await fetch(`${url}/functions/v1/click`, { method: "OPTIONS", headers: { Origin: "http://localhost:3100" } });
     return res.status === 204;

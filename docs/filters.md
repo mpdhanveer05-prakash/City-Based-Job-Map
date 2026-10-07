@@ -86,7 +86,7 @@ So selecting Startup does not zero the MNC count: the user can still add MNC. Co
 
 ## City datasets [Confirmed design, ADR-0006; file layout is a Proposal]
 
-`city_build_snapshot(city_slug)` returns, as one JSON document, everything the build needs for a city: the city, its neighbourhoods and tech parks, all sectors, every candidate company (with its types, stage, ownership status, sectors, and published founders), its published offices in the city, and its active and suspect jobs listed in the city. The candidates are exactly `company_filter(city, '{}')`. It returns `null` for an unknown city or one the caller cannot see. Slug redirects are not in it yet (the table arrives with company merging, P7).
+`city_build_snapshot(city_slug)` returns, as one JSON document, everything the build needs for a city: the city, its neighbourhoods and tech parks, all sectors, every candidate company (with its types, stage, ownership status, sectors, and published founders), its listed offices in the city (published, with reviewed address and location evidence; synthetic sample records excepted, `listed_office()`, since `20261007150000`), and its active and suspect jobs listed in the city. The candidates are exactly `company_filter(city, '{}')`, which counts only listed offices, so a company appears in a city only through a listed office there. It returns `null` for an unknown city or one the caller cannot see. It also carries the companies' slug redirects, which the build writes to `_redirects`.
 
 `npm run data` (`scripts/build-datasets.mts`) reads it once per launch city, validates it with Zod, and writes, under `public/data/` (git-ignored; Next copies it into the static export):
 
@@ -95,10 +95,11 @@ So selecting Startup does not zero the MNC count: the user can still add MNC. Co
 | `<city>/<version>/companies.json` | the city, reference lists, one summary per company | at city entry |
 | `<city>/<version>/offices.json` | one point per published office | at city entry |
 | `<city>/<version>/search.json` | active job titles and published founder names per company | when a visitor first searches |
-| `<city>/<version>/details.json` | description, links, last verified, and the jobs to list | on a company page |
-| `manifest.json` | each city's current version, counts, file paths, and byte sizes (no timestamp) | first |
+| `<city>/<version>/details.json` | description, links, last verified, and the jobs to list | never: the build prerenders the company and jobs pages from it (it is still published) |
+| `<city>/current.json` | the city's current `dataset_version` | by an open explorer tab, to learn that newer data exists (never cached) |
+| `manifest.json` | each city's current version, counts, file paths, and byte sizes (no timestamp) | never: the build bakes the paths into each page; the launch gate and tests read it |
 
-The version is `city.data_version`, so a file URL changes when the data does and can be cached for a long time. Older version folders are removed on each run.
+The version folder is `<city.data_version>-<12 hex of a SHA-256 over the four files>` ([ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md), proposed): any change in content, from Publish now, the pipeline, or the nightly build, gives new URLs, and an unchanged rebuild gives the same ones. Version folders are served `immutable` for a year and `current.json` `no-cache` (`public/_headers`). Older version folders are removed on each run, and a deployment replaces the whole asset set, so an open tab that later asks for an old file gets a 404 and the page says the data was updated. An open explorer tab also checks `current.json` when it becomes visible again (at most every five minutes, and on a back/forward restore) and offers a reload when the version differs.
 
 **Data source** ([ADR-0010](decisions/0010-build-data-source.md), `lib/api/data-source.ts`): a Supabase project over REST with the public anon key (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`; RLS applies), else `LOCAL_DATABASE_URL` (a local database as the anon role, development only), else the committed synthetic snapshot in `supabase/seed/snapshots/` **only** when `DATA_SOURCE=seed` or `--seed-fallback` is given. With nothing, the script skips with a message, and `--require` (what `npm run build` passes) makes that an error. `npm run data -- --export-seed` rewrites the committed snapshots from the seeded local database. `RELEASE_BUILD=1` refuses synthetic data.
 

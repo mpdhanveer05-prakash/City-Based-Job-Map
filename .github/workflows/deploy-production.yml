@@ -48,6 +48,9 @@ jobs:
       OTHER_ENV_SUPABASE_PROJECT_REF: ${{ vars.OTHER_ENV_SUPABASE_PROJECT_REF }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+      # Public visitor-feature keys (DEP-1); check-deploy-env and the prebuild check fail the run when one is missing.
+      NEXT_PUBLIC_GEOAPIFY_KEY: ${{ vars.GEOAPIFY_KEY }}
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
       # Read only so the check can refuse it: production never shows the synthetic sample.
       ALLOW_SYNTHETIC_DATA: ${{ vars.ALLOW_SYNTHETIC_DATA }}
       # Production reads the production database and never the synthetic sample: RELEASE_BUILD=1 refuses synthetic or mixed

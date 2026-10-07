@@ -14,6 +14,7 @@
 // Needs the seeded local database: `npx supabase db start && npx supabase db reset`.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Client } from "pg";
+import { assertDisposableDatabase } from "../disposable-db";
 import { citySnapshotSchema, mergeDataset, splitSnapshot, type CityDataset } from "@/lib/filters/dataset";
 import { cityPoints, companyFacets, companyFilter, prepareIndex, searchCompanies, type FilterIndex } from "@/lib/filters/filter";
 import {
@@ -26,7 +27,8 @@ import {
   type Filters,
 } from "@/lib/filters/schema";
 
-const DATABASE_URL = process.env.PARITY_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+// The disposable test stack only (tests/disposable-db.ts refuses anything else; `node scripts/test-stack.mts start --db-only`).
+const DATABASE_URL = process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres";
 const CITIES = ["bangalore", "chennai"] as const;
 
 let client: Client;
@@ -84,6 +86,7 @@ async function insertTrickyFixtures(): Promise<void> {
 }
 
 beforeAll(async () => {
+  await assertDisposableDatabase(DATABASE_URL);
   client = new Client({ connectionString: DATABASE_URL });
   await client.connect();
   const seeded = await client.query("select count(*)::int as n from company where source_id = 1 and slug like '%-synthetic'");

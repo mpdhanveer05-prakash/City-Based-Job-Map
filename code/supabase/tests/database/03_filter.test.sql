@@ -195,6 +195,12 @@ insert into company_founder (company_id, full_name, source_url, status) values
   ('00000000-0000-0000-0000-0000000000a1', 'Asha Rao', 'https://alpha.test/about', 'published'),
   ('00000000-0000-0000-0000-0000000000a3', 'Hidden Person', 'https://charlie.test/about', 'draft');
 
+-- 20261007150000: a company is listed in a city only through a published office with reviewed address and location
+-- evidence there. The fixtures get that evidence (recorded as the migration owner); 16_security_gaps tests the rule itself.
+insert into field_evidence (office_id, field, source_url, verified_at, reviewed_at, reviewed_by)
+select o.id, f, 'https://fixture.test/office', date '2026-09-01', now(), '00000000-0000-0000-0000-00000000e0ff'
+from office o, unnest(array['address', 'location']) f;
+
 insert into auth.users (id) values ('00000000-0000-0000-0000-00000000e001');
 insert into admin_user (user_id, role) values ('00000000-0000-0000-0000-00000000e001', 'editor');
 

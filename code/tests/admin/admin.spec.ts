@@ -166,7 +166,7 @@ test.describe("sign-in and roles", () => {
     const service = process.env.ADMIN_E2E_SERVICE_KEY!;
     const admin = { apikey: service, Authorization: `Bearer ${service}` };
     // Its verified factor and secret, read from Supabase Auth's table (the admin users list does not include factors).
-    const db = new pg.Client({ connectionString: "postgresql://postgres:postgres@127.0.0.1:54322/postgres" });
+    const db = new pg.Client({ connectionString: process.env.ADMIN_E2E_DB_URL! });
     await db.connect();
     const row = (await db.query(
       "select f.id, f.secret, u.id as user_id from auth.mfa_factors f join auth.users u on u.id = f.user_id where u.email = $1 and f.status = 'verified'",
@@ -580,7 +580,9 @@ test.describe("evidence and publication", () => {
       await expect(panel.getByTestId("review-evidence")).toHaveCount(before - 1);
     }
     await expect(panel.locator('tr[data-state="reviewed"]')).toHaveCount(9);
-    await expect(panel.getByText("The evidence is enough to publish.")).toBeVisible();
+    // Reviewed evidence on a draft office is not enough: the office itself must be published first (20261007150000).
+    await expect(panel).toContainText(/at least one published office needs reviewed evidence/i);
+    const companyUrl = page.url();
 
     await page.goto("/admin/offices?q=Out%20of%20town");
     await page.getByRole("table", { name: "Offices" }).getByRole("link", { name: "Out of town" }).click();
@@ -589,6 +591,9 @@ test.describe("evidence and publication", () => {
     await page.getByLabel("Status", { exact: true }).selectOption("published");
     await page.getByTestId("save-office").click();
     await expect(page.getByRole("status").filter({ hasText: "Saved." })).toBeVisible();
+
+    await page.goto(companyUrl);
+    await expect(page.getByTestId("evidence-panel").getByText("The evidence is enough to publish.")).toBeVisible();
   });
 
   test("the review page lists published companies whose facts are unsupported", async ({ page }) => {
@@ -862,7 +867,7 @@ test.describe("audit log and sources", () => {
 
 test.describe("employer feeds", () => {
   // A feed and a held change, as the pipeline would leave them, written straight to the local database.
-  const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+  const DB = process.env.ADMIN_E2E_DB_URL!;
   let feedId = 0;
   test.beforeAll(async () => {
     const db = new pg.Client({ connectionString: DB });
@@ -918,7 +923,7 @@ test.describe("employer feeds", () => {
 test.describe("logos", () => {
   // P9-21 / ADR-0024 on the real local stack: uploads wait in a private bucket, a reviewer approves, and only then is the
   // file public. Three small valid PNGs (the third has bytes after IEND, so it is a different file with a different hash).
-  const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+  const DB = process.env.ADMIN_E2E_DB_URL!;
   const PNG_A = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==", "base64");
   const PNG_B = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
   const PNG_C = Buffer.concat([PNG_A, Buffer.from("third")]);
@@ -1006,6 +1011,15 @@ test.describe("logos", () => {
     await openCompany(page);
     const panel = page.getByTestId("logo-panel");
     const row = panel.locator('[data-decision="pending"]');
+    // SEC-2 (20261007150000): even a reviewer cannot copy an undecided upload into the public bucket.
+    const keyUndecided = `${companyId}/${await sha(PNG_A)}.png`;
+    const reviewerAuth = { apikey: process.env.ADMIN_E2E_ANON_KEY!, Authorization: `Bearer ${await tokenOf(page)}` };
+    const early = await request.post(`${SUPABASE}/storage/v1/object/copy`, {
+      headers: reviewerAuth,
+      data: { bucketId: "company-logos-pending", sourceKey: keyUndecided, destinationBucket: "company-logos", destinationKey: keyUndecided },
+    });
+    expect(early.status(), "an undecided upload cannot be copied to the public bucket").toBeGreaterThanOrEqual(400);
+    expect((await request.get(publicUrl(keyUndecided))).status()).toBeGreaterThanOrEqual(400);
     await row.getByTestId("approve-logo").click();
     await expect(panel).toContainText("Write a note saying why.");
     await row.getByRole("textbox", { name: "Reason for the decision" }).fill("Brand guidelines allow partner use; current logo");
@@ -1048,6 +1062,14 @@ test.describe("logos", () => {
     expect(await logoKey()).toBe(keyB);
     expect((await request.get(publicUrl(keyB))).status()).toBe(200);
     expect((await request.get(publicUrl(keyC))).status(), "a rejected upload is never public").toBeGreaterThanOrEqual(400);
+    // SEC-2: and it can never be copied there afterwards.
+    const reviewerAuth = { apikey: process.env.ADMIN_E2E_ANON_KEY!, Authorization: `Bearer ${await tokenOf(page)}` };
+    const late = await request.post(`${SUPABASE}/storage/v1/object/copy`, {
+      headers: reviewerAuth,
+      data: { bucketId: "company-logos-pending", sourceKey: keyC, destinationBucket: "company-logos", destinationKey: keyC },
+    });
+    expect(late.status(), "a rejected upload cannot be copied to the public bucket").toBeGreaterThanOrEqual(400);
+    expect((await request.get(publicUrl(keyC))).status()).toBeGreaterThanOrEqual(400);
   });
 
   test("a password-only session cannot read, upload, or approve logos", async ({ request }) => {
