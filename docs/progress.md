@@ -15,7 +15,7 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
-### 2026-10-07 (later, in progress): DEF-3 resolved, DEF-1 user-side proof, logo provenance and privacy, MFA beyond the UI
+### 2026-10-07 (later): DEF-3 resolved, DEF-1 user-side proof, logo provenance and privacy, MFA beyond the UI
 - **DEF-3 resolved: the test was wrong, not the map.** A per-frame recording (camera zoom, `isMoving`, animation state, worker trace, tap point, expansion zoom) showed the sequence. After the camera stops, the map asks the worker for the new zoom on `moveend` (about 100 ms later), and the answer is applied 100 to 200 ms after that. In between, the old clusters are drawn and nothing is animating, so `settle()` could return on that frame.
   - Proof: with `window.__clusterDelayMs` slowing the worker, `settle()` returns while the tapped cluster is still drawn. The new `settleOnView()` waits for the answer for the current zoom, and then the cluster has split.
   - The split assertion is kept. Desktop and mobile both pass.
@@ -32,7 +32,8 @@ Update this after every task: what changed, how it was verified (the commands ac
   - `npx supabase test db`: 664 passed. The logo tests skip without a storage schema, as in Postgres-only CI.
   - Pipeline pytest: 88 passed. The pilot import works with the session fixtures.
   - The hit-test and stylesheet specs: 18 of 18 passed.
-  - Admin e2e: the previous run had 54 passed and 1 failed, a row-selection bug in my new logo test (now fixed). Of the new tests, the sign-out and expired-token ones passed and the factor-removal one was corrected. **The final admin run and the final full e2e suite are not yet done.**
+  - Admin e2e: the previous run had 54 passed and 1 failed, a row-selection bug in my new logo test (now fixed). Of the new tests, the sign-out and expired-token ones passed and the factor-removal one was corrected. **Final runs (7 Oct 2026, from `code/`):** lint clean; typecheck clean; `npm test` 633 passed; `npm run test:e2e` 278 passed, 0 failed, 56 skipped (18.0 min; DEF-3 no longer fails); `npx supabase db reset` then `npx supabase test db` 16 files, 664 passed; `db reset` then `npm run test:admin` 57 passed, 0 failed (the four logo tests cover the upload panel in a browser).
+  - This is one green full suite; the proposed release criterion asks for three in a row.
 
 ### 2026-10-07: publication rule restored, DEF-1 cause and fix, DEF-2, admin MFA, pilot preview, device tooling, logos
 - **Publication rule restored (regression in the database, not only the docs).** `publication_problems` accepted *claimed* evidence for optional company facts, and `12_evidence.test.sql` asserted that. Migration `20261007090000_reviewed_optional_facts.sql`: every populated public company fact needs **reviewed** evidence for its current value; an optional fact may stay unknown. The change gate already required reviewed evidence. Feed jobs keep ADR-0022's rules (`job_evidence_complete` unchanged). ADR-0021 corrected.
