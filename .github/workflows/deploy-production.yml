@@ -9,8 +9,8 @@ name: Deploy production
 # authorization being typed in; the `production` environment should also be set up with required reviewers in the
 # repository settings, so a second person approves the run.
 #
-# Needs: repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID; repository variables SUPABASE_URL and
-# SUPABASE_ANON_KEY (the PRODUCTION Supabase project; the anon key is public by design) and SITE_URL (the public address).
+# Needs the `production` GitHub environment with required reviewers, its variables (SITE_URL, SUPABASE_URL,
+# SUPABASE_ANON_KEY, SUPABASE_PROJECT_REF, ...) and its Cloudflare secrets: docs/deploy-environments.md.
 on:
   workflow_dispatch:
     inputs:
@@ -40,9 +40,16 @@ jobs:
       run:
         working-directory: code
     env:
+      # Every value comes from the `production` GitHub environment (docs/deploy-environments.md), never from repository
+      # level; scripts/check-deploy-env.mts refuses a missing value, staging's project, or a staging site URL.
+      DEPLOY_ENV: ${{ vars.DEPLOY_ENV }}
       NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      OTHER_ENV_SUPABASE_PROJECT_REF: ${{ vars.OTHER_ENV_SUPABASE_PROJECT_REF }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+      # Read only so the check can refuse it: production never shows the synthetic sample.
+      ALLOW_SYNTHETIC_DATA: ${{ vars.ALLOW_SYNTHETIC_DATA }}
       # Production reads the production database and never the synthetic sample: RELEASE_BUILD=1 refuses synthetic or mixed
       # data (ADR-0010), and DEV_ROUTES stays off so no /dev page is published.
       RELEASE_BUILD: "1"
@@ -56,19 +63,14 @@ jobs:
             echo "The confirmation phrase did not match, so nothing was built or deployed." >&2
             exit 1
           fi
-      - name: Check the production settings exist
-        run: |
-          missing=0
-          for name in NEXT_PUBLIC_SITE_URL NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY; do
-            if [ -z "${!name}" ]; then echo "$name is not set (repository variable)." >&2; missing=1; fi
-          done
-          exit $missing
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: code/package-lock.json
+      - name: Check the production configuration
+        run: node scripts/check-deploy-env.mts production
       - run: npm ci
       # ADR-0022: the technical audit AND a human approval of every exception it relies on. An unapproved exception fails here.
       - name: Release audit gate (technical audit and exception approval)

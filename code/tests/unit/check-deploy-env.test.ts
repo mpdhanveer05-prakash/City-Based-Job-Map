@@ -1,0 +1,69 @@
+import { describe, expect, it } from "vitest";
+import { checkDeployEnv } from "../../scripts/check-deploy-env.mts";
+
+const STAGING_REF = "abcdefghijklmnopqrst";
+const PROD_REF = "zyxwvutsrqponmlkjihg";
+
+const staging = {
+  DEPLOY_ENV: "staging",
+  NEXT_PUBLIC_SITE_URL: "https://company-map-staging.company-map.workers.dev",
+  SUPABASE_PROJECT_REF: STAGING_REF,
+  NEXT_PUBLIC_SUPABASE_URL: `https://${STAGING_REF}.supabase.co`,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
+  OTHER_ENV_SUPABASE_PROJECT_REF: PROD_REF,
+};
+const production = {
+  ...staging,
+  DEPLOY_ENV: "production",
+  NEXT_PUBLIC_SITE_URL: "https://officemap.tech",
+  SUPABASE_PROJECT_REF: PROD_REF,
+  NEXT_PUBLIC_SUPABASE_URL: `https://${PROD_REF}.supabase.co`,
+  OTHER_ENV_SUPABASE_PROJECT_REF: STAGING_REF,
+  RELEASE_BUILD: "1",
+  DATA_SOURCE: "",
+};
+
+describe("checkDeployEnv", () => {
+  it("accepts a complete staging and production configuration", () => {
+    expect(checkDeployEnv("staging", staging)).toEqual({ problems: [], dataSource: "" });
+    expect(checkDeployEnv("production", production)).toEqual({ problems: [], dataSource: "" });
+  });
+
+  it("fails when everything is missing, as with no environment set up", () => {
+    expect(checkDeployEnv("staging", {}).problems.length).toBeGreaterThanOrEqual(5);
+    expect(checkDeployEnv("production", {}).problems.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("refuses the other environment's marker, so a repository-level value cannot serve both", () => {
+    expect(checkDeployEnv("production", { ...production, DEPLOY_ENV: "staging" }).problems.join()).toMatch(/DEPLOY_ENV/);
+  });
+
+  it("refuses the same Supabase project for both environments", () => {
+    expect(checkDeployEnv("production", { ...production, OTHER_ENV_SUPABASE_PROJECT_REF: PROD_REF }).problems.join()).toMatch(/separate projects/);
+  });
+
+  it("refuses a URL from a different project than the ref", () => {
+    expect(checkDeployEnv("staging", { ...staging, NEXT_PUBLIC_SUPABASE_URL: `https://${PROD_REF}.supabase.co` }).problems.join()).toMatch(/does not belong/);
+  });
+
+  it("never lets production use synthetic data or dev routes", () => {
+    const bare = { ...production, NEXT_PUBLIC_SUPABASE_URL: "", NEXT_PUBLIC_SUPABASE_ANON_KEY: "", SUPABASE_PROJECT_REF: "", OTHER_ENV_SUPABASE_PROJECT_REF: "" };
+    const r = checkDeployEnv("production", { ...bare, ALLOW_SYNTHETIC_DATA: "true" });
+    expect(r.dataSource).toBe("");
+    expect(r.problems.join()).toMatch(/ALLOW_SYNTHETIC_DATA/);
+    expect(checkDeployEnv("production", { ...production, DATA_SOURCE: "seed" }).problems.join()).toMatch(/DATA_SOURCE/);
+    expect(checkDeployEnv("production", { ...production, DEV_ROUTES: "on" }).problems.join()).toMatch(/DEV_ROUTES/);
+    expect(checkDeployEnv("production", { ...production, RELEASE_BUILD: "" }).problems.join()).toMatch(/RELEASE_BUILD/);
+  });
+
+  it("lets staging show the synthetic sample only when it opts in explicitly", () => {
+    const opted = { DEPLOY_ENV: "staging", NEXT_PUBLIC_SITE_URL: staging.NEXT_PUBLIC_SITE_URL, ALLOW_SYNTHETIC_DATA: "true" };
+    expect(checkDeployEnv("staging", opted)).toEqual({ problems: [], dataSource: "seed" });
+    expect(checkDeployEnv("staging", { ...staging, ALLOW_SYNTHETIC_DATA: "true" }).problems.join()).toMatch(/choose one/);
+  });
+
+  it("refuses a staging site URL on a production host, and the reverse", () => {
+    expect(checkDeployEnv("staging", { ...staging, NEXT_PUBLIC_SITE_URL: "https://officemap.tech" }).problems.join()).toMatch(/production host/);
+    expect(checkDeployEnv("production", { ...production, NEXT_PUBLIC_SITE_URL: staging.NEXT_PUBLIC_SITE_URL }).problems.join()).toMatch(/not a production host/);
+  });
+});

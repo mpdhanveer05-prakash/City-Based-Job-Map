@@ -15,6 +15,25 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-07 (evening): pilot drafts restored, staging smoke failure explained, environment separation prepared
+- **Pilot drafts erased, then restored.** Two `npx supabase db reset` runs for the pgTAP and admin suites wiped the 46 local pilot drafts. Owner rule from now on: database and admin tests use an isolated disposable stack, or a `pg_dump` backup and restore; never `db reset` on the main local database.
+  - Backup before restoring: `.local-backups/pre-pilot-restore-20261007-094628.dump` (git-ignored).
+  - Import inspected first: it only inserts (no delete or update); 46 unique domains, none already in the database; the regenerated files matched the committed ones.
+  - `build_import --import` result: 46 created, 0 errors. All 46 companies and 46 offices are drafts, and the offices are unverified. 262 evidence items, all claims (0 reviewed). All 46 offices are in the review queue (44 locality accuracy, 2 building not verified). Nothing published.
+- **Pilot preview** built from a scratch copy against the `pilot_preview` database copy, served on :8789. The synthetic preview on :8788 is unchanged.
+- **Staging (read only).** `883de71` was deployed by the nightly `schedule` trigger on 7 Oct. Its deploy succeeded and the smoke test after it failed, so the build is live. Last green hosted run: 30 Sep, `687cd3e`.
+  - Reproduced locally with `883de71`'s own tests: 134 passed, 7 failed. The cause is the build configuration, not the site: staging has no Supabase URL (so no click beacon) and no Turnstile key (so no report or suggest forms), while those tests assume both. The seventh failure is the cluster-split test bug fixed later (DEF-3).
+  - A nightly deploy without approval doesn't meet the approval rule in CLAUDE.md.
+- **Environment separation (local, not pushed):** both deploy workflows now use GitHub environments, and `deploy-staging.yml` runs in `staging`, which holds each run for a required reviewer. `scripts/check-deploy-env.mts` runs first in both and fails on missing or crossed settings and on synthetic data or dev routes in production. Settings the owner must configure: [deploy-environments.md](deploy-environments.md).
+- **Production excludes `/dev`.** A build with `DEV_ROUTES` off, in a separate directory, has no `out/dev`, no dev pages, and no `/dev` entry among the 138 in the sitemap. `RELEASE_BUILD=1` refuses the synthetic sample.
+- **Incident:** junctioning `node_modules` into a worktree, then `git worktree remove --force`, deleted most of `code/node_modules`. Fixed with `npm ci`; the :8788 preview had to be restarted.
+- **Checks run:** `npm run lint` clean; `npm run typecheck` clean; `npm test` 40 files, 641 passed.
+- **Not verified:** the workflows on GitHub (not pushed, environments not created); the hosted separation of databases, storage, admins and credentials (needs your dashboards).
+- **Next, owner:**
+  - Create the `staging` and `production` environments.
+  - Decide whether staging gets a Supabase project and Turnstile key, or whether the smoke suite skips those tests on builds without them.
+  - Decide which project `PIPELINE_DATABASE_URL` serves.
+
 ### 2026-10-07 (later): DEF-3 resolved, DEF-1 user-side proof, logo provenance and privacy, MFA beyond the UI
 - **DEF-3 resolved: the test was wrong, not the map.** A per-frame recording (camera zoom, `isMoving`, animation state, worker trace, tap point, expansion zoom) showed the sequence. After the camera stops, the map asks the worker for the new zoom on `moveend` (about 100 ms later), and the answer is applied 100 to 200 ms after that. In between, the old clusters are drawn and nothing is animating, so `settle()` could return on that frame.
   - Proof: with `window.__clusterDelayMs` slowing the worker, `settle()` returns while the tapped cluster is still drawn. The new `settleOnView()` waits for the answer for the current zoom, and then the cluster has split.

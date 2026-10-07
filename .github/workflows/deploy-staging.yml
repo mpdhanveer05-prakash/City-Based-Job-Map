@@ -5,8 +5,8 @@ name: Deploy staging
 # `repository_dispatch` (type `rebuild`) from the request-rebuild Edge Function
 # and the pipeline (P8-05).
 #
-# Needs repository secrets CLOUDFLARE_API_TOKEN (Account > Workers Scripts: Edit)
-# and CLOUDFLARE_ACCOUNT_ID.
+# Needs the `staging` GitHub environment with required reviewers, its variables, and its CLOUDFLARE_API_TOKEN
+# (Account > Workers Scripts: Edit) and CLOUDFLARE_ACCOUNT_ID secrets: docs/deploy-environments.md.
 on:
   workflow_dispatch:
   repository_dispatch:
@@ -25,25 +25,33 @@ permissions:
 
 env:
   NEXT_TELEMETRY_DISABLED: 1
-  STAGING_URL: https://company-map-staging.company-map.workers.dev
 
 jobs:
   deploy:
     name: Build and deploy staging
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Required reviewers on the `staging` environment hold every run (by hand, nightly, or Publish now) until a person
+    # approves it, so nothing reaches the staging Worker without approval (CLAUDE.md, Hard rules).
+    environment:
+      name: staging
+      url: ${{ vars.SITE_URL }}
     defaults:
       run:
         working-directory: code
     env:
       SITE_ENV: staging
       DEV_ROUTES: "on"
-      NEXT_PUBLIC_SITE_URL: https://company-map-staging.company-map.workers.dev
-      # Staging reads the staging Supabase project when the repository variables SUPABASE_URL and SUPABASE_ANON_KEY are set
-      # (the anon key is public by design); until then it shows the committed synthetic sample (ADR-0010).
+      # Every value below comes from the `staging` GitHub environment (docs/deploy-environments.md), never from repository
+      # level: scripts/check-deploy-env.mts fails the run when one is missing or belongs to production. Staging shows the
+      # synthetic sample only when that environment sets ALLOW_SYNTHETIC_DATA=true explicitly (ADR-0010).
+      DEPLOY_ENV: ${{ vars.DEPLOY_ENV }}
+      NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      OTHER_ENV_SUPABASE_PROJECT_REF: ${{ vars.OTHER_ENV_SUPABASE_PROJECT_REF }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
-      DATA_SOURCE: ${{ vars.SUPABASE_URL == '' && 'seed' || '' }}
+      ALLOW_SYNTHETIC_DATA: ${{ vars.ALLOW_SYNTHETIC_DATA }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -51,6 +59,9 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: code/package-lock.json
+      # Before installing or building anything: the staging configuration is complete and is not production's.
+      - name: Check the staging configuration
+        run: node scripts/check-deploy-env.mts staging
       - run: npm ci
       # `postbuild` enforces the static-assets Free limits and the secret scan of out/.
       - run: npm run build
@@ -61,7 +72,7 @@ jobs:
         run: npx wrangler deploy --env staging
       - name: Smoke-test staging
         env:
-          PLAYWRIGHT_BASE_URL: ${{ env.STAGING_URL }}
+          PLAYWRIGHT_BASE_URL: ${{ vars.SITE_URL }}
         run: |
           npx playwright install --with-deps chromium
           npx playwright test --project=desktop

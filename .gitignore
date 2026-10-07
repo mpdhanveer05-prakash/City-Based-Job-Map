@@ -44,3 +44,4 @@ Thumbs.db
 code/data/pilot/*/geocode-cache.json
 code/data/pilot/*/import-rows.json
 code/data/pilot/*/pilot.csv
+/.local-backups/
