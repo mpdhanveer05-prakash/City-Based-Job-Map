@@ -9,47 +9,51 @@
 //   details.json    what only the company pages need: description, links, and the jobs to list
 // The browser merges the first three into a `CityDataset` and filters it with `lib/filters/filter.ts`.
 import "../zod-config.ts";
-import { z } from "zod";
+import * as z from "zod/mini"; // not `zod`: see schema.ts (P9-12)
 import { COMPANY_TYPES, OWNERSHIP_STATUSES, STARTUP_STAGES, slugSchema } from "./schema.ts";
 
-const isoOrNull = z.string().nullable();
+const isoOrNull = z.nullable(z.string());
+const text = z.string().check(z.minLength(1));
+const httpsUrl = z.string().check(z.regex(/^https:\/\//));
+const longitude = z.number().check(z.gte(-180), z.lte(180));
+const latitude = z.number().check(z.gte(-90), z.lte(90));
 
-const refSchema = z.object({ slug: slugSchema, name: z.string().min(1) });
+const refSchema = z.object({ slug: slugSchema, name: text });
 
 const companySchema = z.object({
   id: z.guid(),
   slug: slugSchema,
-  name: z.string().min(1),
-  logo_key: z.string().nullable(),
-  description: z.string().nullable(),
-  website_url: z.string().regex(/^https:\/\//),
-  careers_url: z.string().regex(/^https:\/\//).nullable(),
-  startup_stage: z.enum(STARTUP_STAGES).nullable(),
-  ownership_status: z.enum(OWNERSHIP_STATUSES).nullable(),
+  name: text,
+  logo_key: z.nullable(z.string()),
+  description: z.nullable(z.string()),
+  website_url: httpsUrl,
+  careers_url: z.nullable(httpsUrl),
+  startup_stage: z.nullable(z.enum(STARTUP_STAGES)),
+  ownership_status: z.nullable(z.enum(OWNERSHIP_STATUSES)),
   /** Whether the company's required evidence is complete (ADR-0022). Read by the build; not written to the public files. */
   evidence_complete: z.boolean(),
   last_verified_at: isoOrNull,
   types: z.array(z.enum(COMPANY_TYPES)),
   sectors: z.array(slugSchema),
-  founders: z.array(z.string().min(1)),
+  founders: z.array(text),
 });
 
 const officeSchema = z.object({
   id: z.guid(),
   company_id: z.guid(),
-  lng: z.number().min(-180).max(180),
-  lat: z.number().min(-90).max(90),
+  lng: longitude,
+  lat: latitude,
   accuracy: z.enum(["rooftop", "building", "campus", "street", "locality"]),
   address: z.string(),
-  neighbourhood: slugSchema.nullable(),
-  tech_park: slugSchema.nullable(),
+  neighbourhood: z.nullable(slugSchema),
+  tech_park: z.nullable(slugSchema),
 });
 
 const jobSchema = z.object({
   id: z.guid(),
   company_id: z.guid(),
-  title: z.string().min(1),
-  apply_url: z.string().regex(/^https:\/\//),
+  title: text,
+  apply_url: httpsUrl,
   status: z.enum(["active", "suspect"]),
   last_checked_at: isoOrNull,
   /** The last successful check (ADR-0022): the jobs page's freshness comes from this, not from the company's date. */
@@ -58,24 +62,24 @@ const jobSchema = z.object({
   evidence_complete: z.boolean(),
 });
 
-const position = z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)]);
-const ring = z.array(position).min(4);
+const position = z.tuple([longitude, latitude]);
+const ring = z.array(position).check(z.minLength(4));
 
 /** The city limit as the build simplified it: GeoJSON, a MultiPolygon in the database. */
 const boundarySchema = z.object({
   type: z.literal("MultiPolygon"),
-  coordinates: z.array(z.array(ring).min(1)).min(1),
+  coordinates: z.array(z.array(ring).check(z.minLength(1))).check(z.minLength(1)),
 });
 export type CityBoundary = z.infer<typeof boundarySchema>;
 
 const citySchema = z.object({
   slug: slugSchema,
-  name: z.string().min(1),
+  name: text,
   aliases: z.array(z.string()),
   status: z.enum(["draft", "beta", "live"]),
   centre: z.tuple([z.number(), z.number()]),
   default_zoom: z.number(),
-  data_version: z.number().int().positive(),
+  data_version: z.int().check(z.positive()),
   boundary: boundarySchema,
 });
 
@@ -84,7 +88,7 @@ export const citySnapshotSchema = z.object({
   version: z.literal(1),
   city: citySchema,
   /** How many of `companies` are synthetic sample data (`company.is_synthetic`). */
-  synthetic_companies: z.number().int().nonnegative(),
+  synthetic_companies: z.int().check(z.nonnegative()),
   /** Old slugs of these companies and the slug each now has. Build-time only: they become `_redirects` rules (P6-01). */
   slug_redirects: z.array(z.object({ old_slug: slugSchema, new_slug: slugSchema })),
   neighbourhoods: z.array(refSchema),

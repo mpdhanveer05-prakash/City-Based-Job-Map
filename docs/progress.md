@@ -13,6 +13,36 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-08: P9-12 JavaScript budget (Completed)
+- **Profiled** with `npx next experimental-analyze --output` (Next 16.3.7). The route files were read with a small script: source module → client chunk, compressed size. Then a real build was measured in Chromium (every script fetched, gzipped).
+- **Found:**
+  - the explorer carried about 131 KB (per-module estimate) of Zod: every locale and the JSON-schema converters, because `import { z } from "zod"` brings the whole classic API;
+  - every public page loaded TanStack Query (about 10 KB) through the public layout, although only the explorer uses it.
+- **Changed:**
+  - `lib/filters/{schema,url,dataset}.ts` and `lib/zod-config.ts` import `zod/mini` (same checks; `z.pipe`, `z.catch`, `.check(...)`). The admin forms keep `zod`;
+  - `lib/api/snapshot.ts` (build only) loads Zod's English messages, so a bad snapshot still says what is wrong;
+  - `components/providers.tsx` keeps one `QueryClient` per browser tab (a new one per server render). The provider moved from `app/(public)/layout.tsx` to the city page, so the cache survives a visit to a company page and back.
+- **Measured (gzipped, desktop Chromium, the e2e build):**
+
+  | Page | Before | After |
+  | --- | --- | --- |
+  | Explorer `/bangalore` (MapLibre 297 KB included) | 629.9 KB (app 332.5) | **566.2 KB** (app 268.8) |
+  | City selection `/`, scripts its HTML loads | ~136 KB | **134.2 KB**, the framework only |
+  | `/` including the explorer code prefetched after load | 385.3 KB | 321.6 KB |
+  | Company page | not measured | 326.2 KB (most of it prefetch) |
+
+- **`budgets.spec.ts`:**
+  - the D-12 target of 650 KB, enforced through a 600 KB ceiling (today plus headroom; never above the target);
+  - a new city-selection test: a 150 KB budget for the scripts its HTML loads (a proposal for the owner), the prefetch total reported, and no MapLibre before a city is chosen.
+- **Left as they are:** React and the Next runtime (about 135 KB, on every page), MapLibre (kept by D-12), the remaining Zod core (needed for URL parsing), and the `cn` class helper (about 10 KB).
+- **Checks run:**
+  - `npm run lint` clean; `npm run typecheck` clean; `npm test` 45 files, 692 passed;
+  - `budgets.spec.ts` against the new build: 5 passed.
+  - The full e2e run on the new code took **2.6 h** (normally about 20 min: the laptop was starved) with 289 passed, 4 failed and 59 skipped. The four were two map-load timeouts, a page-setup timeout, and a tap answered after 5 s.
+  - Those four alone, 1 worker, `--repeat-each=3`: 18 passed, 6 by-design skips.
+  - **Second full run** (`npx playwright test --workers=2`, 20.0 min): **293 passed, 0 failed, 59 skipped**. The 59 are the 58 by-design project skips plus the city-selection budget test on mobile.
+- **Next:** every remaining task needs the owner: hosted projects and environments (ENV-1/2), P9-08 (legal review; whether founders are shown at launch), P9-10 (the Sentry DSN and analytics token), P9-11 (an R2 bucket), P9-14/15 (hosted project, domain), P9-20 (a human reviewer), and the manual screen-reader pass of P9-01.
+
 ### 2026-10-08: main local database migrated; ADR-0025 option C accepted and built (REBUILD-1, DB-MAIN)
 - **Owner decisions (8 Oct 2026):** apply the main-database plan now; production rebuilds by **option C**.
 - **Main local database migrated** ([main-db-migration-plan.md](main-db-migration-plan.md)):
@@ -268,7 +298,7 @@ Update this after every task: what changed, how it was verified (the commands ac
 - **Audit governance:** exception `approval` record (pending). The gate reports TECHNICAL and APPROVAL separately; `npm run audit -- --release` (now in the production workflow) fails while any exception is unapproved; an AI or the assessor cannot approve. The owner stays PENDING.
 - **Phone coverage:** `tests/e2e/phone.spec.ts`, 10 tests on the phone profile.
 - **Docs:** [curation-guide.md](curation-guide.md) (the Startup and MNC wording is a proposal), ADR-0022.
-- **Bugs found and fixed along the way:** (1) the evidence panel's review button refreshed the wrong query (a shadowed `id`), so the page stayed stale after a review. Found by the admin e2e, diagnosed with a temporary spec, now fixed. (2) A regular expression written by a script contained backspace characters instead of `` (the AI-approver check matched nothing). Unit tests caught it; the repository was scanned for control characters and is clean. (3) The exhaustive cluster-worker test went over Vitest's 5 s default twice under full-suite load and now has a 20 s limit.
+- **Bugs found and fixed along the way:** (1) the evidence panel's review button refreshed the wrong query (a shadowed `id`), so the page stayed stale after a review. Found by the admin e2e, diagnosed with a temporary spec, now fixed. (2) A regular expression written by a script contained backspace characters instead of `\b` (the AI-approver check matched nothing). Unit tests caught it; the repository was scanned for control characters and is clean. (3) The exhaustive cluster-worker test went over Vitest's 5 s default twice under full-suite load and now has a 20 s limit.
 - **Verified this session (from `code/`):** lint and typecheck clean; `npm test` **618 passed**; `npx supabase test db` **620 passed** (14 files; new `13_evidence_followups.test.sql` with 37); `npm run test:parity` **8 passed**; pipeline pytest **76 passed**. `npm run audit`: technical **pass** and approval **1 not approved** (exit 0); `npm run audit -- --release`: **FAIL**, as designed (exit 1). `npm run test:admin` (full local stack, after `db reset`) **46 passed**. `npm run test:e2e` on the final build (desktop + phone) **266 passed, 0 failed, 52 skipped**: 41 desktop-only tests skipped on the phone profile, and 11 phone-only tests (the 10 new ones and 1 older) skipped on desktop. `node scripts/launch-gate.mts` on the synthetic build: FAIL, including the new check "48 published companies and 74 open jobs lack required evidence" (Bengaluru).
 - **Findings, not fixed:**
   - P9-17: the static export's prefetch payloads answer 404 (the client asks for a dotted name, the export writes nested folders); seen on every admin page.

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Explorer, type ExplorerCity } from "@/components/explorer/explorer";
+import { Providers } from "@/components/providers";
 import { loadAllCities, loadCity, loadManifest } from "@/lib/data/city-data";
 import { parseCity } from "@/lib/filters/url";
 
@@ -39,19 +40,22 @@ export default async function CityPage({ params }: PageProps<"/[city]">) {
     boundary: city.boundary,
   };
   return (
+    // Only the explorer uses TanStack Query, so its provider is here rather than in the public layout (P9-12).
     // useSearchParams needs a Suspense boundary in a prerendered page; the fallback is what the static HTML holds.
-    <Suspense
-      fallback={
-        <main className="flex-1 p-4" data-testid="explorer-skeleton">
-          <h1 className="text-xl font-bold">{city.name}</h1>
-          <p className="mt-2 text-muted-foreground">Loading the map…</p>
-        </main>
-      }
-    >
-      <Explorer
-        city={explorerCity}
-        paths={{ companies: entry.files.companies.path, offices: entry.files.offices.path, search: entry.files.search.path }}
-      />
-    </Suspense>
+    <Providers>
+      <Suspense
+        fallback={
+          <main className="flex-1 p-4" data-testid="explorer-skeleton">
+            <h1 className="text-xl font-bold">{city.name}</h1>
+            <p className="mt-2 text-muted-foreground">Loading the map…</p>
+          </main>
+        }
+      >
+        <Explorer
+          city={explorerCity}
+          paths={{ companies: entry.files.companies.path, offices: entry.files.offices.path, search: entry.files.search.path }}
+        />
+      </Suspense>
+    </Providers>
   );
 }

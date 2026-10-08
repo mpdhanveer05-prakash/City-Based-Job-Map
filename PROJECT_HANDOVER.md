@@ -67,7 +67,8 @@ following is verified only locally; see `docs/progress.md`:
 
 Latest checks, from `code/`:
 - **On the disposable test stack (7 Oct):** pgTAP 17 files, 711 passed; parity 8 passed; pipeline pytest 89 passed; admin e2e 58 passed.
-- **Without a database (8 Oct):** lint and typecheck clean; unit 44 files, 669 passed; full e2e 292 passed, 0 failed, 58 skipped (by design; 2 workers).
+- **Without a database (8 Oct, after P9-12):** lint and typecheck clean; unit 45 files, 692 passed; full e2e 293 passed, 0 failed, 59 skipped (by design; 2 workers).
+- **P9-12 (8 Oct):** explorer JavaScript 629 → 566 KB gzipped (D-12 target 650 KB); city-selection page 134 KB (its own 150 KB budget, a proposal).
 
 Sections below were written at `04aa427` and updated where these changes apply. Where a row still says "open" for these
 items, the status tables in §2.2 and §10 take precedence.
@@ -1053,8 +1054,8 @@ All runs were on Windows 11 with Node 24, from `code/`, on the uncommitted worki
 | --- | --- | --- | --- |
 | Lint | `npm run lint` | clean | 8 Oct |
 | Types | `npm run typecheck` | clean | 8 Oct |
-| Unit | `npm test` | **44 files, 669 passed** | 8 Oct |
-| E2E + axe | `npx playwright test --workers=2` (same as `npm run test:e2e` with 2 workers instead of 3, for memory) | **292 passed, 0 failed, 58 skipped** (19.6 min, Geoapify key present) | 8 Oct |
+| Unit | `npm test` | **45 files, 692 passed** | 8 Oct (after REBUILD-1 and P9-12) |
+| E2E + axe | `npx playwright test --workers=2` (same as `npm run test:e2e` with 2 workers instead of 3, for memory) | **293 passed, 0 failed, 59 skipped** (20.0 min, Geoapify key present; after P9-12). Before P9-12: 292 / 0 / 58 | 8 Oct |
 | pgTAP | `node scripts/test-stack.mts test-db` (test stack) | **17 files, 711 passed** | 7 Oct |
 | Admin e2e | `npm run test:admin` (test stack, after `reset`) | **58 passed, 0 failed** | 7 Oct |
 | Pipeline | `python -m pytest scripts/pipeline/tests` (test stack) | 89 passed | 7 Oct |
@@ -1068,10 +1069,10 @@ All runs were on Windows 11 with Node 24, from `code/`, on the uncommitted worki
 **Proposal, not an approved requirement:** three consecutive green full suites before a release candidate. Earlier full runs on 7 Oct had 4 and 2 failures (a slot-timeout bug, then DEF-3), and one 275/1 run (the first DEF-1 user-side test). A 7 Oct run with 3 workers and 0.7 GB of free memory had 2 hit-test failures and was cut off; the same four map specs passed alone the next day (41 passed, 1 skipped, 1 worker), then the full run above. Low memory on this laptop still makes full runs unreliable (DEF-2).
 
 ### 8.2 Skips and coverage gaps
-- **The 58 e2e skips are all by design.** Each test runs only on the project (desktop or emulated phone) it applies to:
+- **The 59 e2e skips are all by design.** Each test runs only on the project (desktop or emulated phone) it applies to:
   - **41 on mobile:** budgets 4, the desktop journey 1, the focus test 1, explorer filters 10, explorer map 9, keyboard journeys 4, lifecycle 1, popup 11;
   - **15 on desktop:** phone spec 10, stylesheet timing 4, popup phone-only 1.
-  - **2 more on mobile since 7 Oct:** the snapshot-consistency spec makes HTTP-only checks and runs on desktop only.
+  - **3 more on mobile since 7 Oct:** the snapshot-consistency spec (2) and the city-selection budget (1) run on desktop only.
   - **Without a Geoapify key,** 12 more skip (basemap and tile tests).
 - **In CI,** the mobile project leaves out the heavy map specs. Pixel 7 emulation isn't a real phone.
 - **Gaps:**
@@ -1133,9 +1134,9 @@ All runs were on Windows 11 with Node 24, from `code/`, on the uncommitted worki
   - Both have been tried only against desktop Chrome: 0 duplicate-key frames, warm filter latency median 283 ms, hits 4/4.
   - Procedure: `docs/real-device-test-procedure.md`.
 - **JavaScript budget:**
-  - the explorer loads **629 KB gzipped** (MapLibre 297 KB, app 331 KB) against the plan's 350 KB;
-  - `budgets.spec.ts` enforces a 660 KB ceiling;
-  - the owner chose 650 KB provisionally (D-12); P9-12 (set it, profile the app code, add a budget for the city-selection page) is not started.
+  - the explorer loads **566 KB gzipped** (MapLibre 297 KB, app 269 KB; 629 KB before P9-12) against the plan's 350 KB;
+  - `budgets.spec.ts` enforces the owner's provisional 650 KB target (D-12) with a 600 KB ceiling, and a 150 KB budget for the city-selection page (134 KB measured, the framework only; the number is a proposal);
+  - P9-12 (8 Oct 2026): the client schemas use `zod/mini`, and TanStack Query's provider moved to the city page. What is left is React and the Next runtime, MapLibre, and the explorer's own code.
 - **Accessibility (P9-01): in progress.**
   - **Automated and passing:** axe (WCAG 2.0/2.1/2.2 A/AA; serious or critical) on every public page and state, keyboard journeys, visible focus, 44 px targets, reduced motion.
   - **Not done:** the manual NVDA and TalkBack pass, and an admin accessibility pass.
@@ -1246,7 +1247,7 @@ The pilot README's instructions (plain `npm run build`, then `npm run preview`) 
 | --- | --- | --- | --- | --- | --- | --- |
 | P2-09 | Map performance gate on real devices (mid-range Android, iPhone, laptop) and a report | Blocked (devices, gate owner) | P0 | D-06 devices | `docs/map-gate-report.md` with raw numbers, pass/fail, sign-off; no silent switch to plain markers | Owner, Dev |
 | P9-03 | Performance budgets with real data on the reference devices | In progress | P1 | P2-09, DATA-1 | Budgets met on devices | Dev |
-| P9-12 | JavaScript budget 650 KB: set it, profile the 331 KB of app code, add a city-page budget | Not started | P1 | — | `budgets.spec.ts` at 650 KB and green | Dev |
+| P9-12 | JavaScript budget 650 KB: set it, profile the 331 KB of app code, add a city-page budget | **Done (8 Oct 2026)**: 629 → 566 KB; city page 134 KB | P1 | — | `budgets.spec.ts` at 650 KB and green | Dev |
 | D-11 / P9-11 | Restrict the Geoapify key by referrer; PMTiles-on-R2 prototype and ADR | Not started | P1 (restriction P0) | R2 bucket | Key restricted; comparison ADR | Owner, Dev |
 | ADR-0009 | Confirm north-up only (rotation and tilt off) | Proposed | P2 | — | ADR accepted | Owner |
 

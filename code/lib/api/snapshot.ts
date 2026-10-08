@@ -1,7 +1,13 @@
 // Reads `city_build_snapshot(city)` from Supabase at build time (ADR-0006). Build-time only: the
 // result is written into the static export, and nothing here runs in the browser or holds a secret.
 // It uses the public anon key, so Row-Level Security decides what comes back: published rows only.
+import { config } from "zod/mini";
+import { en } from "zod/locales";
 import { citySnapshotSchema, type CitySnapshot } from "../filters/dataset.ts";
+
+// Build time only: the schemas use `zod/mini`, which has no messages loaded, so a bad snapshot would only say "Invalid
+// input". The browser never imports this module, so the English messages stay out of its bundle.
+config(en());
 
 export type SnapshotSource = { url: string; anonKey: string };
 

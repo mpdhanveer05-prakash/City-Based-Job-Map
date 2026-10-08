@@ -1,7 +1,9 @@
 // The filter object shared by the URL, the browser filter (P4-01), and the SQL reference
 // (`company_filter`, docs/filters.md). One definition of the values and one normaliser.
 import "../zod-config.ts";
-import { z } from "zod";
+// `zod/mini`, not `zod` (P9-12): these schemas reach the explorer's bundle, and the full entry adds about 100 KB gzipped of
+// locales and JSON-schema code the browser never uses.
+import * as z from "zod/mini";
 
 /** Launch cities (ADR-0002). A city is a path segment (`/bangalore`), never a query parameter. */
 export const CITY_SLUGS = ["bangalore", "chennai"] as const;
@@ -42,10 +44,7 @@ const WHITESPACE_RUN = new RegExp(`[${WHITESPACE}]+`, "g");
 export const MAX_QUERY_LENGTH = 100;
 
 /** A kebab-case slug: how neighbourhoods, tech parks, sectors, and companies are named. */
-export const slugSchema = z
-  .string()
-  .max(100)
-  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+export const slugSchema = z.string().check(z.maxLength(100), z.regex(/^[a-z0-9]+(-[a-z0-9]+)*$/));
 
 /**
  * The filter, with the same keys as the SQL function's JSON (`tech_parks` is snake_case on
@@ -74,7 +73,7 @@ export const EMPTY_FILTERS: Readonly<Filters> = Object.freeze({
 
 /** Strict schema for an already-normalised filter object (the dataset layer and the tests). */
 export const filtersSchema = z.object({
-  q: z.string().max(MAX_QUERY_LENGTH),
+  q: z.string().check(z.maxLength(MAX_QUERY_LENGTH)),
   types: z.array(z.enum(COMPANY_TYPES)),
   stages: z.array(z.enum(STARTUP_STAGES)),
   neighbourhoods: z.array(slugSchema),

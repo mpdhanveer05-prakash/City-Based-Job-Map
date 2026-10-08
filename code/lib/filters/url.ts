@@ -9,7 +9,7 @@
 // string, in a fixed parameter order with sorted lists and no defaults, so Back and Forward compare
 // URLs by value and a shared link looks the same however it was reached.
 import "../zod-config.ts";
-import { z } from "zod";
+import * as z from "zod/mini"; // not `zod`: see schema.ts (P9-12)
 import {
   CITY_SLUGS,
   COMPANY_TYPES,
@@ -94,22 +94,22 @@ function firstValues(input: SearchInput): Record<string, string | undefined> {
   return out;
 }
 
+/** An optional string parameter turned into a value; the transform also runs when the parameter is absent. */
+const param = <T,>(fn: (v: string | undefined) => T) => z.pipe(z.optional(z.string()), z.transform(fn));
+
 const csv = (valid: (v: string) => boolean) =>
-  z
-    .string()
-    .optional()
-    .transform((v) =>
-      (v ?? "")
-        .split(",")
-        .map((s) => s.trim().toLowerCase())
-        .filter((s) => s !== "" && valid(s)),
-    );
+  param((v) =>
+    (v ?? "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter((s) => s !== "" && valid(s)),
+  );
 
 /** The single schema for the explorer's query string. Every field falls back to its default. */
-export const explorerSearchSchema = z
-  .object({
-    view: z.enum(VIEWS).catch(DEFAULT_VIEW),
-    q: z.string().optional().transform(normalizeQuery),
+export const explorerSearchSchema = z.pipe(
+  z.object({
+    view: z.catch(z.enum(VIEWS), DEFAULT_VIEW),
+    q: param(normalizeQuery),
     type: csv((v) => (COMPANY_TYPES as readonly string[]).includes(v)),
     // Old links may say stage=public or stage=acquired; those are kept here and moved to the status group below.
     stage: csv((v) => (STARTUP_STAGES as readonly string[]).includes(v) || LEGACY_STAGE_STATUSES.includes(v)),
@@ -117,13 +117,10 @@ export const explorerSearchSchema = z
     hood: csv((v) => slugSchema.safeParse(v).success),
     park: csv((v) => slugSchema.safeParse(v).success),
     sector: csv((v) => slugSchema.safeParse(v).success),
-    company: z
-      .string()
-      .optional()
-      .transform((v) => (v && slugSchema.safeParse(v.trim()).success ? v.trim() : null)),
-    map: z.string().optional().transform(parseCamera),
-  })
-  .transform((p) => ({
+    company: param((v) => (v && slugSchema.safeParse(v.trim()).success ? v.trim() : null)),
+    map: param(parseCamera),
+  }),
+  z.transform((p) => ({
     view: p.view,
     // normalizeFilters clears stages unless Startup is selected, so a URL such as ?stage=seed alone
     // or ?type=mnc&stage=seed is corrected on load.
@@ -138,7 +135,8 @@ export const explorerSearchSchema = z
     }),
     company: p.company,
     camera: p.map,
-  }));
+  })),
+);
 
 /** Parses the query string of an explorer URL. Never throws. */
 export function parseExplorerSearch(input: SearchInput): Omit<ExplorerState, "city"> {
