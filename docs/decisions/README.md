@@ -28,6 +28,6 @@ Each ADR is short: context, decision, consequences, status (Proposed · Accepted
 | [0022](0022-evidence-for-jobs-changes-and-refresh.md) | Job evidence, reviewed changes to public facts, refresh checks, launch enforcement, exception approval | Accepted; implemented |
 | [0023](0023-company-classification-definitions.md) | Company classification definitions (Startup, MNC, Product) | Accepted |
 | [0024](0024-logo-storage-and-provenance.md) | Logo storage, provenance, and permitted use | Proposed; built locally (P9-21); approve → copy → activate since `20261007150000`; categories need the owner |
-| [0025](0025-dataset-versions-and-rebuild-policy.md) | Dataset versions, update discovery, and the production rebuild policy | Proposed |
+| [0025](0025-dataset-versions-and-rebuild-policy.md) | Dataset versions, update discovery, and the production rebuild policy | Accepted (option C, 8 Oct 2026) |
 
 Open decisions are listed in the [plan.md decision register](../../plan.md#open-decision-register).

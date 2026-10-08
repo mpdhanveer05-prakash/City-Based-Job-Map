@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { handleRebuild, type PublishOutcome, type RebuildDeps } from "../../supabase/functions/_shared/rebuild-handler";
+import { handleRebuild, rebuildEventType, type PublishOutcome, type RebuildDeps } from "../../supabase/functions/_shared/rebuild-handler";
 
 const ORIGIN = "https://company-map.example";
 const AUTH = "Bearer user.jwt.token";
@@ -106,5 +106,19 @@ describe("request-rebuild handler", () => {
     const text = await (await handleRebuild(post(), d)).text();
     expect(text).not.toContain("user.jwt.token");
     expect(text).not.toMatch(/token/i);
+  });
+});
+
+describe("the dispatch event type (ADR-0025 option C)", () => {
+  it("is `rebuild` (staging) unless the project says otherwise", () => {
+    expect(rebuildEventType(undefined)).toBe("rebuild");
+    expect(rebuildEventType(" ")).toBe("rebuild");
+    expect(rebuildEventType("rebuild")).toBe("rebuild");
+  });
+  it("is `refresh-production-data` on the production project", () => {
+    expect(rebuildEventType("refresh-production-data")).toBe("refresh-production-data");
+  });
+  it("refuses any other value instead of starting another workflow", () => {
+    expect(() => rebuildEventType("deploy-production")).toThrow(/REBUILD_EVENT_TYPE/);
   });
 });

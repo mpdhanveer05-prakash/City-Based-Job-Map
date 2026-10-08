@@ -5,13 +5,31 @@ Update this after every task: what changed, how it was verified (the commands ac
 ## Current state (8 Oct 2026; full detail in [PROJECT_HANDOVER.md](../PROJECT_HANDOVER.md))
 - **One machine:** this Windows laptop. About 2 GB of memory is often free: run one heavy job at a time.
 - **Built and tested locally:** the public site (city selection, explorer with WebGL map, Grid and List, search and filters, company and jobs pages, beacon, feedback forms), the admin (MFA, editing, CSV import, evidence review, publication gates, feeds, logos), the pipeline, and the build safeguards. Production has never been deployed; staging runs the synthetic sample.
-- **Databases:** the **main local database** (project `company-map`, port 54322) holds the 46 Bengaluru pilot drafts and must **never be reset or used by a test**. It is at migration `20261007140000`; bringing it to `20261007160000` is planned and rehearsed but not applied ([main-db-migration-plan.md](main-db-migration-plan.md)). Every database and admin test runs on the **disposable test stack** (`node scripts/test-stack.mts start|reset|test-db|stop`, project `company-map-test`, port 55322); the tests refuse any other database. Backups: `.local-backups/` (git-ignored).
+- **Databases:** the **main local database** (project `company-map`, port 54322) holds the 46 Bengaluru pilot drafts and must **never be reset or used by a test**. It is at migration `20261007160000` (applied 8 Oct 2026, [main-db-migration-plan.md](main-db-migration-plan.md)). Every database and admin test runs on the **disposable test stack** (`node scripts/test-stack.mts start|reset|test-db|stop`, project `company-map-test`, port 55322); the tests refuse any other database. Backups: `.local-backups/` (git-ignored).
 - **Previews:** preserved copies of the synthetic and pilot builds are in `.local-previews/{synthetic,pilot}` (git-ignored). Serve them from `code/` with `npx wrangler dev --config ../.local-previews/synthetic/wrangler.jsonc --port 8788` or `.../pilot/... --port 8789`.
 - **Latest checks:** see the newest log entry below.
-- **Owner actions open:** the GitHub `staging` and `production` environments and their variables ([deploy-environments.md](deploy-environments.md)); the production rebuild policy ([ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md); option C is a concrete proposal); whether to apply the main-database migration plan; D-04 coverage and gate thresholds; D-06 devices and gate owner; D-07 geocoding provider; a human data reviewer for the pilot; the logo permitted-use categories; hosted MFA; an independent approver for the audit exception; which project the pipeline serves; whether to push, and the squash of `5812ed2`/`b55857e` first.
+- **Owner actions open:** the GitHub `staging` and `production` environments and their variables ([deploy-environments.md](deploy-environments.md)); the production data refresh's setup ([ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md) option C, chosen 8 Oct 2026: the `production-data` environment, the `release/*` tag ruleset, the production project's secrets); D-04 coverage and gate thresholds; D-06 devices and gate owner; D-07 geocoding provider; a human data reviewer for the pilot; the logo permitted-use categories; hosted MFA; an independent approver for the audit exception; which project the pipeline serves; whether to push, and the squash of `5812ed2`/`b55857e` first.
 - **Blockers:** P2-09 (devices), P9-20 (a human reviewer), hosted work (no hosted Supabase project yet).
 
 ## Log
+
+### 2026-10-08: main local database migrated; ADR-0025 option C accepted and built (REBUILD-1, DB-MAIN)
+- **Owner decisions (8 Oct 2026):** apply the main-database plan now; production rebuilds by **option C**.
+- **Main local database migrated** ([main-db-migration-plan.md](main-db-migration-plan.md)):
+  - backup `.local-backups/pre-migrate-apply-20261008-130205.dump`, then `npx supabase migration up --local`, which applied `20261007150000` and `20261007160000`;
+  - every count unchanged (46 drafts, 46 offices, 262 evidence, 0 reviewed; Bengaluru 49, Chennai 24), and spot checks as rehearsed;
+  - stopped with a plain `supabase stop`.
+- **Option C built locally, never run:**
+  - `deploy-production.yml` tags each successful release (annotated `release/<yyyymmdd-hhmm>-<run>`, pushed with `contents: write` on that job only) and keeps the release files and the Worker version for 90 days. The smoke checks moved to `scripts/smoke-production.sh`.
+  - New `refresh-production-data.yml`. A `resolve` job runs on `main`: it refuses the newest tag unless it is annotated, made by `github-actions[bot]`, correctly named and on `main`, with no fallback to an older tag. A `refresh` job (environment `production-data`) checks out exactly that commit and uses its scripts. It runs the release checks plus `scripts/refresh-guard.mts`. It deploys only if a dataset changed, smoke-tests, and runs `wrangler rollback` to the recorded previous version on failure. It keeps the files for 30 days. Concurrency group `deploy-production`, shared with the release workflow.
+  - `request-rebuild` sends the type named by `REBUILD_EVENT_TYPE` (unset → `rebuild`; `refresh-production-data` on production; anything else fails).
+  - Owner setup: [deploy-environments.md](deploy-environments.md) (environment `production-data`, the tag ruleset, CODEOWNERS for the two workflows, the production secrets). ADR-0025 accepted.
+- **Checks run:**
+  - `tests/unit/release.test.ts` (20) and `rebuild-handler.test.ts` (with 3 new): 33 passed.
+  - `release-tag.mts resolve` on a scratch git repository: no tag → `found=false`, exit 0; a valid tag → chosen; a newer tag off `main` → refused, exit 1; a newer tag by another tagger → refused, exit 1.
+  - `refresh-guard.mts` against a local server: unchanged → no deployment; changed → `bangalore`; jobs 74 → 50 → stopped, exit 1; the same with `--allow-shrink` → allowed and recorded; unreachable site → stopped.
+  - `@action-validator/cli` 0.6.0: all three deploy workflows valid; a deliberately broken copy rejected.
+- **Not verified (needs GitHub and Cloudflare):** the tag push, the JSON shape of `wrangler deployments status --json` (read defensively: anything unexpected stops the run before it deploys), `wrangler rollback` on an assets-only Worker, the triggers.
 
 ### 2026-10-07 to 08: follow-ups before P9-12: logo bytes, open-tab test, snapshot consistency, smoke policy, main-database plan, ADR-0025 option C
 - **1. Logo integrity from the bytes** (migration `20261007160000_logo_sha256.sql`, Edge Function `activate-logo`):

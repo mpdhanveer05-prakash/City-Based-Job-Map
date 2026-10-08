@@ -3,7 +3,8 @@ name: Deploy production
 # P9-05. Builds the real-data static export and deploys it to the production assets-only Worker `company-map`
 # (ADR-0006, ADR-0007). THIS WORKFLOW HAS NEVER RUN. It exists so the release is a recorded, repeatable step, and it does
 # nothing unless a person starts it by hand and types the confirmation phrase. There is no schedule and no dispatch trigger:
-# the nightly and publish-now rebuilds go to staging until the owner decides otherwise (docs/release-checklist.md).
+# the nightly and publish-now rebuilds go to staging. Production DATA is refreshed by refresh-production-data.yml (ADR-0025
+# option C, accepted 8 Oct 2026), which rebuilds only the release/* tag this workflow creates after a successful release.
 #
 # CLAUDE.md, "Hard rules": do not deploy publicly without the owner's explicit authorization. The `confirm` input is that
 # authorization being typed in; the `production` environment should also be set up with required reviewers in the
@@ -36,6 +37,9 @@ jobs:
     timeout-minutes: 30
     # Required reviewers on this environment make the deploy a two-person step.
     environment: production
+    # Write access only to push the release tag (ADR-0025 option C).
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: code
@@ -92,37 +96,42 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler deploy
-      # The browser specs use the synthetic fixtures, which a real-data site does not have, so production gets plain HTTP checks:
-      # the pages exist, carry a policy, and say nothing about sample data.
+        run: npx wrangler deploy --message "release run ${{ github.run_id }} (${{ github.sha }})"
       - name: Smoke-test production
+        run: bash scripts/smoke-production.sh "${{ vars.SITE_URL }}"
+      # ADR-0025 option C: record what a person approved, so the data refresh rebuilds exactly this commit and never newer
+      # code. The tag namespace release/* is protected by a repository ruleset (only this workflow's app may create it,
+      # nobody may move or delete it): docs/deploy-environments.md.
+      - name: Read the deployed Worker version
+        id: version
         env:
-          SITE: ${{ vars.SITE_URL }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          fail=0
-          for path in / /bangalore /chennai /suggest /sitemap.xml; do
-            code=$(curl -s -o /tmp/page.html -w '%{http_code}' "$SITE$path")
-            if [ "$code" != "200" ]; then echo "$path answered $code" >&2; fail=1; continue; fi
-            case "$path" in
-              /sitemap.xml) ;;
-              *)
-                grep -q 'http-equiv="Content-Security-Policy"' /tmp/page.html || { echo "$path has no Content-Security-Policy" >&2; fail=1; }
-                if grep -qi 'synthetic' /tmp/page.html; then echo "$path mentions synthetic data" >&2; fail=1; fi
-                ;;
-            esac
-          done
-          code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/dev/tokens")
-          if [ "$code" = "200" ]; then echo "/dev/tokens is published" >&2; fail=1; fi
-          # Deployment policy: a production build has every visitor feature (lib/build-features.ts REQUIRED.production).
-          curl -s "$SITE/build-info.json" -o /tmp/build-info.json || true
-          python3 - <<'PY' || fail=1
-          import json, sys
-          try:
-              info = json.load(open("/tmp/build-info.json"))
-          except Exception:
-              sys.exit("build-info.json is missing from the production site")
-          missing = [f for f in ("basemap", "admin", "beacon", "feedback") if info.get("features", {}).get(f) is not True]
-          if info.get("target") != "production" or missing:
-              sys.exit(f"production build-info.json: target {info.get('target')!r}, missing required features {missing}")
-          PY
-          exit $fail
+          npx wrangler deployments status --json > ../worker-status.json
+          echo "id=$(node scripts/worker-version.mts ../worker-status.json)" >> "$GITHUB_OUTPUT"
+      - name: Tag the approved release
+        id: tag
+        env:
+          VERSION_ID: ${{ steps.version.outputs.id }}
+        run: |
+          tag=$(node scripts/release-tag.mts name --run "$GITHUB_RUN_NUMBER")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" "$GITHUB_SHA" -m "Production release of $GITHUB_SHA" -m "Worker version: $VERSION_ID" -m "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          git push origin "refs/tags/$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          { echo "### Production release"; echo "Tag \`$tag\`, commit \`$GITHUB_SHA\`, Worker version \`$VERSION_ID\`."; } >> "$GITHUB_STEP_SUMMARY"
+      # The rollback material for this release: the exact files deployed, their manifest, the launch-gate report and the
+      # Worker version (ADR-0025 option C, point 1).
+      - name: Keep the release files
+        run: |
+          mkdir -p ../release
+          cp -r out ../release/out
+          cp public/data/manifest.json ../launch-gate-report.md ../release/
+          echo "${{ steps.version.outputs.id }}" > ../release/worker-version.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-${{ github.run_number }}
+          path: release
+          retention-days: 90

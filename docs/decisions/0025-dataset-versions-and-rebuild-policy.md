@@ -1,6 +1,6 @@
 # ADR-0025: Dataset versions, update discovery, and the production rebuild policy
 
-- **Status:** Proposed (7 Oct 2026). Part 1 is built locally; part 2 needs the owner's decision.
+- **Status:** Accepted (8 Oct 2026): the owner chose **option C** for part 2. Part 1 and option C are built locally; neither has run on GitHub or Cloudflare.
 - **Date:** 2026-10-07
 - **Related tasks / decisions:** DEP-2 and REBUILD-1 (PROJECT_HANDOVER.md), ADR-0006 (static datasets), ADR-0012 (Publish now), ADR-0013 (pipeline), ADR-0022 (refresh), [docs/deploy-environments.md](../deploy-environments.md)
 
@@ -32,7 +32,7 @@ workflow by hand, so job freshness in production depends on how often a person r
      page loaded. Reload the page to get the new data."
    - Prerendered company and jobs pages are separate HTML documents; a visitor sees new content on their next navigation.
 
-### Part 2: the production rebuild policy (for the owner to choose)
+### Part 2: the production rebuild policy (owner chose C, 8 Oct 2026)
 | Option | How production gets new data | Approval | Freshness | Risk |
 | --- | --- | --- | --- | --- |
 | **A. Manual releases only** (today) | A person runs `deploy-production.yml` (typed phrase, environment reviewers) | Every change | As often as someone releases; job links can go stale for days | Lowest automation risk; fails the launch gate's freshness target unless released daily |
@@ -42,7 +42,7 @@ workflow by hand, so job freshness in production depends on how often a person r
 Whichever option is chosen, staging actions must never trigger it (Publish now on staging dispatches only to staging), and
 the production workflow keeps its own environment, project, and keys.
 
-### Option C in detail (proposal, not built)
+### Option C in detail (accepted 8 Oct 2026; built locally, never run)
 **Goal:** production data refreshes automatically, while production **code** changes only through a person's approved
 release. A refresh rebuilds the exact commit of the last approved release with fresh production data, or it does nothing.
 
@@ -79,7 +79,7 @@ release. A refresh rebuilds the exact commit of the last approved release with f
      (proposal: 20%) against the deployed manifest, so a bad import or mass unpublish waits for a person.
    - If nothing changed (every city's `dataset_version` equals the deployed one), stop: no deployment.
 5. **No overlap.**
-   - `refresh-production-data.yml` and `deploy-production.yml` share one concurrency group (`production-deploy`,
+   - `refresh-production-data.yml` and `deploy-production.yml` share one concurrency group (`deploy-production`,
      `cancel-in-progress: false`), so at most one production deployment runs and one waits.
    - If a newer release tag appears while a refresh waits, the refresh re-resolves the tag when it starts.
 6. **Rollback.**
@@ -93,23 +93,51 @@ release. A refresh rebuilds the exact commit of the last approved release with f
 **What it does not do:** it never builds `main`, never deploys code that no person approved, never uses staging data or keys,
 and never runs while another production deployment is in progress.
 
-**Prerequisites before it can be built:**
-- the owner's choice of option C;
-- the production Supabase project and the `production` and `production-data` environments;
-- the tag ruleset;
-- a production-only dispatch token in the production project's function secrets;
-- the shrink-guard threshold.
+**As built (8 Oct 2026, local, not pushed):**
+- `deploy-production.yml`: after the smoke checks pass, it reads the serving Worker version (`wrangler deployments status
+  --json`, `scripts/worker-version.mts`), creates and pushes the annotated tag (`scripts/release-tag.mts name`), and uploads
+  `out/`, the manifest, the launch-gate report and the version id as `release-<run>` (90 days). The smoke checks moved to
+  `scripts/smoke-production.sh`, shared by both workflows.
+- `refresh-production-data.yml`: a `resolve` job runs `scripts/release-tag.mts resolve` from `main`. It refuses the newest
+  `release/*` tag unless it is annotated, tagged by `github-actions[bot]`, correctly named, and on `main`, and it never falls
+  back to an older tag. The `refresh` job checks out that commit, checks `HEAD`, and from then on uses the tag's own scripts.
+  It runs `check-deploy-env production`, `audit --release`, the `RELEASE_BUILD=1` build, the launch gate and
+  `scripts/refresh-guard.mts`. Only if a city's dataset changed does it record the serving version, deploy, smoke-test and,
+  on any failure, `wrangler rollback` to that version. It keeps `refresh-<run>` (30 days).
+- **Shrink guard:** a drop of more than 20% in a city's companies or jobs, compared with the deployed `manifest.json`,
+  stops the run. Only a manual run with the `allow_shrink` input lets it through, and the summary records it. The guard
+  also stops on synthetic data, a live city missing from the build, a new city (a city goes live only through a release),
+  or an unreadable deployed manifest.
+- **Dispatch:** `request-rebuild` reads `REBUILD_EVENT_TYPE` (unset → `rebuild`, staging; `refresh-production-data` on the
+  production project; any other value fails the dispatch).
+- **Tests:** `tests/unit/release.test.ts` (tag choice, shrink guard, version parsing) and `rebuild-handler.test.ts` (event
+  type). `release-tag.mts resolve` was exercised against a scratch git repository: no tag, a valid tag, a newest tag off
+  `main`, and a newest tag by another tagger. `refresh-guard.mts` was run against a local server: unchanged, changed, a 32%
+  shrink, the same with `--allow-shrink`, and an unreachable site. Both workflows pass `@action-validator/cli` 0.6.0.
+
+**Not verified (needs GitHub and Cloudflare):** the tag push with `GITHUB_TOKEN`; the shape of `wrangler deployments
+status --json` (read defensively; anything unexpected stops the run before it deploys); `wrangler rollback` on an
+assets-only Worker; the schedule and dispatch triggers.
+
+**Owner setup before it can run:**
+- the production Supabase project, and the `production` and `production-data` environments;
+- the `release/*` tag ruleset;
+- a production-only dispatch token, and `REBUILD_EVENT_TYPE=refresh-production-data` in the production project's function
+  secrets;
+- the shrink-guard threshold (20% is a proposal);
+- a first release from `deploy-production.yml`.
 
 ## Consequences
 - Part 1 makes "changed snapshot, same URL" impossible and lets the files be cached for a year. It costs no extra files
   beyond one `current.json` per city and two header rules (5 of 100 used).
 - `data_version` still exists (the database counter Publish now moves); the published folder is now the content version.
-- Option C would need: a tag per approved release, a `refresh-production-data.yml` that checks out that tag, and the
-  production project's `request-rebuild` dispatching a separate event type. Not built until the owner chooses.
+- Option C adds a tag per approved release, `refresh-production-data.yml`, and a separate dispatch event type for the
+  production project. Production data can now change without a person, but only data the database already accepted,
+  through every release check, and never with new code.
 
 ## Verification (7 Oct 2026, local)
 - Unit: `tests/unit/dataset-build.test.ts` checks the folder format, that changed content gets a new version with the same
   `data_version`, and that equal content keeps it.
 - E2E: `tests/e2e/static-hosting.spec.ts` checks `current.json` is `no-cache` and a version file is `immutable` on the
   served build (wrangler dev). Not yet verified on a deployed Worker.
-- The open-tab notice has no automated test yet.
+- The open-tab notice: `tests/e2e/open-tab-update.spec.ts` (added 7 Oct 2026).

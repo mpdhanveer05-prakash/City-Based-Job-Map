@@ -1,0 +1,168 @@
+name: Refresh production data
+
+# ADR-0025 option C (accepted 8 Oct 2026). Production DATA refreshes automatically; production CODE changes only through a
+# person's approved release (deploy-production.yml). This workflow rebuilds the exact commit of the newest release/* tag
+# with fresh production data, runs every release check plus a shrink guard, and deploys only if a city's dataset changed.
+# If the new version fails its smoke checks, it rolls the Worker back to the version that was serving. It never builds
+# main, never uses staging data or keys, and never runs alongside another production deployment.
+#
+# THIS WORKFLOW HAS NEVER RUN. Before it can: the production Supabase project, the `production-data` GitHub environment,
+# the release/* tag ruleset, and a first release from deploy-production.yml (docs/deploy-environments.md).
+on:
+  # Sent only by the production project's request-rebuild function (secret REBUILD_EVENT_TYPE=refresh-production-data).
+  # Staging's token and function send `rebuild`, which only deploy-staging.yml listens to.
+  repository_dispatch:
+    types: [refresh-production-data]
+  # 30 minutes after each pipeline run (pipeline.yml runs at :17 every 6 hours).
+  schedule:
+    - cron: "47 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      allow_shrink:
+        description: "Deploy even if a city's companies or jobs drop by more than 20% (check the data first)"
+        type: boolean
+        default: false
+
+# The same group as deploy-production.yml: at most one production deployment runs, and one waits.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  resolve:
+    name: Find the approved release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      found: ${{ steps.release.outputs.found }}
+      tag: ${{ steps.release.outputs.tag }}
+      commit: ${{ steps.release.outputs.commit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      # The newest release/* tag, refused unless it is annotated, made by the production workflow, and on main. Resolved when
+      # this run starts, so a run that waited behind a release picks up that release.
+      - id: release
+        working-directory: code
+        run: |
+          git fetch --force origin main:refs/remotes/origin/main
+          node scripts/release-tag.mts resolve
+
+  refresh:
+    name: Rebuild the release with production data
+    needs: resolve
+    if: needs.resolve.outputs.found == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production-data
+    defaults:
+      run:
+        working-directory: code
+    env:
+      # From the `production-data` environment: production values only (docs/deploy-environments.md).
+      DEPLOY_ENV: ${{ vars.DEPLOY_ENV }}
+      NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      OTHER_ENV_SUPABASE_PROJECT_REF: ${{ vars.OTHER_ENV_SUPABASE_PROJECT_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_GEOAPIFY_KEY: ${{ vars.GEOAPIFY_KEY }}
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+      ALLOW_SYNTHETIC_DATA: ${{ vars.ALLOW_SYNTHETIC_DATA }}
+      RELEASE_BUILD: "1"
+      DATA_SOURCE: ""
+    steps:
+      # The exact approved commit. Every script below comes from the tag's tree, not from main.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.resolve.outputs.commit }}
+      - name: Check this is the release commit
+        env:
+          COMMIT: ${{ needs.resolve.outputs.commit }}
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$COMMIT" ]; then echo "Checked out $(git rev-parse HEAD), expected $COMMIT" >&2; exit 1; fi
+          for f in scripts/refresh-guard.mts scripts/worker-version.mts scripts/smoke-production.sh; do
+            [ -f "$f" ] || { echo "The release predates the data refresh ($f missing): make a new release first." >&2; exit 1; }
+          done
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: code/package-lock.json
+      - name: Check the production configuration
+        run: node scripts/check-deploy-env.mts production
+      - run: npm ci
+      # An audit exception that expired since the release blocks the refresh.
+      - name: Release audit gate
+        run: npm run audit -- --release
+      # RELEASE_BUILD=1 refuses synthetic data, pilot previews, and any company or job whose evidence is incomplete.
+      - run: npm run build
+      - name: Launch gate (each city must pass)
+        run: node scripts/launch-gate.mts --out ../launch-gate-report.md
+      # Stops on synthetic data, a missing or new city, or a shrink over 20% (unless a person allowed it on a manual run);
+      # says whether any city's dataset changed.
+      - name: Compare with the deployed site
+        id: guard
+        run: |
+          node scripts/refresh-guard.mts --deployed "${{ vars.SITE_URL }}" ${{ inputs.allow_shrink == true && '--allow-shrink' || '' }}
+      - name: Record the version now serving
+        id: previous
+        if: steps.guard.outputs.changed == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler deployments status --json > ../worker-before.json
+          echo "id=$(node scripts/worker-version.mts ../worker-before.json)" >> "$GITHUB_OUTPUT"
+      - name: Deploy
+        if: steps.guard.outputs.changed == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy --message "data refresh of ${{ needs.resolve.outputs.tag }}, run ${{ github.run_id }}"
+      - name: Smoke-test production
+        id: smoke
+        if: steps.guard.outputs.changed == 'true'
+        run: bash scripts/smoke-production.sh "${{ vars.SITE_URL }}"
+      - name: Roll back
+        if: failure() && steps.previous.outputs.id != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PREVIOUS: ${{ steps.previous.outputs.id }}
+        run: |
+          npx wrangler rollback "$PREVIOUS" --message "data refresh run ${{ github.run_id }} failed its checks" --yes
+          echo "**Rolled back** to Worker version \`$PREVIOUS\`." >> "$GITHUB_STEP_SUMMARY"
+      - name: Summary
+        if: steps.guard.outputs.changed == 'true' && success()
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+          COMMIT: ${{ needs.resolve.outputs.commit }}
+          PREVIOUS: ${{ steps.previous.outputs.id }}
+        run: echo "Deployed the data refresh of \`$TAG\` (\`$COMMIT\`); the version before it was \`$PREVIOUS\`." >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the refresh files
+        if: always() && steps.guard.outputs.changed == 'true'
+        run: |
+          mkdir -p ../refresh
+          cp -r out ../refresh/out
+          cp public/data/manifest.json ../refresh/
+          cp ../launch-gate-report.md ../refresh/ 2>/dev/null || true
+          echo "${{ steps.previous.outputs.id }}" > ../refresh/previous-worker-version.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always() && steps.guard.outputs.changed == 'true'
+        with:
+          name: refresh-${{ github.run_number }}
+          path: refresh
+          retention-days: 30

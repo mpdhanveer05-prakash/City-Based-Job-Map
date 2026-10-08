@@ -16,10 +16,24 @@ export type PublishOutcome =
 export type RebuildDeps = {
   /** Calls `publish_now` with the caller's own Authorization header. */
   publishNow(authorization: string): Promise<PublishOutcome>;
-  /** Asks GitHub to run the deploy workflow (`repository_dispatch`, type "rebuild"). */
+  /** Asks GitHub to run the deploy workflow (`repository_dispatch`, of the type `rebuildEventType` gives). */
   dispatchRebuild(): Promise<{ ok: boolean; status: number }>;
   allowedOrigins: readonly string[];
 };
+
+/**
+ * The `repository_dispatch` type a project's "Publish now" sends (ADR-0025 option C), from the function secret
+ * REBUILD_EVENT_TYPE: staging leaves it unset (`rebuild`, deploy-staging.yml); production sets `refresh-production-data`
+ * (refresh-production-data.yml). Any other value is a configuration error, never a silent fallback to another workflow.
+ */
+export const REBUILD_EVENT_TYPES = ["rebuild", "refresh-production-data"] as const;
+export type RebuildEventType = (typeof REBUILD_EVENT_TYPES)[number];
+export function rebuildEventType(value: string | undefined): RebuildEventType {
+  const v = (value ?? "").trim();
+  if (v === "") return "rebuild";
+  if ((REBUILD_EVENT_TYPES as readonly string[]).includes(v)) return v as RebuildEventType;
+  throw new Error(`REBUILD_EVENT_TYPE must be one of ${REBUILD_EVENT_TYPES.join(", ")}`);
+}
 
 const baseHeaders = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Type": "application/json" };
 

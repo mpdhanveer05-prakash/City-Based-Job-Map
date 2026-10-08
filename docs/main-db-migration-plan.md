@@ -1,6 +1,6 @@
 # Bringing the main local database up to date: plan (not applied)
 
-*Prepared 7 Oct 2026; rehearsed on a restored copy 8 Oct 2026. Status: **not applied**. Apply only when the owner says so.*
+*Prepared 7 Oct 2026; rehearsed on a restored copy 8 Oct 2026. Status: **applied 8 Oct 2026** on the owner's instruction (see the end).*
 
 The **main local database** (Supabase project `company-map`, port 54322, Docker volume `supabase_db_company-map`) holds
 the 46 Bengaluru pilot drafts. It must never be reset. It is at migration `20261007140000`. Two newer migrations exist,
@@ -73,3 +73,15 @@ Run from `code/`, with Docker running and the main stack started:
   same counts), and the stack was stopped with a plain `npx supabase stop` (data kept).
 - **Not rehearsed:** `npx supabase migration up` itself (it would write to the main database), and a `pg_restore --clean`
   over the main database.
+
+## Applied (8 Oct 2026)
+- Owner's instruction: "Apply it now".
+- Database container only (`npx supabase db start`). Backup `.local-backups/pre-migrate-apply-20261008-130205.dump`
+  (1,015,281 bytes, 77 table-data entries).
+- Before: every count as in step 2. `npx supabase migration list --local` showed exactly the two migrations pending.
+- `npx supabase migration up --local`: applied `20261007150000_security_gaps.sql` and `20261007160000_logo_sha256.sql`,
+  exit 0.
+- After: at `20261007160000`, and every count unchanged (46, 46, 262, 0; 117, 137, 115, 275, 3; Bengaluru 49, Chennai 24).
+  The spot checks match the rehearsal: `activate_logo` gone, `complete_logo_activation` not executable by
+  `authenticated`, 1 of 3 logos activated with no verified hash, the storage policy present.
+- Stopped with a plain `npx supabase stop` (data kept).

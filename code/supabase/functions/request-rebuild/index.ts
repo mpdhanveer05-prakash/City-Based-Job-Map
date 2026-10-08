@@ -3,10 +3,21 @@
 // ../_shared/rebuild-handler.ts.
 //
 // Secrets (supabase secrets set): ALLOWED_ORIGINS (the site's origins, comma separated), GITHUB_DISPATCH_TOKEN (a
-// fine-grained token with "Contents: read and write" on this repository only), GITHUB_REPOSITORY (owner/name).
+// fine-grained token with "Contents: read and write" on this repository only), GITHUB_REPOSITORY (owner/name), and on the
+// production project only REBUILD_EVENT_TYPE=refresh-production-data (ADR-0025 option C; unset means `rebuild`, staging).
 // SUPABASE_URL and SUPABASE_ANON_KEY are provided to every function by Supabase. GITHUB_API_URL is for tests only.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { handleRebuild, type PublishOutcome, type PublishResult } from "../_shared/rebuild-handler.ts";
+import { handleRebuild, rebuildEventType, type PublishOutcome, type PublishResult } from "../_shared/rebuild-handler.ts";
+
+// Read once at start-up, so a wrong value fails every call (the dispatch step) instead of starting another workflow.
+const eventType = (() => {
+  try {
+    return rebuildEventType(Deno.env.get("REBUILD_EVENT_TYPE"));
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    return null;
+  }
+})();
 
 const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
   .split(",")
@@ -32,7 +43,7 @@ async function publishNow(authorization: string): Promise<PublishOutcome> {
 async function dispatchRebuild(): Promise<{ ok: boolean; status: number }> {
   const token = Deno.env.get("GITHUB_DISPATCH_TOKEN");
   const repository = Deno.env.get("GITHUB_REPOSITORY");
-  if (!token || !repository) return { ok: false, status: 0 };
+  if (!token || !repository || !eventType) return { ok: false, status: 0 };
   // GITHUB_API_URL exists so the end-to-end test can point this at a local stand-in; production leaves it unset.
   const api = (Deno.env.get("GITHUB_API_URL") ?? "https://api.github.com").replace(/\/+$/, "");
   const response = await fetch(`${api}/repos/${repository}/dispatches`, {
@@ -44,7 +55,7 @@ async function dispatchRebuild(): Promise<{ ok: boolean; status: number }> {
       "User-Agent": "company-map-request-rebuild",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ event_type: "rebuild" }),
+    body: JSON.stringify({ event_type: eventType }),
   });
   // GitHub answers 204 No Content when it accepted the event.
   return { ok: response.status === 204, status: response.status };

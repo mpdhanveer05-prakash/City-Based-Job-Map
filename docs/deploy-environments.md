@@ -46,6 +46,21 @@ afterwards. Leaving them there is how one project could end up serving both envi
   `TURNSTILE_SITE_KEY`. Never `ALLOW_SYNTHETIC_DATA`.
 - Secrets: `CLOUDFLARE_API_TOKEN` (a separate production token), `CLOUDFLARE_ACCOUNT_ID`.
 
+**Environment `production-data`** (the data refresh, `refresh-production-data.yml`; ADR-0025 option C, accepted 8 Oct 2026)
+- Protection: *Deployment branches*: `main` only. Required reviewers are optional: the release tag, the release checks and the
+  shrink guard are its gate.
+- Variables: the same values as `production`.
+- Secrets: `CLOUDFLARE_ACCOUNT_ID`, and a `CLOUDFLARE_API_TOKEN` scoped to the `company-map` Worker only.
+
+**Repository ruleset for release tags** (Settings → Rules → Rulesets → New tag ruleset)
+- Target `refs/tags/release/*`. Restrict creation to the GitHub Actions app (bypass list: none for people), and block
+  updates and deletions. `deploy-production.yml` creates one tag per successful release (its job has `contents: write`
+  for this only). The data refresh rebuilds only the newest such tag, so a tag anyone else could create or move would be a
+  way to deploy unapproved code. `scripts/release-tag.mts` also refuses a tag that is not annotated, not made by
+  `github-actions[bot]`, or not on `main`.
+- Changes to `.github/workflows/refresh-production-data.yml` and `deploy-production.yml` should need code-owner review on
+  `main` (a `CODEOWNERS` entry plus branch protection).
+
 The anon keys are public by design, which is why they are variables and not secrets. Nothing privileged goes in either
 environment's variables.
 
@@ -54,9 +69,12 @@ environment's variables.
 - **Two Supabase projects**: their own database, Storage buckets (`company-logos`, `company-logos-pending`), Auth users,
   allowlisted `admin_user` rows, and enrolled MFA factors. Create administrators separately in each; don't copy them.
 - **Edge Function secrets in each project**: `TURNSTILE_SECRET_KEY`, `FEEDBACK_SALT` (rate-limit hash; random, per project),
-  `ALLOWED_ORIGINS` (that environment's site only), `GITHUB_DISPATCH_TOKEN` and `GITHUB_REPOSITORY`. Publish now sends a `rebuild` event that only `deploy-staging.yml` listens for, and
-  production has no dispatch or schedule trigger. So the production project's Publish now cannot deploy production
-  until the owner decides how production rebuilds work: the options are in [ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md) (proposed; option C recommended).
+  `ALLOWED_ORIGINS` (that environment's site only), `GITHUB_DISPATCH_TOKEN` and `GITHUB_REPOSITORY` (a separate token per
+  project). **Production only:** `REBUILD_EVENT_TYPE=refresh-production-data`. Staging leaves it unset, so its Publish now
+  sends `rebuild`, which only `deploy-staging.yml` listens for. The production project's Publish now sends
+  `refresh-production-data`, which only `refresh-production-data.yml` listens for. That workflow rebuilds the last approved
+  release with production data and never new code ([ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md)). Any
+  other value makes the dispatch fail.
 - **Pipeline and monitor** (`pipeline.yml`, `monitor.yml`) read the repository secret `PIPELINE_DATABASE_URL`, which isn't
   set yet, so both fail at "Check the secret is set". **Open:** which project the pipeline serves. When it is decided,
   give the job an `environment:` so the secret lives in one environment only.

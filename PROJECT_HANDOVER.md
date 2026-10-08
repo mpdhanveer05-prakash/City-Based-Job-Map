@@ -47,7 +47,7 @@ following is verified only locally; see `docs/progress.md`:
    (`scripts/test-stack.mts`) and refuses any other database. The main local database, which holds the pilot drafts, is
    never reset.
 4. **Dataset freshness (DEP-2): part 1 built locally.** Content-versioned dataset folders, immutable caching, and an
-   open-tab update notice (ADR-0025). **Still open (owner):** how production rebuilds at all (ADR-0025 part 2, options A–C).
+   open-tab update notice (ADR-0025). Production rebuilds: the owner chose **option C** on 8 Oct 2026 (data-only refresh of the last approved release), now built locally; see item 9.
 
 **Follow-ups, 7–8 Oct 2026 (local, not pushed, not deployed):**
 5. **Logo integrity from the bytes:** a logo becomes the company's logo only after the `activate-logo` Edge Function has
@@ -60,7 +60,10 @@ following is verified only locally; see `docs/progress.md`:
 8. **Main local database:** a backed-up, non-reset migration plan, rehearsed on a restored copy with every count
    unchanged; **not applied** ([docs/main-db-migration-plan.md](docs/main-db-migration-plan.md)). Saved previews still
    represent their original builds.
-9. **ADR-0025 option C** is now a concrete proposal (§4.5); the owner still chooses A, B or C.
+9. **ADR-0025 option C, accepted 8 Oct 2026 and built locally (never run):** `deploy-production.yml` tags each successful
+   release, and `refresh-production-data.yml` rebuilds only the newest valid release tag with production data, behind every
+   release check and a shrink guard, with automatic rollback (§4.5).
+10. **Main local database migrated (8 Oct 2026):** at `20261007160000` after a fresh backup; all counts unchanged.
 
 Latest checks, from `code/`:
 - **On the disposable test stack (7 Oct):** pgTAP 17 files, 711 passed; parity 8 passed; pipeline pytest 89 passed; admin e2e 58 passed.
@@ -521,7 +524,11 @@ flowchart TB
   - two separate builds of the same data are byte-identical, and each folder is named by its files' hash (`tests/unit/dataset-determinism.test.ts`);
   - each explorer, pointer and manifest names the same snapshot, and company and jobs pages show what it holds (`tests/e2e/snapshot-consistency.spec.ts`); Map, Grid and List counts are checked by the existing explorer and phone specs;
   - the open-tab notice: unchanged content gives no notice, changed content gives one and the reload uses the new snapshot, and a failed check leaves browsing working (`tests/e2e/open-tab-update.spec.ts`).
-- **How production rebuilds** (ADR-0025 part 2) awaits the owner. Option C is now a concrete proposal: a data-only refresh that rebuilds the exact commit of the last approved `release/*` tag, with production data and every release check (plus a shrink guard), in one concurrency group with the production deploy, with automatic rollback and retained artifacts, and never newer code.
+- **How production rebuilds** (ADR-0025 part 2): **option C, accepted 8 Oct 2026, built locally and never run.**
+  - `deploy-production.yml` creates an annotated `release/<yyyymmdd-hhmm>-<run>` tag after a successful release, and keeps the release files for 90 days.
+  - `refresh-production-data.yml` (Publish now on the production project, every 6 h at :47, or by hand) rebuilds the newest valid release tag with production data. A tag is refused unless it is annotated, made by `github-actions[bot]`, and on `main`. The run checks config, audit, `RELEASE_BUILD`, the launch gate, and the shrink guard (a drop over 20% in companies or jobs waits for a person).
+  - It deploys only when a dataset changed, rolls back to the previous Worker version on failure, and keeps the files for 30 days. It shares the `deploy-production` concurrency group.
+  - Code: `lib/release.ts`, `scripts/{release-tag,refresh-guard,worker-version}.mts`, `scripts/smoke-production.sh`. Owner setup: [docs/deploy-environments.md](docs/deploy-environments.md).
 
 **Caching:** `/_next/static/*`, `/maplibre/*` and dataset version folders are `immutable` for one year; `current.json` is `no-cache`. Pages use the default caching.
 
@@ -538,6 +545,7 @@ flowchart TB
 | Publish now (`repository_dispatch: rebuild`) | staging |
 | Pipeline run (every 6 h, dispatches `rebuild`) | staging |
 | Manual run of either deploy workflow | staging or production |
+| Publish now on the **production** project (`refresh-production-data` event), every 6 h at :47, or by hand | production, data only: the last approved release tag rebuilt (ADR-0025 option C; never run) |
 
 **Map worker:**
 - Points are sent as transferable typed arrays.
@@ -606,7 +614,7 @@ flowchart LR
 26. `20261007150000_security_gaps`: SEC-1 to SEC-4, the publication loophole (a company needs a *published* reviewed office), `listed_office()` for listings, and logo approve → copy → activate.
 27. `20261007160000_logo_sha256`: logo activation by server-side SHA-256 (`request_logo_activation`, the `activate-logo` Edge Function, `complete_logo_activation` for `service_role` only); drops `activate_logo(bigint)`.
 
-Migrations 26 and 27 are applied to the disposable test stack only. The main local database is still at #25; the plan to bring it up to date without a reset is [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) (not applied).
+Migrations 26 and 27 were applied to the main local database on 8 Oct 2026 with `supabase migration up`, after a fresh backup and a rehearsal on a restored copy; all counts were unchanged ([docs/main-db-migration-plan.md](docs/main-db-migration-plan.md)).
 
 **Rule:** schema changes go only in **new** migration files. Never edit an applied migration.
 
@@ -1190,7 +1198,7 @@ The pilot README's instructions (plain `npm run build`, then `npm run preview`) 
 
 ### 9.4 State of this machine (8 Oct 2026)
 - **Docker:** stopped. The main stack's data is kept in the volume `supabase_db_company-map` (stopped with a plain `supabase stop`); the test stack was stopped and discarded.
-- **Main local database:** at migration `20261007140000` (#25), holding the pilot drafts. #26 and #27 are not applied ([docs/main-db-migration-plan.md](docs/main-db-migration-plan.md)).
+- **Main local database:** at migration `20261007160000` (#27), holding the pilot drafts (46 drafts, 46 offices, 262 evidence items, 0 reviewed). Backup before the migration: `.local-backups/pre-migrate-apply-20261008-130205.dump`.
 - **Previews:** not running. The saved copies in `.local-previews/{synthetic,pilot}` still represent their original builds (before #26, #27 and content-versioned datasets); serve them as in `docs/progress.md`.
 - **Memory:** often under 2 GB free with the usual desktop apps open; run one heavy job at a time.
 
@@ -1225,8 +1233,8 @@ The pilot README's instructions (plain `npm run build`, then `npm run preview`) 
 | DEP-2 | Content-versioned datasets, caching, open-tab update notice (ADR-0025 part 1) | Done locally; not deployed | P1 | — | Documented policy and a test | Dev |
 | DEP-3/4 | Staging smoke suite fit for a real-data staging site; test before going live | Open | P1 | ENV-1 | Smoke passes on real-data staging; a failing build does not go live | Dev |
 | PIPE-1 | Decide which project the pipeline serves; set `PIPELINE_DATABASE_URL` (per environment); give the jobs an `environment:` | Open | P0 | ENV-1 | `pipeline.yml` and `monitor.yml` green | Owner, Dev |
-| REBUILD-1 | Decide how production rebuilds after a publication (ADR-0025 part 2: A manual, B scheduled with approval, C data-only refresh of the last approved release) | Open (owner); option C written up as a concrete proposal, not built | P0 | — | Documented and implemented | Owner |
-| DB-MAIN | Bring the main local database (pilot drafts) to migration `20261007160000` without a reset | Plan written and rehearsed on a restored copy; **not applied** | P1 | owner's go-ahead | [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) followed; counts unchanged | Owner (approve), Dev |
+| REBUILD-1 | How production rebuilds after a publication | **Decided: option C (8 Oct 2026); built locally, never run** (`refresh-production-data.yml`, release tags) | P0 | ENV-1, ENV-2, the tag ruleset, a first release | A refresh of a real release deploys changed data, refuses a forged tag and a large shrink, and rolls back a failed smoke | Owner (setup), Dev |
+| DB-MAIN | Bring the main local database (pilot drafts) to migration `20261007160000` without a reset | **Done (8 Oct 2026)**: backup, `migration up`, counts unchanged | P1 | — | [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) followed; counts unchanged | Dev |
 | P9-15 | officemap.tech: DNS on Cloudflare, Worker custom domain, site URL, canonical URLs, CSP, allowed origins | Not started | P0 | ENV-1, release approval | Production smoke on the domain passes | Owner, Dev |
 | P9-05 | Release checklist and a production deploy | In progress (workflow never run) | P0 | everything P0 | Checklist complete; explicit owner authorization | Owner |
 | GIT-1 | Squash local commits `5812ed2`/`b55857e` (OSM-derived files in history) before pushing; then push | Awaiting authorization | P0 | — | No OSM-derived file anywhere in pushed history | Owner (authorize), Dev |
@@ -1294,7 +1302,7 @@ P6-04, P5-05, P4-03, Phase 10, the PMTiles migration, Chennai (as the second rel
 7. **ADR-0009:** north-up only.
 8. **Staging:** a Supabase project and Turnstile key, or synthetic-only staging with feature-skipping tests.
 9. **Which project the pipeline serves.**
-10. **How production rebuilds** after a publication.
+10. ~~How production rebuilds after a publication~~: option C chosen (8 Oct 2026); the owner sets up the environment, tag ruleset and secrets.
 11. **Whether "open jobs" includes suspect jobs.**
 12. **Whether to keep the repository public** (60-day schedule disablement; the plan recommended private).
 13. **Authorizing the history squash, and the push.**
@@ -1344,7 +1352,7 @@ P6-04, P5-05, P4-03, Phase 10, the PMTiles migration, Chennai (as the second rel
    - Make the admin e2e suite safe (OPS-1/2).
    - Fix DEP-1.
    - *Dev can do all of this now, except authorizing the squash.*
-2. **Decide the blocking questions:** D-04 (coverage and gate), D-07 (geocoder), the pipeline target, the production rebuild policy, whether staging gets a Supabase project, and founders at launch.
+2. **Decide the blocking questions:** D-04 (coverage and gate), D-07 (geocoder), the pipeline target, whether staging gets a Supabase project, and founders at launch.
 3. **Stand up the hosted environments** (ENV-1, ENV-2):
    - two Supabase projects with MFA, admins, function secrets and the pipeline login;
    - the GitHub environments;
