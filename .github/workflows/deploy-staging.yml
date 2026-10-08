@@ -76,6 +76,9 @@ jobs:
       - name: Smoke-test staging
         env:
           PLAYWRIGHT_BASE_URL: ${{ vars.SITE_URL }}
+          # The deployment policy's target (lib/build-features.ts REQUIRED), from this environment's settings, not from the
+          # build: a required feature the deployed build lacks fails the smoke test instead of being skipped.
+          EXPECT_DEPLOY_TARGET: ${{ vars.ALLOW_SYNTHETIC_DATA == 'true' && 'staging-synthetic' || 'staging' }}
         run: |
           npx playwright install --with-deps chromium
           npx playwright test --project=desktop

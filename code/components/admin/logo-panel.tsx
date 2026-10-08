@@ -138,15 +138,18 @@ export function LogoPanel({ companyId }: { companyId: string }) {
     }
   };
 
-  // SEC-2 (migration 20261007150000): approve first; only then may the file be copied to the public bucket, and
-  // activate_logo makes it the logo once the public copy matches the reviewed upload.
+  // SEC-2 (migrations 20261007150000, 20261007160000): approve first; only then may the file be copied to the public
+  // bucket, and the activate-logo function makes it the logo once the copy's bytes hash to the reviewed upload's SHA-256.
   const activate = async (id: number): Promise<string | null> => {
     const key = assets.data?.find((x) => x.id === id)?.storage_key;
     if (!key) return "That upload is no longer listed. Reload the page.";
     const copied = await supabase.storage.from("company-logos-pending").copy(key, key, { destinationBucket: "company-logos" });
     if (copied.error && !/exists|duplicate/i.test(copied.error.message)) return `Approved, but the file could not be published: ${copied.error.message}`;
-    const { error } = await supabase.rpc("activate_logo", { p_id: id });
-    return error ? `Approved, but it is not the logo yet: ${describeError(error)}` : null;
+    // The server hashes both files' bytes and the database compares them with the upload's hash (20261007160000).
+    const { error } = await supabase.functions.invoke("activate-logo", { body: { id } });
+    if (!error) return null;
+    const detail = await (error as { context?: Response }).context?.json?.().catch(() => null);
+    return `Approved, but it is not the logo yet: ${(detail as { error?: string } | null)?.error ?? error.message}`;
   };
 
   const decide = async (id: number, decision: "approved" | "rejected") => {

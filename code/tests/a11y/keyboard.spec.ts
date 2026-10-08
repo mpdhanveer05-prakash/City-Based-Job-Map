@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { featureOff, OFF_REASON } from "../e2e/build-info";
+import { requireOrSkip } from "../e2e/build-info";
 import { expect, test, type Page } from "@playwright/test";
 
 // P9-01. What the axe sweep in pages.spec.ts does not cover: the company, jobs, and suggest pages (with their report forms
@@ -15,7 +15,7 @@ async function blockingViolations(page: Page) {
 }
 
 test("the company page, with its report form open, has no serious or critical axe violations", async ({ page, request }) => {
-    test.skip(await featureOff(request, "feedback"), OFF_REASON("feedback"));
+    await requireOrSkip(request, "feedback");
   await stubTurnstile(page);
   await page.goto(COMPANY);
   await page.getByText("Something wrong on this page? Tell us").click();
@@ -24,7 +24,7 @@ test("the company page, with its report form open, has no serious or critical ax
 });
 
 test("the jobs page, with its report form open, has no serious or critical axe violations", async ({ page, request }) => {
-    test.skip(await featureOff(request, "feedback"), OFF_REASON("feedback"));
+    await requireOrSkip(request, "feedback");
   await stubTurnstile(page);
   await page.goto(`${COMPANY}/jobs`);
   await page.getByText("A job that is closed or wrong? Tell us").click();
@@ -125,7 +125,7 @@ test.describe("keyboard only", () => {
   });
 
   test("the suggest form can be filled and sent in with the keyboard alone", async ({ page, request }) => {
-    test.skip(await featureOff(request, "feedback"), OFF_REASON("feedback"));
+    await requireOrSkip(request, "feedback");
     await stubTurnstile(page);
     await page.goto("/suggest");
     await tabTo(page, { id: "feedback-company" });

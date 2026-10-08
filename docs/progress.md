@@ -2,16 +2,63 @@
 
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
-## Current state (7 Oct 2026; full detail in [PROJECT_HANDOVER.md](../PROJECT_HANDOVER.md))
+## Current state (8 Oct 2026; full detail in [PROJECT_HANDOVER.md](../PROJECT_HANDOVER.md))
 - **One machine:** this Windows laptop. About 2 GB of memory is often free: run one heavy job at a time.
 - **Built and tested locally:** the public site (city selection, explorer with WebGL map, Grid and List, search and filters, company and jobs pages, beacon, feedback forms), the admin (MFA, editing, CSV import, evidence review, publication gates, feeds, logos), the pipeline, and the build safeguards. Production has never been deployed; staging runs the synthetic sample.
-- **Databases:** the **main local database** (project `company-map`, port 54322) holds the 46 Bengaluru pilot drafts and must **never be reset or used by a test**. Every database and admin test runs on the **disposable test stack** (`node scripts/test-stack.mts start|reset|test-db|stop`, project `company-map-test`, port 55322); the tests refuse any other database. Backups: `.local-backups/` (git-ignored).
+- **Databases:** the **main local database** (project `company-map`, port 54322) holds the 46 Bengaluru pilot drafts and must **never be reset or used by a test**. It is at migration `20261007140000`; bringing it to `20261007160000` is planned and rehearsed but not applied ([main-db-migration-plan.md](main-db-migration-plan.md)). Every database and admin test runs on the **disposable test stack** (`node scripts/test-stack.mts start|reset|test-db|stop`, project `company-map-test`, port 55322); the tests refuse any other database. Backups: `.local-backups/` (git-ignored).
 - **Previews:** preserved copies of the synthetic and pilot builds are in `.local-previews/{synthetic,pilot}` (git-ignored). Serve them from `code/` with `npx wrangler dev --config ../.local-previews/synthetic/wrangler.jsonc --port 8788` or `.../pilot/... --port 8789`.
 - **Latest checks:** see the newest log entry below.
-- **Owner actions open:** the GitHub `staging` and `production` environments and their variables ([deploy-environments.md](deploy-environments.md)); the production rebuild policy ([ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md)); D-04 coverage and gate thresholds; D-06 devices and gate owner; D-07 geocoding provider; a human data reviewer for the pilot; the logo permitted-use categories; hosted MFA; an independent approver for the audit exception; which project the pipeline serves; whether to push, and the squash of `5812ed2`/`b55857e` first.
+- **Owner actions open:** the GitHub `staging` and `production` environments and their variables ([deploy-environments.md](deploy-environments.md)); the production rebuild policy ([ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md); option C is a concrete proposal); whether to apply the main-database migration plan; D-04 coverage and gate thresholds; D-06 devices and gate owner; D-07 geocoding provider; a human data reviewer for the pilot; the logo permitted-use categories; hosted MFA; an independent approver for the audit exception; which project the pipeline serves; whether to push, and the squash of `5812ed2`/`b55857e` first.
 - **Blockers:** P2-09 (devices), P9-20 (a human reviewer), hosted work (no hosted Supabase project yet).
 
 ## Log
+
+### 2026-10-07 to 08: follow-ups before P9-12: logo bytes, open-tab test, snapshot consistency, smoke policy, main-database plan, ADR-0025 option C
+- **1. Logo integrity from the bytes** (migration `20261007160000_logo_sha256.sql`, Edge Function `activate-logo`):
+  - a reviewer's request is recorded (`request_logo_activation`);
+  - the function downloads the pending upload and the public copy with the service key and computes the SHA-256 of each file's bytes itself (`supabase/functions/_shared/logo-activation-handler.ts`);
+  - `complete_logo_activation` (service role only) accepts only if both equal the hash the upload's key names, for a request made in the last ten minutes. `activate_logo(bigint)`, which compared Storage metadata, is dropped. A client-supplied hash is refused outright;
+  - the admin panel calls the function after the copy.
+- **2. Open-tab update test** (`tests/e2e/open-tab-update.spec.ts`, desktop and phone):
+  - unchanged content gives no notice;
+  - no check before five minutes;
+  - changed content gives one notice, and the reload fetches the new snapshot's files;
+  - a failed check says nothing, and browsing keeps working.
+- **3. Determinism and consistency:**
+  - two separate builds of the same data are byte-identical, and each folder is named by its files' hash (`tests/unit/dataset-determinism.test.ts`; it saves and restores `public/_redirects`);
+  - each city's explorer, `current.json` and `manifest.json` name the same folder, and company and jobs pages show what that snapshot holds (`tests/e2e/snapshot-consistency.spec.ts`). Map, Grid and List counts stay covered by the explorer and phone specs.
+- **4. Smoke tests cannot silently skip a required feature:**
+  - the required features come from deployment policy (`REQUIRED` in `lib/build-features.ts` and `EXPECT_DEPLOY_TARGET`, set by `deploy-staging.yml` from its environment), not from the build's `build-info.json`. A required feature that is off **fails**; only a feature the target does not require may skip (`featureTestDecision`, unit-tested);
+  - a run against a deployed site without `EXPECT_DEPLOY_TARGET` fails;
+  - `tests/e2e/deploy-policy.spec.ts` checks the build against the policy; the production workflow's curl smoke checks `build-info.json` the same way.
+  - **Demonstrated (8 Oct):** a copy of the e2e build with `build-info.json` edited to say the beacon is off, served by `wrangler dev` on :8790, running the three beacon tests in `company-pages.spec.ts`:
+    - with no target set, 3 failed ("must set EXPECT_DEPLOY_TARGET");
+    - with `staging`, 3 failed ("the deployment policy requires the beacon feature, but this build has it off");
+    - with `staging-synthetic`, 3 skipped;
+    - `deploy-policy.spec.ts` with `staging` failed ("beacon is required"). The copy was deleted.
+- **Main local database: plan, rehearsed, not applied** ([main-db-migration-plan.md](main-db-migration-plan.md)).
+  - Backup `.local-backups/pre-migrate-20261008-125054.dump`. Restored into a scratch database in the same container, then both migrations applied as `postgres`.
+  - The first attempt failed safely: the copy was owned by `supabase_admin`, both files rolled back, and the counts were unchanged. With the copy owned by `postgres`, as the real database is, both applied, and every count was unchanged (46 drafts, 46 offices, 262 evidence, 0 reviewed; Bengaluru 49, Chennai 24).
+  - Scratch database dropped. The main database is still at `20261007140000`, unchanged, and stopped with its data kept.
+  - The saved previews in `.local-previews/` still represent their original builds.
+- **ADR-0025 option C** written up as a concrete proposal, not built:
+  - rebuild the exact commit of the newest protected `release/*` tag, with production data only;
+  - every release check plus a shrink guard;
+  - one concurrency group with the production deploy;
+  - rollback to the previous Worker version, and retained artifacts;
+  - it never builds `main`.
+- **Docs:** security, data model, curation guide, ADR-0024 (logo activation by hash), ADR-0025, plan.md, the handover.
+- **Checks run (from `code/`):**
+  - 7 Oct, on the test stack:
+    - `test-stack.mts test-db` 17 files, 711 passed. The first run failed `15_logo_assets` (a temp table not granted to `service_role`; fixed in the test);
+    - `npm run test:admin` 58 passed, including a tamper test through the real function (the public copy replaced with other bytes is refused);
+    - `npm run test:parity` 8 passed; pipeline pytest 89 passed.
+  - 8 Oct, without a database:
+    - `npm run lint` clean; `npm run typecheck` clean; `npm test` 44 files, 669 passed;
+    - `npx playwright test --workers=2`: **292 passed, 0 failed, 58 skipped** (19.6 min). The 58 are the 56 by-design project skips plus the snapshot spec's 2 on mobile.
+  - **An incomplete run, explained:** the 7 Oct full run with 3 workers had 2 hit-test failures (16.8 and 20.0 min) with 0.7 GB of memory free, and it was cut off when the session ended. The four map specs alone on 8 Oct, with 1 worker: 41 passed, 1 skipped. Then the full run above.
+- **Not verified:** anything on a hosted project (the Edge Function's service key and Storage download there); `supabase migration up` on the main database (not authorized); the open-tab notice on a deployed Worker; ADR-0025 option C (not built).
+- **Next:** the owner decides on applying the main-database plan and on REBUILD-1 (ADR-0025 option C); then P9-12.
 
 ### 2026-10-07 (night): SEC-1 to SEC-4, the publication loophole, listings, test isolation, build configuration, dataset versions
 - **Test isolation first.** `scripts/test-stack.mts` builds a disposable second Supabase stack (`company-map-test`, ports +1000, database 55322) from `supabase/`, with a `test_stack.marker` in its seed.

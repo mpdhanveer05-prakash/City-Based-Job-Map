@@ -41,3 +41,25 @@ describe("buildFeatures", () => {
     expect(missingFeatures("local", {})).toEqual([]);
   });
 });
+
+import { featureTestDecision, REQUIRED } from "@/lib/build-features";
+import { requiredFeatures } from "../e2e/build-info";
+
+describe("featureTestDecision: deployment policy decides, not build-info.json", () => {
+  it("never skips a required feature: a build without it fails", () => {
+    expect(featureTestDecision("beacon", REQUIRED.production, { beacon: false }).action).toBe("fail");
+    expect(featureTestDecision("feedback", REQUIRED.staging, null).action).toBe("fail");
+    expect(featureTestDecision("beacon", REQUIRED.production, { beacon: true }).action).toBe("run");
+  });
+  it("skips a feature only when the target does not require it and the build says it is off", () => {
+    expect(featureTestDecision("feedback", REQUIRED["staging-synthetic"], { feedback: false }).action).toBe("skip");
+    expect(featureTestDecision("feedback", REQUIRED["staging-synthetic"], null).action).toBe("run");
+    expect(featureTestDecision("basemap", REQUIRED["staging-synthetic"], { basemap: false }).action).toBe("fail");
+  });
+  it("takes the required features from the deployment target, and refuses a remote run without one", () => {
+    expect(requiredFeatures({})).toEqual(["beacon", "feedback"]);
+    expect(requiredFeatures({ PLAYWRIGHT_BASE_URL: "https://x", EXPECT_DEPLOY_TARGET: "staging" })).toEqual(REQUIRED.staging);
+    expect(() => requiredFeatures({ PLAYWRIGHT_BASE_URL: "https://x" })).toThrow(/EXPECT_DEPLOY_TARGET/);
+    expect(() => requiredFeatures({ PLAYWRIGHT_BASE_URL: "https://x", EXPECT_DEPLOY_TARGET: "local" })).toThrow(/EXPECT_DEPLOY_TARGET/);
+  });
+});

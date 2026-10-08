@@ -33,7 +33,7 @@
 | Hosted integration | **Almost none.** No hosted Supabase project serves the site. Staging is a static synthetic-data site whose latest smoke test **failed** (a configuration cause, explained in [§8.3](#83-hosted-staging-smoke-test-failure-7-oct)). Production has **never been deployed**. |
 | Real data | **Pilot only.** 46 real Bengaluru companies exist as **unreviewed local drafts**, built from 51 source-checked candidates. **0 human-reviewed, 0 published, 0 jobs, 0 logos, 0 founders.** 44 of 46 map points are only locality-accurate and are OSM-derived (licensing unresolved). Chennai has no real data. |
 | Launch readiness | **Not ready.** Launch blockers: real-data volume and human review (D-04), a geocoding provider (D-07), hosted projects and their configuration, the map performance gate on real devices (D-06), an independent security approval of the audit exception, a screen-reader pass, the domain, monitoring and backups. |
-| Git | `main` is **18 commits ahead** of GitHub (`origin/main` = `883de71`). Two of those commits contain OSM-derived files and **should be squashed before any push** (owner decision pending). |
+| Git | `main` is **20 commits ahead** of GitHub (`origin/main` = `883de71`). Two of those commits contain OSM-derived files and **should be squashed before any push** (owner decision pending). |
 
 **Update, later on 7 Oct 2026 (local, not pushed).** The four risks first listed here have been worked on. All of the
 following is verified only locally; see `docs/progress.md`:
@@ -49,9 +49,22 @@ following is verified only locally; see `docs/progress.md`:
 4. **Dataset freshness (DEP-2): part 1 built locally.** Content-versioned dataset folders, immutable caching, and an
    open-tab update notice (ADR-0025). **Still open (owner):** how production rebuilds at all (ADR-0025 part 2, options A–C).
 
-Latest checks, run 7 Oct 2026 from `code/`:
-- **On the disposable test stack:** pgTAP 17 files, 708 passed; parity 8 passed; pipeline pytest 89 passed; admin e2e 57 passed.
-- **Without a database:** unit 42 files, 658 passed; full e2e 280 passed, 0 failed, 56 skipped (by design).
+**Follow-ups, 7–8 Oct 2026 (local, not pushed, not deployed):**
+5. **Logo integrity from the bytes:** a logo becomes the company's logo only after the `activate-logo` Edge Function has
+   computed the SHA-256 of the pending upload's and the public copy's bytes on the server, and both equal the upload's
+   hash (`20261007160000`). No client-supplied hash or metadata counts.
+6. **Dataset freshness tested:** byte-identical builds, one snapshot across explorer, pointer, manifest, company and jobs
+   pages, and the open-tab notice (no notice / notice / reload uses the new snapshot / failed check harmless).
+7. **Smoke tests follow deployment policy:** required features come from the deploy target (`EXPECT_DEPLOY_TARGET` and
+   `REQUIRED`), not from `build-info.json`. A required feature that is off fails, demonstrated on an edited build copy.
+8. **Main local database:** a backed-up, non-reset migration plan, rehearsed on a restored copy with every count
+   unchanged; **not applied** ([docs/main-db-migration-plan.md](docs/main-db-migration-plan.md)). Saved previews still
+   represent their original builds.
+9. **ADR-0025 option C** is now a concrete proposal (§4.5); the owner still chooses A, B or C.
+
+Latest checks, from `code/`:
+- **On the disposable test stack (7 Oct):** pgTAP 17 files, 711 passed; parity 8 passed; pipeline pytest 89 passed; admin e2e 58 passed.
+- **Without a database (8 Oct):** lint and typecheck clean; unit 44 files, 669 passed; full e2e 292 passed, 0 failed, 58 skipped (by design; 2 workers).
 
 Sections below were written at `04aa427` and updated where these changes apply. Where a row still says "open" for these
 items, the status tables in §2.2 and §10 take precedence.
@@ -262,12 +275,12 @@ For each item, the table separates these levels:
 | DEF-2 | Map-load timeouts under parallel e2e load | **Mitigated.** At most one map-heavy test runs at a time. Not proven gone. |
 | DEF-3 | A tapped cluster was still drawn after the camera flight | **Test bug fixed** with `settleOnView()`; passes in the full suite. `plan.md` still says "Open". |
 | SEC-1 | Updates to tag, sector and job-city rows bypassed the reviewed-evidence change gate | **Fixed locally** (`20261007150000`; [§5.6](#56-known-security-gaps-found-in-the-final-sql)) |
-| SEC-2 | A logo could sit in the public bucket without being approved | **Fixed locally** (approve, copy, activate) |
+| SEC-2 | A logo could sit in the public bucket without being approved | **Fixed locally** (approve, copy, then activation by a server-side SHA-256 of the bytes, `20261007160000`) |
 | SEC-3 | Pipeline-written jobs were not evidence- or feed-gated in SQL | **Fixed locally** (`pipeline_job_gate`; feed automation preserved) |
 | SEC-4 | Callers with no signed-in user (service role) could insert pre-reviewed evidence, publish, approve feeds, set logos | **Fixed locally** (only the database owner is trusted) |
 | DEP-1 | Deploy workflows didn't pass the Geoapify or Turnstile site keys | **Fixed locally** (workflows map them; deploy and prebuild checks fail without them) |
-| DEP-2 | Rebuilds could change data under the same URL; no cache rule for `/data/*` | **Fixed locally** (content-hashed folders, ADR-0025 part 1); production rebuild policy awaits the owner |
-| DEP-3 | The staging smoke test runs the whole synthetic-data desktop suite | **Partly fixed**: tests of a feature the build lacks now skip with a reason (`build-info.json`); the suite still assumes synthetic fixtures |
+| DEP-2 | Rebuilds could change data under the same URL; no cache rule for `/data/*` | **Fixed locally** (content-hashed folders, ADR-0025 part 1; determinism, snapshot consistency and the open-tab notice are tested). The production rebuild policy awaits the owner; option C is now a concrete proposal |
+| DEP-3 | The staging smoke test runs the whole synthetic-data desktop suite | **Partly fixed**: which features are required comes from deployment policy (`EXPECT_DEPLOY_TARGET` set by the workflow, `REQUIRED` in `lib/build-features.ts`), not from the build's `build-info.json`. A required feature the build lacks fails the test; only a feature the target doesn't require may skip. The suite still assumes synthetic fixtures |
 | DEP-4 | Staging deploys before its smoke test, so a failing build stays live | **Open** |
 | OPS-1 | Admin e2e global setup deletes all `admin_user` rows and adds test companies | **Fixed locally**: it now runs only on the disposable test stack and refuses any other database |
 | UX-1 | "Open jobs" counts differ: the explorer counts active jobs only; the company page and jobs page include *suspect* jobs | **Open** (owner decision) |
@@ -498,14 +511,19 @@ flowchart TB
 - `PILOT_PREVIEW=1` accepts only a local database on 127.0.0.1 or localhost and shows a banner.
 - noindex comes from `SITE_ENV`, which must not be `production`.
 
-**`data_version`:**
-- An integer per city, bumped **only by `publish_now`**, for every city at once.
-- File URLs include it, so a Publish now rebuild gives new URLs.
-- **Pipeline and nightly rebuilds rewrite the files under the same URLs.**
-- `public/_headers` has **no rule for `/data/*`** (Cloudflare's default caching applies), while TanStack Query caches per `data_version` with `staleTime: Infinity`.
-- Net effect: a visitor's open tab can show data older than the latest rebuild until they reload. **Decide the policy** (DEP-2): bump `data_version` on every data rebuild, or set a short `Cache-Control` on `/data/*`.
+**Dataset versions (DEP-2, [ADR-0025](docs/decisions/0025-dataset-versions-and-rebuild-policy.md) part 1, built locally 7 Oct 2026):**
+- `data_version` is still an integer per city, bumped only by `publish_now`.
+- Each city's files go in a folder named `<data_version>-<content hash>` (`public/data/<city>/<folder>/{companies,offices,search,details}.json`), so **changed content always gets new URLs**, whatever triggered the rebuild. A build deletes the city's older folders.
+- `/data/<city>/current.json` names the current folder.
+- `public/_headers`: version folders are `immutable` for a year; `current.json` is `no-cache`.
+- **Open tabs:** when an explorer tab becomes visible again, at least five minutes after its last check, it fetches `current.json` (`no-store`). If the folder changed, it offers a reload; if the check fails, it says nothing and browsing continues (`components/explorer/explorer.tsx`).
+- **Tested (7 Oct 2026):**
+  - two separate builds of the same data are byte-identical, and each folder is named by its files' hash (`tests/unit/dataset-determinism.test.ts`);
+  - each explorer, pointer and manifest names the same snapshot, and company and jobs pages show what it holds (`tests/e2e/snapshot-consistency.spec.ts`); Map, Grid and List counts are checked by the existing explorer and phone specs;
+  - the open-tab notice: unchanged content gives no notice, changed content gives one and the reload uses the new snapshot, and a failed check leaves browsing working (`tests/e2e/open-tab-update.spec.ts`).
+- **How production rebuilds** (ADR-0025 part 2) awaits the owner. Option C is now a concrete proposal: a data-only refresh that rebuilds the exact commit of the last approved `release/*` tag, with production data and every release check (plus a shrink guard), in one concurrency group with the production deploy, with automatic rollback and retained artifacts, and never newer code.
 
-**Caching:** `/_next/static/*` and `/maplibre/*` are `immutable` for one year. Pages and data use the default caching.
+**Caching:** `/_next/static/*`, `/maplibre/*` and dataset version folders are `immutable` for one year; `current.json` is `no-cache`. Pages use the default caching.
 
 **Freshness shown to visitors:**
 - **Jobs page:** "Checked today / N days ago", from the oldest `last_ok_at` among the listed jobs.
@@ -585,6 +603,10 @@ flowchart LR
 23. `20261007120000_logo_permission_evidence`: the terms quote and the storage, display and atlas permissions.
 24. `20261007130000_logo_pending_bucket`: the private `company-logos-pending` bucket; reworked storage policies.
 25. `20261007140000_admin_session_checks`: the final `is_admin()` (live session row, verified factor); pipeline functions revoked from `anon` and `authenticated`.
+26. `20261007150000_security_gaps`: SEC-1 to SEC-4, the publication loophole (a company needs a *published* reviewed office), `listed_office()` for listings, and logo approve → copy → activate.
+27. `20261007160000_logo_sha256`: logo activation by server-side SHA-256 (`request_logo_activation`, the `activate-logo` Edge Function, `complete_logo_activation` for `service_role` only); drops `activate_logo(bigint)`.
+
+Migrations 26 and 27 are applied to the disposable test stack only. The main local database is still at #25; the plan to bring it up to date without a reset is [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) (not applied).
 
 **Rule:** schema changes go only in **new** migration files. Never edit an applied migration.
 
@@ -778,7 +800,7 @@ flowchart LR
 
 ### 5.6 Known security gaps found in the final SQL (fixed locally, 7 Oct 2026)
 
-**Update:** all four, the publication loophole, and the listing rule were demonstrated on the disposable test stack as the role that could reach them, then fixed in migration `20261007150000_security_gaps.sql` with regression tests in `supabase/tests/database/16_security_gaps.test.sql`. The table below is the original finding; see the status table in §2.2. Residuals: Storage's copy is trusted for the bytes (the database compares size, type and content tag); pre-migration public copies of undecided logos, if any, are not removed automatically (only local test data had them); nothing is verified on a hosted project.
+**Update:** all four, the publication loophole, and the listing rule were demonstrated on the disposable test stack as the role that could reach them, then fixed in migration `20261007150000_security_gaps.sql` with regression tests in `supabase/tests/database/16_security_gaps.test.sql`. The table below is the original finding; see the status table in §2.2. **Logo integrity (follow-up, `20261007160000`):** a logo becomes the company's logo only after the `activate-logo` Edge Function has downloaded the pending upload and the public copy with the service key and computed the **SHA-256 of their bytes on the server**; `complete_logo_activation` (service role only) accepts only if both equal the hash the upload's key names, for a reviewer's request made in the last ten minutes. No hash or metadata sent by a browser is compared. Tested by pgTAP `15_logo_assets` and an admin e2e test that replaces the public copy with other bytes and is refused. Residuals: pre-migration public copies of undecided logos, if any, are not removed automatically (only local test data had them); nothing is verified on a hosted project.
 These were found while preparing this handover. I confirmed them by reading the live policies and grants; none was exploited.
 
 | ID | Gap | Suggested fix |
@@ -1017,28 +1039,31 @@ The README in `code/data/pilot/bangalore/` still quotes round-2 optional-fact co
 ## 8. Testing and known defects
 
 ### 8.1 Latest results
-All runs were on 7 Oct 2026, on Windows 11 with Node 24, from `code/`.
+All runs were on Windows 11 with Node 24, from `code/`, on the uncommitted working tree after `2e4d8a6` (the follow-ups of 7–8 Oct).
 
-| Suite | Command | Result | Code tested |
+| Suite | Command | Result | When |
 | --- | --- | --- | --- |
-| Lint | `npm run lint` | clean | `04aa427` |
-| Types | `npm run typecheck` | clean | `04aa427` |
-| Unit | `npm test` | **40 files, 641 passed** | `04aa427` (633 on `0f79828` before the new deploy-check tests) |
-| E2E + axe | `npm run test:e2e` | **278 passed, 0 failed, 56 skipped** (18.0 min, 3 workers, Geoapify key present) | `0f79828` application code (same as `04aa427`) |
-| pgTAP | `npx supabase test db` (after `db reset`) | **16 files, 664 passed** | `0f79828` |
-| Admin e2e | `npm run test:admin` (after `db reset`) | **57 passed, 0 failed** | `0f79828` |
-| Pipeline | `python -m pytest scripts/pipeline/tests` | 88 passed | 7 Oct, earlier run |
-| Parity | `npm run test:parity` | 8 passed | 6 Oct (filter unchanged since) |
+| Lint | `npm run lint` | clean | 8 Oct |
+| Types | `npm run typecheck` | clean | 8 Oct |
+| Unit | `npm test` | **44 files, 669 passed** | 8 Oct |
+| E2E + axe | `npx playwright test --workers=2` (same as `npm run test:e2e` with 2 workers instead of 3, for memory) | **292 passed, 0 failed, 58 skipped** (19.6 min, Geoapify key present) | 8 Oct |
+| pgTAP | `node scripts/test-stack.mts test-db` (test stack) | **17 files, 711 passed** | 7 Oct |
+| Admin e2e | `npm run test:admin` (test stack, after `reset`) | **58 passed, 0 failed** | 7 Oct |
+| Pipeline | `python -m pytest scripts/pipeline/tests` (test stack) | 89 passed | 7 Oct |
+| Parity | `npm run test:parity` (test stack) | 8 passed | 7 Oct |
+| Smoke policy | beacon tests against an edited build copy (beacon off) | no target: 3 failed; `staging`: 3 failed; `staging-synthetic`: 3 skipped | 8 Oct |
+| Main-DB rehearsal | [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) step 3 on a restored copy | both migrations applied; all counts unchanged | 8 Oct |
 | Audit | `npm run audit` / `-- --release` | technical pass / release **fails** (approval pending) | 6 Oct |
 | CI | GitHub Actions on push | 4/4 jobs green on `883de71` | 6 Oct |
 | Staging smoke | `883de71`'s own tests: `npx playwright test --project=desktop` with `PLAYWRIGHT_BASE_URL` set to the staging URL | **134 passed, 7 failed, 8 skipped** | 7 Oct, live staging |
 
-**Proposal, not an approved requirement:** three consecutive green full suites before a release candidate (one recorded so far). Earlier full runs on 7 Oct had 4 and 2 failures (a slot-timeout bug, then DEF-3), and one 275/1 run (the first DEF-1 user-side test).
+**Proposal, not an approved requirement:** three consecutive green full suites before a release candidate. Earlier full runs on 7 Oct had 4 and 2 failures (a slot-timeout bug, then DEF-3), and one 275/1 run (the first DEF-1 user-side test). A 7 Oct run with 3 workers and 0.7 GB of free memory had 2 hit-test failures and was cut off; the same four map specs passed alone the next day (41 passed, 1 skipped, 1 worker), then the full run above. Low memory on this laptop still makes full runs unreliable (DEF-2).
 
 ### 8.2 Skips and coverage gaps
-- **The 56 e2e skips are all by design.** Each test runs only on the project (desktop or emulated phone) it applies to:
+- **The 58 e2e skips are all by design.** Each test runs only on the project (desktop or emulated phone) it applies to:
   - **41 on mobile:** budgets 4, the desktop journey 1, the focus test 1, explorer filters 10, explorer map 9, keyboard journeys 4, lifecycle 1, popup 11;
   - **15 on desktop:** phone spec 10, stylesheet timing 4, popup phone-only 1.
+  - **2 more on mobile since 7 Oct:** the snapshot-consistency spec makes HTTP-only checks and runs on desktop only.
   - **Without a Geoapify key,** 12 more skip (basemap and tile tests).
 - **In CI,** the mobile project leaves out the heavy map specs. Pixel 7 emulation isn't a real phone.
 - **Gaps:**
@@ -1050,7 +1075,6 @@ All runs were on 7 Oct 2026, on Windows 11 with Node 24, from `code/`.
   - storage policies in CI (the logo pgTAP parts skip in CI's Postgres-only database; they ran on the full local stack);
   - no tests for `scripts/pilot/*`, the `PILOT_PREVIEW` build guards, the in-page gate runner or the Android CDP mode;
   - no pgTAP tests for the feed approve, withdraw and resolve functions (pytest and admin e2e cover them);
-  - no test for UPDATEs on tag, sector and job-city rows (SEC-1);
   - **the backup drill** does not cover Storage, auth tables or the newer evidence, feed and logo tables, and hasn't run since 5 Oct.
 
 ### 8.3 Hosted staging smoke-test failure (7 Oct)
@@ -1151,25 +1175,24 @@ The build always writes `code/out/` and `code/public/data/`, and the running :87
 The pilot README's instructions (plain `npm run build`, then `npm run preview`) overwrite the synthetic preview and need updating.
 
 ### 9.3 Running database and admin tests safely
-- **Preferred (not built yet; task OPS-2):** a disposable second Supabase stack for tests, for example a copy of `code/supabase` with a different `project_id` and ports, reset freely.
-- **Until then, use backup → test → restore:**
-  1. Back up the main database with `docker exec <db container> pg_dump -U postgres -Fc -d postgres > .local-backups/<name>.dump`. `.local-backups/` is git-ignored; the latest is `pre-pilot-restore-20261007-094628.dump`.
-  2. Run the tests (they may reset the database).
-  3. Restore:
+- **Built (OPS-2, 7 Oct 2026):** the disposable test stack, `node scripts/test-stack.mts start|reset|test-db|stop` (project `company-map-test`, database :55322). Every database and admin test runs there and refuses any other database. Use it; never test on the main database.
+- **Recovery of the main database, if it is ever damaged:**
+  1. Backups: `docker exec <db container> pg_dump -U postgres -Fc -d postgres > .local-backups/<name>.dump`. `.local-backups/` is git-ignored; see the folder for the newest.
+  2. Restore:
      - either re-import the pilot with `LOCAL_DATABASE_URL=… python -m scripts.pilot.build_import --import` (only inserts; it's checked for duplicates by domain; re-importing the same rows adds nothing);
      - or `pg_restore` the dump. **A `pg_restore --clean` into the main database has not been verified.** The drill restores only into a scratch database.
-  4. Verify the counts: 46 non-synthetic draft companies, 46 draft offices, 262 pilot evidence claims, 0 reviewed.
+  3. Verify the counts: 46 non-synthetic draft companies, 46 draft offices, 262 pilot evidence claims, 0 reviewed.
 - **Operating notes:**
   - only one heavy job (e2e, gate, admin stack) at a time; low memory kills runs;
   - a running `next dev` can corrupt the generated types, so stop it before builds;
   - the local Edge runtime sometimes answers `503 name resolution failed` (a Docker DNS flake; the admin setup retries);
   - Playwright wipes `test-results/`, so durable numbers go to `code/gate-results/` (git-ignored).
 
-### 9.4 State of this machine (7 Oct 2026)
-- **Containers running:** `supabase_db`, `storage`, `rest`, `auth`, `kong`, `inbucket` (`company-map`).
-- **Databases:** `postgres` (main) and `pilot_preview` (scratch).
-- **Previews:** :8788 (synthetic) and :8789 (pilot).
-- **Edge Functions:** not being served.
+### 9.4 State of this machine (8 Oct 2026)
+- **Docker:** stopped. The main stack's data is kept in the volume `supabase_db_company-map` (stopped with a plain `supabase stop`); the test stack was stopped and discarded.
+- **Main local database:** at migration `20261007140000` (#25), holding the pilot drafts. #26 and #27 are not applied ([docs/main-db-migration-plan.md](docs/main-db-migration-plan.md)).
+- **Previews:** not running. The saved copies in `.local-previews/{synthetic,pilot}` still represent their original builds (before #26, #27 and content-versioned datasets); serve them as in `docs/progress.md`.
+- **Memory:** often under 2 GB free with the usual desktop apps open; run one heavy job at a time.
 
 ---
 
@@ -1202,7 +1225,8 @@ The pilot README's instructions (plain `npm run build`, then `npm run preview`) 
 | DEP-2 | Content-versioned datasets, caching, open-tab update notice (ADR-0025 part 1) | Done locally; not deployed | P1 | — | Documented policy and a test | Dev |
 | DEP-3/4 | Staging smoke suite fit for a real-data staging site; test before going live | Open | P1 | ENV-1 | Smoke passes on real-data staging; a failing build does not go live | Dev |
 | PIPE-1 | Decide which project the pipeline serves; set `PIPELINE_DATABASE_URL` (per environment); give the jobs an `environment:` | Open | P0 | ENV-1 | `pipeline.yml` and `monitor.yml` green | Owner, Dev |
-| REBUILD-1 | Decide how production rebuilds after a publication (manual release only, or an approved trigger) | Open | P0 | — | Documented and implemented | Owner |
+| REBUILD-1 | Decide how production rebuilds after a publication (ADR-0025 part 2: A manual, B scheduled with approval, C data-only refresh of the last approved release) | Open (owner); option C written up as a concrete proposal, not built | P0 | — | Documented and implemented | Owner |
+| DB-MAIN | Bring the main local database (pilot drafts) to migration `20261007160000` without a reset | Plan written and rehearsed on a restored copy; **not applied** | P1 | owner's go-ahead | [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) followed; counts unchanged | Owner (approve), Dev |
 | P9-15 | officemap.tech: DNS on Cloudflare, Worker custom domain, site URL, canonical URLs, CSP, allowed origins | Not started | P0 | ENV-1, release approval | Production smoke on the domain passes | Owner, Dev |
 | P9-05 | Release checklist and a production deploy | In progress (workflow never run) | P0 | everything P0 | Checklist complete; explicit owner authorization | Owner |
 | GIT-1 | Squash local commits `5812ed2`/`b55857e` (OSM-derived files in history) before pushing; then push | Awaiting authorization | P0 | — | No OSM-derived file anywhere in pushed history | Owner (authorize), Dev |
@@ -1284,11 +1308,11 @@ P6-04, P5-05, P4-03, Phase 10, the PMTiles migration, Chennai (as the second rel
 | Item | Value |
 | --- | --- |
 | Branch | `main` |
-| Local HEAD | `04aa427` "Deploy environments: staging approval gate, per-environment config check, production never synthetic (local, not pushed)" |
+| Local HEAD | `2e4d8a6` "SEC-1..4, publication loophole, listed offices; disposable test stack and guards; DEP-1 build features; DEP-2 content-versioned datasets (ADR-0025 proposed); stale docs corrected" |
 | Remote HEAD (`origin/main`) | `883de71` "P9-06: ownership status separate from startup stage…" (6 Oct 2026) |
-| Unpushed commits | **18** (`93ca2a6` … `04aa427`, 6–7 Oct): evidence gates (P9-07), feed governance, Bengaluru pilot research and import, publication-rule fix, DEF-1/2/3, MFA (P9-13), logos (P9-21), pilot preview, verification records, deploy environments |
+| Unpushed commits | **20** (`93ca2a6` … `2e4d8a6`, 6–7 Oct): evidence gates (P9-07), feed governance, Bengaluru pilot research and import, publication-rule fix, DEF-1/2/3, MFA (P9-13), logos (P9-21), pilot preview, verification records, deploy environments |
 | History cleanup pending | `5812ed2` contains OSM/Nominatim-derived pilot files (37-row `import-rows.json`, `pilot.csv`, `geocode-cache.json`); `b55857e` removed them. **Squash both before any push** so ODbL-derived data is never published (awaiting the owner's authorization; the rule is not to rewrite history without it). `e8bb5ad` and `0f79828` are labelled WIP; the latter's verification is recorded in `18f58b2`. |
-| Working tree | This handover file and a one-line correction in `docs/progress.md` (committed with this document; see the commit reference in the delivery note) |
+| Working tree | **Uncommitted** follow-ups of 7–8 Oct on top of `2e4d8a6`: migration `20261007160000`, the `activate-logo` function, the new tests (open-tab, snapshot consistency, deploy policy, dataset determinism, logo handler), the smoke-policy changes in both deploy workflows, ADR-0024/0025 updates, `docs/main-db-migration-plan.md`, and these docs. Commit when the owner asks |
 | Open PRs | 4 Dependabot PRs |
 | Repository visibility | **Public** |
 

@@ -32,6 +32,14 @@ Until now `company.logo_key` existed, but nothing could fill it. There was no bu
 5. **Gate.** A signed-in administrator can set `company.logo_key` only to an approved upload for that company, or clear it. The seed and the migration owner are not checked, as with the other gates.
 6. **Postgres-only databases** (CI's `supabase db start`) have no `storage` schema. There, the migration skips the bucket and its policies, and `tests/database/15_logo_assets.test.sql` skips. Hosted projects and the full local stack have the schema.
 
+7. **Changes after the first version (7 Oct 2026; this ADR is still Proposed).**
+   - Uploads go to a private `company-logos-pending` bucket (`20261007130000`).
+   - Each upload records the terms quote and the storage, display and atlas permissions (`20261007120000`).
+   - Nothing may enter the public bucket before approval (SEC-2, `20261007150000`).
+   - A logo becomes the company's logo only after the `activate-logo` Edge Function has hashed the pending upload's bytes
+     and the public copy's bytes on the server (SHA-256) and both equal the hash the key names (`20261007160000`). No
+     client-supplied hash or metadata establishes integrity.
+
 ## Consequences
 
 - Logos can be loaded with a recorded basis, which release checklist row 6 needed.

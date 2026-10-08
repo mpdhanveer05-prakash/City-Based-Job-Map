@@ -65,3 +65,19 @@ export function missingFeatures(target: BuildTarget, env: Env): string[] {
   const have = buildFeatures(env);
   return REQUIRED[target].filter((f) => !have[f]).map((f) => `a ${target} build needs the ${f} feature: set ${NEEDS[f]}`);
 }
+
+/** What a smoke or e2e test of a feature should do (tests/e2e/build-info.ts): the deployment policy decides, not the build. */
+export type FeatureTestDecision = { action: "run" } | { action: "skip"; reason: string } | { action: "fail"; reason: string };
+
+/**
+ * `required` comes from the deployment target (REQUIRED, or the features the local e2e server configures); `info` is what
+ * the build says it has. A required feature is never skipped: if the build lacks it, the test fails and says so. Only a
+ * feature the target does not require may be skipped, and only when the build says it is off.
+ */
+export function featureTestDecision(feature: BuildFeature, required: readonly BuildFeature[], info: Partial<BuildFeatures> | null): FeatureTestDecision {
+  const has = info?.[feature];
+  if (required.includes(feature)) {
+    return has === true ? { action: "run" } : { action: "fail", reason: `the deployment policy requires the ${feature} feature, but this build ${info ? "has it off" : "has no build-info.json"}` };
+  }
+  return has === false ? { action: "skip", reason: `this build has no ${feature} feature, and its deployment target does not require it` } : { action: "run" };
+}

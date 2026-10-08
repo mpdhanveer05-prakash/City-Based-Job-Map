@@ -410,6 +410,13 @@ verify_jwt = true
 import_map = "./functions/request-rebuild/deno.json"
 entrypoint = "./functions/request-rebuild/index.ts"
 
+# Logo activation (20261007160000): called by a signed-in reviewer, so JWT verification stays on; it hashes the bytes itself.
+[functions.activate-logo]
+enabled = true
+verify_jwt = true
+import_map = "./functions/activate-logo/deno.json"
+entrypoint = "./functions/activate-logo/index.ts"
+
 [analytics]
 # Log analytics container; not needed locally.
 enabled = false

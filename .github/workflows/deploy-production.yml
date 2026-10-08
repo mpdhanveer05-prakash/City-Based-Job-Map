@@ -113,4 +113,16 @@ jobs:
           done
           code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/dev/tokens")
           if [ "$code" = "200" ]; then echo "/dev/tokens is published" >&2; fail=1; fi
+          # Deployment policy: a production build has every visitor feature (lib/build-features.ts REQUIRED.production).
+          curl -s "$SITE/build-info.json" -o /tmp/build-info.json || true
+          python3 - <<'PY' || fail=1
+          import json, sys
+          try:
+              info = json.load(open("/tmp/build-info.json"))
+          except Exception:
+              sys.exit("build-info.json is missing from the production site")
+          missing = [f for f in ("basemap", "admin", "beacon", "feedback") if info.get("features", {}).get(f) is not True]
+          if info.get("target") != "production" or missing:
+              sys.exit(f"production build-info.json: target {info.get('target')!r}, missing required features {missing}")
+          PY
           exit $fail

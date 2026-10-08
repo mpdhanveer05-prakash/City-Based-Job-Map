@@ -1,7 +1,7 @@
 // P6-01 to P6-03: the company page, the company's jobs page, and the direct links to the employer with their click
 // beacon. The pages are prerendered from the build's dataset, which these specs read over HTTP as the oracle.
 import AxeBuilder from "@axe-core/playwright";
-import { featureOff, OFF_REASON } from "./build-info";
+import { requireOrSkip } from "./build-info";
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { loadCityData, openExplorer, type CityData, type Company, type Job } from "./explorer-helpers";
 
@@ -168,7 +168,7 @@ test.describe("jobs page", () => {
 
 test.describe("direct links and the click beacon", () => {
   test.beforeEach(async ({ request }, testInfo) => {
-    if (/counts|carries/.test(testInfo.title)) test.skip(await featureOff(request, "beacon"), OFF_REASON("beacon"));
+    if (/counts|carries/.test(testInfo.title)) await requireOrSkip(request, "beacon");
   });
   async function capture(page: Page) {
     const beacons: Array<{ body: string; type: string | undefined }> = [];

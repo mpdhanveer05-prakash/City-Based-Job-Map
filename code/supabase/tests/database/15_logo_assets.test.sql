@@ -6,7 +6,7 @@ create extension if not exists pgtap with schema extensions;
 -- A Postgres-only database (CI's `supabase db start`) has no storage schema, so the bucket does not exist there: skip.
 select to_regclass('storage.objects') is not null and to_regclass('storage.buckets') is not null as has_storage \gset
 \if :has_storage
-select plan(28);
+select plan(31);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated, service_role;
@@ -34,7 +34,13 @@ exception when others then
   return sqlstate;
 end;
 $$;
-grant execute on all functions in schema tests to anon, authenticated;
+create function tests.become_service() returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims', '', true);
+  perform set_config('role', 'service_role', true);
+end;
+$$;
+grant execute on all functions in schema tests to anon, authenticated, service_role;
 
 truncate public.admin_user;
 insert into auth.users (id) values ('00000000-0000-0000-0000-00000000109e'), ('00000000-0000-0000-0000-00000000109f');
@@ -42,7 +48,7 @@ insert into admin_user (user_id, role) values
   ('00000000-0000-0000-0000-00000000109e', 'editor'),
   ('00000000-0000-0000-0000-00000000109f', 'reviewer');
 create temp table t as select id as company from company order by slug limit 1;
-grant select on t to anon, authenticated;
+grant select on t to anon, authenticated, service_role;
 create function tests.key(n int) returns text language sql as $$
   select (select company from t)::text || '/' || repeat(n::text, 64) || '.png' $$;
 create function tests.record(n int) returns text language sql as $$
@@ -97,18 +103,25 @@ select is(tests.sqlstate_of(format($q$insert into storage.objects (bucket_id, na
 select is(tests.sqlstate_of(format('select review_logo(%s, %L, %L)', (select max(id) from logo_asset), 'approved', 'Brand page checked; current logo')), null,
   'a reviewer approves the upload');
 select is((select logo_key from company where id = (select company from t)), null, 'approving alone does not change the company''s logo');
-select is(tests.sqlstate_of(format('select activate_logo(%s)', (select max(id) from logo_asset))), '23514', 'activating needs the public copy');
-select is(tests.sqlstate_of(format($q$insert into storage.objects (bucket_id, name, metadata) values ('company-logos', %L, '{"size": 999, "mimetype": "image/png", "eTag": "\"other\""}')$q$, tests.key(1))), null,
+select is(tests.sqlstate_of(format($q$insert into storage.objects (bucket_id, name, metadata) values ('company-logos', %L, '{"size": 1200, "mimetype": "image/png"}')$q$, tests.key(1))), null,
   'once approved, a reviewer may copy it into the public bucket');
-select is(tests.sqlstate_of(format('select activate_logo(%s)', (select max(id) from logo_asset))), '23514',
-  'a public copy that does not match the reviewed upload is not activated');
+-- 20261007160000: activation is a reviewer's request, completed by the activate-logo function (service role) with the
+-- SHA-256 it computed from the files' bytes. No hash a browser sends is ever compared.
+select is(tests.sqlstate_of(format('select request_logo_activation(%s)', (select max(id) from logo_asset))), null,
+  'a reviewer asks to activate the approved upload');
+select is(tests.sqlstate_of(format('select complete_logo_activation(%s, %L, %L)', (select max(id) from logo_asset), repeat('1', 64), repeat('1', 64))), '42501',
+  'a reviewer cannot complete the activation with hashes of their own');
 reset role;
-set local storage.allow_delete_query = 'true';
-delete from storage.objects where bucket_id = 'company-logos' and name = tests.key(1);
-reset storage.allow_delete_query;
-insert into storage.objects (bucket_id, name, metadata) values ('company-logos', tests.key(1), '{"size": 1200, "mimetype": "image/png", "eTag": "\"e1\""}');
+select tests.become_service();
+select is(tests.sqlstate_of(format('select complete_logo_activation(%s, %L, %L)', (select max(id) from logo_asset), repeat('1', 64), repeat('2', 64))), '23514',
+  'the server''s hash of a public copy that differs from the upload is refused');
+select is(tests.sqlstate_of(format('select complete_logo_activation(%s, %L, %L)', (select max(id) from logo_asset), repeat('3', 64), repeat('1', 64))), '23514',
+  'an upload whose bytes do not match its recorded hash is refused');
+select is((select logo_key from company where id = (select company from t)), null, 'nothing became the logo');
+select is(tests.sqlstate_of(format('select complete_logo_activation(%s, %L, %L)', (select max(id) from logo_asset), repeat('1', 64), repeat('1', 64))), null,
+  'matching server hashes of both files activate it');
+reset role;
 select tests.become('00000000-0000-0000-0000-00000000109f');
-select is(tests.sqlstate_of(format('select activate_logo(%s)', (select max(id) from logo_asset))), null, 'a matching copy is activated');
 select is((select logo_key from company where id = (select company from t)), tests.key(1), 'and it becomes the company''s logo');
 select is((select self_reviewed from logo_asset order by id desc limit 1), false, 'reviewed by someone other than the uploader');
 select is(tests.sqlstate_of(format('select review_logo(%s, %L, %L)', (select max(id) from logo_asset), 'rejected', 'again')), '23514',

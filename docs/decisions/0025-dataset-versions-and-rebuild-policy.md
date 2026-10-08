@@ -42,6 +42,64 @@ workflow by hand, so job freshness in production depends on how often a person r
 Whichever option is chosen, staging actions must never trigger it (Publish now on staging dispatches only to staging), and
 the production workflow keeps its own environment, project, and keys.
 
+### Option C in detail (proposal, not built)
+**Goal:** production data refreshes automatically, while production **code** changes only through a person's approved
+release. A refresh rebuilds the exact commit of the last approved release with fresh production data, or it does nothing.
+
+1. **Approved releases are recorded, immutably.**
+   - When `deploy-production.yml` succeeds (typed phrase, `production` environment reviewers, audit, launch gate), its last
+     step creates an annotated tag `release/<UTC date>-<run number>` on the commit it built, and records the deployed Worker
+     version id in the tag message.
+   - The tag namespace is protected (repository ruleset: only the `github-actions` app may create `release/*`; nobody may
+     move or delete one).
+   - The `out/` folder, `manifest.json`, the launch-gate report, and the Worker version id are uploaded as a workflow
+     artifact (retention 90 days), keyed by the tag.
+2. **A separate workflow refreshes data only:** `refresh-production-data.yml`.
+   - Triggers:
+     - `repository_dispatch` of type `refresh-production-data`, sent only by the **production** Supabase project's
+       `request-rebuild` and by the production pipeline run;
+     - a schedule, every 6 hours after the pipeline;
+     - by hand.
+   - Staging never sends this event type, and staging's token cannot (separate fine-grained tokens per project).
+   - Environment `production-data`: production variables only (`DEPLOY_ENV=production`, the production project ref and anon
+     key, `OTHER_ENV_SUPABASE_PROJECT_REF` = staging), and its own Cloudflare token scoped to the `company-map` Worker.
+     Required reviewers are optional; the checks below are the gate.
+3. **The exact approved commit, never newer code.**
+   - The job resolves the newest `release/*` tag, verifies it is an annotated tag created by the workflow, checks out
+     `refs/tags/<tag>`, and asserts `git rev-parse HEAD` equals the tag's commit.
+   - It refuses if the tag's commit is not an ancestor of `main` (no orphan or rewritten release).
+   - Workflow and scripts run from the tag's tree too: the job calls the tag's `scripts/`, not `main`'s.
+   - A change to this workflow file itself needs code-owner review on `main`.
+4. **Production data only, and every check of a release.**
+   - `check-deploy-env production` (no synthetic data, no `DEV_ROUTES`, separate projects, required visitor features).
+   - `RELEASE_BUILD=1`: refuses synthetic, pilot-preview, and any company or job whose evidence is incomplete.
+   - `npm run audit -- --release`: an exception that expired since the release blocks the refresh.
+   - The launch gate for every live city.
+   - A **shrink guard** (new): refuse when a city's published companies or open jobs drop by more than an agreed share
+     (proposal: 20%) against the deployed manifest, so a bad import or mass unpublish waits for a person.
+   - If nothing changed (every city's `dataset_version` equals the deployed one), stop: no deployment.
+5. **No overlap.**
+   - `refresh-production-data.yml` and `deploy-production.yml` share one concurrency group (`production-deploy`,
+     `cancel-in-progress: false`), so at most one production deployment runs and one waits.
+   - If a newer release tag appears while a refresh waits, the refresh re-resolves the tag when it starts.
+6. **Rollback.**
+   - Before deploying, it records the currently deployed Worker version id.
+   - After `wrangler deploy` it runs the production smoke checks, including `build-info.json` against policy.
+   - On failure it runs `wrangler rollback <previous version id>` and fails the run. Every refresh also uploads its `out/`,
+     manifest and launch-gate report as an artifact (retention 30 days), so any earlier state can be redeployed by hand.
+7. **Visibility.** Each run writes a summary: tag, commit, dataset versions before and after, the counts per city, and the
+   Worker version deployed or rolled back.
+
+**What it does not do:** it never builds `main`, never deploys code that no person approved, never uses staging data or keys,
+and never runs while another production deployment is in progress.
+
+**Prerequisites before it can be built:**
+- the owner's choice of option C;
+- the production Supabase project and the `production` and `production-data` environments;
+- the tag ruleset;
+- a production-only dispatch token in the production project's function secrets;
+- the shrink-guard threshold.
+
 ## Consequences
 - Part 1 makes "changed snapshot, same URL" impossible and lets the files be cached for a year. It costs no extra files
   beyond one `current.json` per city and two header rules (5 of 100 used).

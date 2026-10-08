@@ -1072,6 +1072,45 @@ test.describe("logos", () => {
     expect((await request.get(publicUrl(keyC))).status()).toBeGreaterThanOrEqual(400);
   });
 
+  test("activation hashes the bytes on the server: a tampered public copy is refused", async ({ page, request }) => {
+    const PNG_D = Buffer.concat([PNG_B, Buffer.from("fourth")]);
+    await signInAs(page, "editor");
+    await openCompany(page);
+    await fillUpload(page, { name: "d.png", mimeType: "image/png", buffer: PNG_D });
+    await expect(page.getByTestId("logo-panel")).toContainText("Uploaded.");
+    await page.getByRole("button", { name: "Sign out" }).click();
+
+    await signInAs(page, "reviewer");
+    await openCompany(page);
+    const before = await logoKey();
+    const keyD = `${companyId}/${await sha(PNG_D)}.png`;
+    const auth = { apikey: process.env.ADMIN_E2E_ANON_KEY!, Authorization: `Bearer ${await tokenOf(page)}` };
+    const id = (await request.get(`${SUPABASE}/rest/v1/logo_asset?select=id&storage_key=eq.${encodeURIComponent(keyD)}`, { headers: auth }).then((r) => r.json()))[0].id as number;
+    expect((await request.post(`${SUPABASE}/rest/v1/rpc/review_logo`, { headers: auth, data: { p_id: id, p_decision: "approved", p_note: "Brand page checked" } })).status()).toBeLessThan(300);
+    // A reviewer writes DIFFERENT bytes under the approved key in the public bucket (the policy allows a write once approved)...
+    const tampered = await request.post(`${SUPABASE}/storage/v1/object/company-logos/${keyD}`, { headers: { ...auth, "Content-Type": "image/png" }, data: PNG_A });
+    expect(tampered.status()).toBeLessThan(300);
+    // ...and asks for activation directly, claiming the right hash: the function ignores any hash and computes its own.
+    const activate = await request.post(`${SUPABASE}/functions/v1/activate-logo`, {
+      headers: { ...auth, Origin: "http://localhost:3100", "Content-Type": "application/json" },
+      data: { id },
+    });
+    expect(activate.status(), await activate.text()).toBe(409);
+    expect(await logoKey(), "a tampered copy never becomes the logo").toBe(before);
+    const claimed = await request.post(`${SUPABASE}/functions/v1/activate-logo`, {
+      headers: { ...auth, Origin: "http://localhost:3100", "Content-Type": "application/json" },
+      data: { id, sha256: await sha(PNG_D) },
+    });
+    expect(claimed.status(), "a client-supplied hash is refused outright").toBe(400);
+    // Nor can the reviewer complete the activation with hashes of their own.
+    const direct = await request.post(`${SUPABASE}/rest/v1/rpc/complete_logo_activation`, {
+      headers: auth,
+      data: { p_id: id, p_pending_sha256: await sha(PNG_D), p_public_sha256: await sha(PNG_D) },
+    });
+    expect(direct.status()).toBeGreaterThanOrEqual(400);
+    expect(await logoKey()).toBe(before);
+  });
+
   test("a password-only session cannot read, upload, or approve logos", async ({ request }) => {
     const anon = process.env.ADMIN_E2E_ANON_KEY!;
     const token = (await (await request.post(`${SUPABASE}/auth/v1/token?grant_type=password`, { headers: { apikey: anon }, data: { email: USERS.reviewer, password: PASSWORD } })).json()).access_token as string;
