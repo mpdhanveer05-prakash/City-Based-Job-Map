@@ -46,6 +46,37 @@ export function describeDataSource(source: DataSource): string {
 
 export const isReleaseBuild = (env: DataSourceEnv): boolean => env.RELEASE_BUILD === "1";
 
+/**
+ * A database that scripts/pilot/preview-db.mts made (it has the `pilot_preview.marker` table) holds SIMULATED reviews: a
+ * stand-in account marked the pilot's claims reviewed so that the listing rule shows them. Only an explicit local pilot
+ * preview build may read it; anything else, a release above all, is refused. Returns why, or null.
+ */
+export function previewCopyRefusal(env: DataSourceEnv, isPreviewCopy: boolean): string | null {
+  if (!isPreviewCopy) return null;
+  if (isReleaseBuild(env)) return "this database is a pilot preview copy with simulated reviews: a release build never reads it.";
+  if (env.PILOT_PREVIEW !== "1") return "this database is a pilot preview copy with simulated reviews: build it only as a local pilot preview (PILOT_PREVIEW=1).";
+  return null;
+}
+
+/**
+ * PILOT_PREVIEW=1 (scripts/pilot/preview-db.mts) builds unreviewed pilot records from a local scratch copy, for looking at
+ * only. Why such a build must stop, or null: never in a release build, and only from a database on this machine.
+ */
+export function pilotPreviewRefusal(env: DataSourceEnv, source: DataSource): string | null {
+  if (env.PILOT_PREVIEW !== "1") return null;
+  if (isReleaseBuild(env)) return "RELEASE_BUILD=1 refuses PILOT_PREVIEW=1: the pilot records are unreviewed.";
+  let hostname = "";
+  try {
+    hostname = source.kind === "local" ? new URL(source.connectionString).hostname : "";
+  } catch {
+    hostname = "";
+  }
+  if (hostname !== "127.0.0.1" && hostname !== "localhost") {
+    return "PILOT_PREVIEW=1 reads only the local scratch copy. Set LOCAL_DATABASE_URL as scripts/pilot/preview-db.mts prints.";
+  }
+  return null;
+}
+
 /** A release build must not ship sample data. Returns the problem, or null when it is fine. */
 export function assertReleaseData(
   env: DataSourceEnv,

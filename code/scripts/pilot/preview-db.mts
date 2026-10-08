@@ -4,9 +4,12 @@
 //   node scripts/pilot/preview-db.mts [--container supabase_db_company-map]
 //
 // 1. Dumps the local `postgres` database and restores it into a new database, `pilot_preview` (as scripts/backup-drill.mts).
-// 2. In that copy only: deletes every synthetic company, and marks the remaining (pilot) companies and their offices
-//    published. It does this as the database owner, whom the publication gates do not check (they apply to signed-in
-//    administrators), so it records no approval and no review. Nothing in the real database changes.
+// 2. In that copy only: deletes every synthetic company, marks the remaining (pilot) companies and their offices
+//    published, and marks their evidence reviewed by a named stand-in: SIMULATED reviews, each listed in
+//    pilot_preview.simulated_review (the listing rule needs reviewed evidence). It does
+//    this as the database owner, whom the publication gates do not check (they apply to signed-in
+//    administrators). It records no approval, and the stand-in's "review" exists only in the copy, which is thrown away.
+//    Nothing in the real database changes.
 // 3. Prints the commands to build the site from the copy, with PILOT_PREVIEW=1: every page then carries a banner saying the
 //    records are unreviewed candidates, search engines are told not to index it, and RELEASE_BUILD=1 refuses it.
 //
@@ -73,6 +76,33 @@ const published = psql(
         c as (update company set status = 'published' where status = 'draft' and exists (select 1 from office x where x.company_id = company.id) returning 1)
    select (select count(*) from c) || ' companies, ' || (select count(*) from o) || ' offices'`,
 );
+// Since 20261007150000 a city lists a real company only through an office whose address and location evidence is REVIEWED.
+// The pilot's evidence is unreviewed claims, so without this the preview would show no companies at all. In the copy only,
+// the claims are marked reviewed by a stand-in account named for what it is; the real database keeps them as claims, and
+// every page of this build says the records are unreviewed.
+//
+// Provenance is kept: every original evidence field (source, date, recorder, note) stays as it was; only reviewed_at and
+// reviewed_by are set, and each such row is listed in pilot_preview.simulated_review. The copy is marked
+// (pilot_preview.marker), and the build refuses a marked database for anything but a local pilot preview, never a release
+// (lib/api/data-source.ts previewCopyRefusal); the preview's manifest then says pilot_preview, which the launch gate, the
+// data refresh and the production smoke check refuse.
+const PREVIEW_REVIEWER = "00000000-0000-4000-8000-0000000071b0";
+const marked = psql(
+  SCRATCH,
+  `set session_replication_role = replica;
+   create schema pilot_preview;
+   create table pilot_preview.marker (made_at timestamptz not null default now(), note text not null);
+   insert into pilot_preview.marker (note) values ('Pilot preview copy made by scripts/pilot/preview-db.mts. Its reviews are SIMULATED (pilot_preview.simulated_review). Never deploy or release a build of it.');
+   create table pilot_preview.simulated_review (evidence_id bigint primary key, simulated_at timestamptz not null default now(),
+     note text not null default 'simulated: not reviewed by a person; pilot preview copy only');
+   insert into auth.users (id, email, raw_user_meta_data) values ('${PREVIEW_REVIEWER}', 'pilot-preview-stand-in@local.test',
+     '{"simulated": true, "purpose": "pilot preview copy only: not a person, not a review"}') on conflict do nothing;
+   insert into pilot_preview.simulated_review (evidence_id) select id from field_evidence where reviewed_at is null;
+   with r as (update field_evidence set reviewed_at = now(), reviewed_by = '${PREVIEW_REVIEWER}'
+              where id in (select evidence_id from pilot_preview.simulated_review) returning 1)
+   select count(*) from r;`,
+).split("\n").pop();
+console.log(`   marked ${marked} unreviewed evidence items as reviewed by the stand-in "pilot-preview-stand-in@local.test": SIMULATED, listed in pilot_preview.simulated_review (in the copy only)`);
 const counts = psql(SCRATCH, "select string_agg(c.slug || ' ' || (select count(*) from company_filter(c.slug, '{}')), ', ') from city c");
 console.log(`   removed ${removed} synthetic companies; marked ${published} as published in the copy`);
 console.log(`   companies the build will show, per city: ${counts}`);

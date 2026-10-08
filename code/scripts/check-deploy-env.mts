@@ -45,6 +45,9 @@ export function checkDeployEnv(target: DeployTarget, env: Readonly<Record<string
   if (target === "staging" && productionHost) problems.push(`staging SITE_URL points at the production host ${siteHost}.`);
   if (target === "production" && siteHost && !productionHost) problems.push(`production SITE_URL host ${siteHost} is not a production host.`);
 
+  // A pilot preview (unreviewed records, scripts/pilot/preview-db.mts) is built on this laptop only, never by a deploy.
+  if (v("PILOT_PREVIEW") !== "") problems.push(`PILOT_PREVIEW must not be set for a ${target} build: pilot previews are local only.`);
+
   const synthetic = v("ALLOW_SYNTHETIC_DATA") === "true";
   if (target === "production") {
     if (synthetic) problems.push("ALLOW_SYNTHETIC_DATA must not be set for production.");

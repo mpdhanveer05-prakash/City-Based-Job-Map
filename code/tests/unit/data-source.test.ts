@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { assertReleaseData, chooseDataSource, describeDataSource } from "@/lib/api/data-source";
+import { assertReleaseData, chooseDataSource, describeDataSource, pilotPreviewRefusal, previewCopyRefusal } from "@/lib/api/data-source";
+import { buildManifest } from "@/lib/filters/dataset-files";
 import { citySnapshotSchema, snapshotIsSynthetic, splitSnapshot, type CitySnapshot } from "@/lib/filters/dataset";
 
 describe("chooseDataSource", () => {
@@ -99,5 +100,45 @@ describe("snapshotIsSynthetic", () => {
     const bad = structuredClone(make(1, 1)) as unknown as { city: { boundary: unknown } };
     bad.city.boundary = { type: "Point", coordinates: [80, 13] };
     expect(citySnapshotSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe("pilotPreviewRefusal (PILOT_PREVIEW=1 builds only from this machine, never as a release)", () => {
+  const local = (url: string) => ({ kind: "local" as const, connectionString: url });
+  const preview = { PILOT_PREVIEW: "1" };
+
+  it("does nothing when the build is not a pilot preview", () => {
+    expect(pilotPreviewRefusal({}, { kind: "rest", url: "https://x.supabase.co", anonKey: "k" })).toBeNull();
+  });
+  it("accepts the local scratch copy", () => {
+    expect(pilotPreviewRefusal(preview, local("postgresql://postgres:postgres@127.0.0.1:54322/pilot_preview"))).toBeNull();
+    expect(pilotPreviewRefusal(preview, local("postgresql://postgres:postgres@localhost:54322/pilot_preview"))).toBeNull();
+  });
+  it("refuses a release build, whatever the source", () => {
+    expect(pilotPreviewRefusal({ ...preview, RELEASE_BUILD: "1" }, local("postgresql://postgres:postgres@127.0.0.1:54322/pilot_preview"))).toMatch(/RELEASE_BUILD/);
+  });
+  it.each([
+    ["a hosted project over the API", { kind: "rest" as const, url: "https://abc.supabase.co", anonKey: "k" }],
+    ["the committed sample", { kind: "seed" as const }],
+    ["a remote database", local("postgresql://postgres:pw@db.abcdefghijklmnopqrst.supabase.co:5432/postgres")],
+    ["a host that only starts like localhost", local("postgresql://postgres:pw@localhost.attacker.example:5432/postgres")],
+    ["a user name that looks like a local address", local("postgresql://127.0.0.1@db.example.org:5432/postgres")],
+    ["an unreadable address", local("not a url")],
+  ])("refuses %s", (_label, source) => {
+    expect(pilotPreviewRefusal(preview, source)).toMatch(/local scratch copy/);
+  });
+});
+
+describe("previewCopyRefusal (a database with simulated reviews)", () => {
+  it("lets a local pilot preview build read it, and nothing else", () => {
+    expect(previewCopyRefusal({ PILOT_PREVIEW: "1" }, true)).toBeNull();
+    expect(previewCopyRefusal({}, true)).toMatch(/only as a local pilot preview/);
+    expect(previewCopyRefusal({ SITE_ENV: "staging" }, true)).toMatch(/only as a local pilot preview/);
+    expect(previewCopyRefusal({ PILOT_PREVIEW: "1", RELEASE_BUILD: "1" }, true)).toMatch(/release build never reads it/);
+    expect(previewCopyRefusal({ RELEASE_BUILD: "1" }, false)).toBeNull();
+  });
+  it("labels a preview's manifest, and only a preview's", () => {
+    expect(buildManifest([], { pilotPreview: true })).toEqual({ version: 1, pilot_preview: true, cities: {} });
+    expect(buildManifest([])).toEqual({ version: 1, cities: {} });
   });
 });

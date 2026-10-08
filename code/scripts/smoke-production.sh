@@ -17,6 +17,7 @@ for path in / /bangalore /chennai /suggest /sitemap.xml; do
     *)
       grep -q 'http-equiv="Content-Security-Policy"' /tmp/page.html || { echo "$path has no Content-Security-Policy" >&2; fail=1; }
       if grep -qi 'synthetic' /tmp/page.html; then echo "$path mentions synthetic data" >&2; fail=1; fi
+      if grep -q 'pilot-preview-banner' /tmp/page.html; then echo "$path is a pilot preview build" >&2; fail=1; fi
       ;;
   esac
 done

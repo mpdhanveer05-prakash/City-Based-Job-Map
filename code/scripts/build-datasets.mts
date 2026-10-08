@@ -19,7 +19,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fetchCitySnapshot, parseCitySnapshot } from "../lib/api/snapshot.ts";
-import { assertReleaseData, chooseDataSource, describeDataSource } from "../lib/api/data-source.ts";
+import { assertReleaseData, chooseDataSource, describeDataSource, pilotPreviewRefusal, previewCopyRefusal } from "../lib/api/data-source.ts";
 import { collectRedirects, renderRedirects } from "../lib/redirects.ts";
 import { buildManifest, DATASET_FILE_NAMES, serializeDataset, type SerializedDataset } from "../lib/filters/dataset-files.ts";
 import type { CitySnapshot } from "../lib/filters/dataset.ts";
@@ -37,6 +37,18 @@ const option = (name: string, fallback: string) => {
 
 const outDir = path.resolve(option("--out", "public/data"));
 const seedDir = path.resolve("supabase/seed/snapshots");
+
+/** Whether a local database is a pilot preview copy (scripts/pilot/preview-db.mts marks it). */
+async function isPilotPreviewCopy(connectionString: string): Promise<boolean> {
+  const { default: pg } = await import("pg");
+  const client = new pg.Client({ connectionString });
+  await client.connect();
+  try {
+    return (await client.query("select to_regclass('pilot_preview.marker') is not null as marked")).rows[0].marked === true;
+  } finally {
+    await client.end();
+  }
+}
 
 async function readFromLocalDatabase(connectionString: string, city: string): Promise<unknown> {
   // Dynamic import: `pg` is a development dependency and is not needed for the REST path.
@@ -95,15 +107,12 @@ async function main() {
   }
   // PILOT_PREVIEW=1 (scripts/pilot/preview-db.mts): unreviewed pilot records from a local scratch copy, for looking at only.
   const pilotPreview = env.PILOT_PREVIEW === "1";
-  if (pilotPreview) {
-    if (env.RELEASE_BUILD === "1") {
-      console.error("build-datasets: RELEASE_BUILD=1 refuses PILOT_PREVIEW=1: the pilot records are unreviewed.");
-      process.exit(1);
-    }
-    if (source.kind !== "local" || !/@(127\.0\.0\.1|localhost)[:/]/.test(source.connectionString)) {
-      console.error("build-datasets: PILOT_PREVIEW=1 reads only the local scratch copy. Set LOCAL_DATABASE_URL as scripts/pilot/preview-db.mts prints.");
-      process.exit(1);
-    }
+  // A database holding simulated reviews is refused unless this is the local preview build it was made for.
+  const pilotRefusal =
+    pilotPreviewRefusal(env, source) ?? previewCopyRefusal(env, source.kind === "local" && (await isPilotPreviewCopy(source.connectionString)));
+  if (pilotRefusal) {
+    console.error(`build-datasets: ${pilotRefusal}`);
+    process.exit(1);
   }
   console.log(`build-datasets: reading ${describeDataSource(source)}, writing ${path.relative(process.cwd(), outDir) || "."}`);
 
@@ -145,7 +154,8 @@ async function main() {
     // The pointer an open tab checks (never cached, public/_headers) to learn that newer data exists.
     writeFileSync(path.join(cityDir, "current.json"), JSON.stringify({ version: 1, dataset_version: set.datasetVersion }));
   }
-  const manifest = buildManifest(sets);
+  // A preview's manifest says so: the launch gate, the data refresh and the production smoke check all refuse it.
+  const manifest = buildManifest(sets, { pilotPreview });
   writeFileSync(path.join(outDir, "manifest.json"), JSON.stringify(manifest));
 
   // public/_redirects = the static rules (config/redirects.static) + one rule per old company slug (P6-01).

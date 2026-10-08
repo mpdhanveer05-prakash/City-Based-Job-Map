@@ -40,6 +40,11 @@ describe("checkDeployEnv", () => {
     expect(checkDeployEnv("production", { ...production, DEPLOY_ENV: "staging" }).problems.join()).toMatch(/DEPLOY_ENV/);
   });
 
+  it("refuses a pilot preview in any hosted build (unreviewed records are local only)", () => {
+    expect(checkDeployEnv("staging", { ...staging, PILOT_PREVIEW: "1" }).problems.join()).toMatch(/PILOT_PREVIEW must not be set for a staging build/);
+    expect(checkDeployEnv("production", { ...production, PILOT_PREVIEW: "1" }).problems.join()).toMatch(/PILOT_PREVIEW must not be set for a production build/);
+  });
+
   it("refuses the same Supabase project for both environments", () => {
     expect(checkDeployEnv("production", { ...production, OTHER_ENV_SUPABASE_PROJECT_REF: PROD_REF }).problems.join()).toMatch(/separate projects/);
   });

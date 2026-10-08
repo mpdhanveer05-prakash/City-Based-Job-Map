@@ -19,6 +19,10 @@ const root = path.resolve("public/data");
 const read = <T,>(rel: string): T => JSON.parse(readFileSync(path.join(root, rel.replace(/^\/data\//, "")), "utf8")) as T;
 
 const manifest = read<Manifest>("manifest.json");
+if (manifest.pilot_preview) {
+  console.error("Launch gate: FAIL. This is a pilot preview build (simulated reviews); it can never launch.");
+  process.exit(1);
+}
 const results = Object.entries(manifest.cities)
   .filter(([slug]) => !only || slug === only)
   .map(([slug, entry]) => {
