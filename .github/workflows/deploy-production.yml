@@ -92,6 +92,13 @@ jobs:
           name: launch-gate-report
           path: launch-gate-report.md
           if-no-files-found: ignore
+      # ADR-0025 option C: the release's own counts become what every later data refresh is measured against. The tag is
+      # named now, so the baseline can say which release it belongs to; it is created only after the smoke checks pass.
+      - name: Name the release
+        id: name
+        run: echo "tag=$(node scripts/release-tag.mts name --run "$GITHUB_RUN_NUMBER")" >> "$GITHUB_OUTPUT"
+      - name: Write the approved baseline
+        run: node scripts/approved-baseline.mts --tag "${{ steps.name.outputs.tag }}" --commit "$GITHUB_SHA" --run "$GITHUB_RUN_ID" --by "${{ github.actor }}"
       - name: Deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -115,7 +122,7 @@ jobs:
         env:
           VERSION_ID: ${{ steps.version.outputs.id }}
         run: |
-          tag=$(node scripts/release-tag.mts name --run "$GITHUB_RUN_NUMBER")
+          tag="${{ steps.name.outputs.tag }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "$tag" "$GITHUB_SHA" -m "Production release of $GITHUB_SHA" -m "Worker version: $VERSION_ID" -m "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

@@ -1,6 +1,6 @@
 // ADR-0025 option C: the rules of the production data refresh, kept pure so Vitest can test them
-// (tests/unit/release.test.ts). scripts/release-tag.mts, scripts/refresh-guard.mts and scripts/worker-version.mts run them
-// in .github/workflows/deploy-production.yml and refresh-production-data.yml.
+// (tests/unit/release.test.ts). scripts/release-tag.mts, release-record.mts, refresh-guard.mts, approved-baseline.mts and
+// worker-version.mts run them in .github/workflows/deploy-production.yml and refresh-production-data.yml.
 import type { Manifest } from "./filters/dataset-files";
 
 /** `release/<UTC yyyymmdd-hhmm>-<run number>`, created only by deploy-production.yml after a successful release. */
@@ -56,45 +56,140 @@ export function chooseRelease(tags: readonly TagRecord[]): ReleaseChoice {
     : { kind: "release", tag: newest };
 }
 
+/** The release a refresh rebuilds, as verified: its tag, commit, and the deploy-production run that made it. */
+export type ReleaseRef = { tag: string; commit: string; runId: string };
+
+/**
+ * The counts a person last approved for production, per city: at a release, or at a manual refresh where a person allowed
+ * a shrink. Deployed as /data/approved-baseline.json; an automatic refresh carries it forward unchanged, so every refresh
+ * is measured against what a person approved, not only against the previous refresh.
+ */
+export type ApprovedBaseline = {
+  version: 1;
+  release: ReleaseRef;
+  approved: { kind: "release" | "shrink"; runId: string; by: string; at: string };
+  cities: Record<string, { companies: number; jobs: number; dataset_version: string }>;
+};
+
+export const BASELINE_PATH = "data/approved-baseline.json";
+
+export function baselineFrom(manifest: Manifest, release: ReleaseRef, approved: ApprovedBaseline["approved"]): ApprovedBaseline {
+  const cities: ApprovedBaseline["cities"] = {};
+  for (const [city, entry] of Object.entries(manifest.cities)) {
+    cities[city] = { companies: entry.counts.companies, jobs: entry.counts.jobs, dataset_version: entry.dataset_version };
+  }
+  return { version: 1, release, approved, cities };
+}
+
+/** What the production site serves now, as the refresh read it (null where it could not be read). */
+export type DeployedState = { manifest: Manifest | null; baseline: ApprovedBaseline | null; commit: string | null };
+
 export type RefreshDecision = {
   /** Cities whose published folder would change. Empty means there is nothing to deploy. */
   changed: string[];
   /** Any problem stops the refresh before it deploys. */
   problems: string[];
-  /** Shrinks that were over the limit but allowed by a person (a manual run's input). */
+  /** Shrinks over the limit that a person allowed (a manual run's input). */
   allowed: string[];
+  /** The baseline to deploy with this refresh: the same one, or a new one when a person allowed a shrink. */
+  baseline: ApprovedBaseline | null;
 };
 
-/** Compares the manifest just built with the one the production site serves. */
-export function compareManifests(deployed: Manifest | null, next: Manifest, options: { maxDrop?: number; allowShrink?: boolean } = {}): RefreshDecision {
+const pct = (n: number) => `${Math.round(n * 100)}%`;
+const dropped = (was: number, now: number, maxDrop: number) => was > 0 && now < was * (1 - maxDrop);
+
+/**
+ * Whether a refresh of `release` may deploy `next`. It stops (problems) unless:
+ *  - the site is serving a build of this very release (so a refresh never puts older code over a newer release, or over a
+ *    deployment made outside the workflows), and its approved baseline names this release;
+ *  - no city is synthetic, missing, or new (a city goes live only through a release);
+ *  - no city's companies or jobs fall by more than `maxDrop` against the deployed site (a sudden drop) OR against the
+ *    approved baseline (a slow one: several small drops that each pass the first check), down to zero included.
+ * A person's manual run may allow the shrinks; the baseline then becomes the new counts, recording who allowed it.
+ */
+export function evaluateRefresh(
+  next: Manifest,
+  deployed: DeployedState,
+  release: ReleaseRef,
+  options: { maxDrop?: number; allowShrink?: { runId: string; by: string; at: string } } = {},
+): RefreshDecision {
   const maxDrop = options.maxDrop ?? DEFAULT_MAX_DROP;
-  const decision: RefreshDecision = { changed: [], problems: [], allowed: [] };
-  if (!deployed) {
-    decision.problems.push("The production site's manifest could not be read. A refresh needs a release that is already deployed.");
-    return decision;
+  const decision: RefreshDecision = { changed: [], problems: [], allowed: [], baseline: deployed.baseline };
+  const live = deployed.manifest;
+  if (!live) decision.problems.push("The production site's manifest could not be read. A refresh needs a release that is already deployed.");
+  if (deployed.commit !== release.commit) {
+    decision.problems.push(
+      `The production site was built from ${deployed.commit ?? "an unknown commit"}, not from ${release.tag} (${release.commit}). ` +
+        "A newer release may be live without its tag, or something was deployed outside the workflows: a person must check.",
+    );
   }
-  for (const city of Object.keys(deployed.cities)) {
-    if (!next.cities[city]) decision.problems.push(`${city} is live but missing from the new build.`);
+  const base = deployed.baseline;
+  if (!base) decision.problems.push(`The production site has no approved baseline (/${BASELINE_PATH}).`);
+  else if (base.release.tag !== release.tag || base.release.commit !== release.commit || base.release.runId !== release.runId) {
+    const ref = (r: ReleaseRef) => `${r.tag} (${r.commit.slice(0, 12)}, run ${r.runId})`;
+    decision.problems.push(`The approved baseline is for ${ref(base.release)}, not for ${ref(release)}.`);
   }
+  if (!live || !base) return decision;
+
+  if (next.pilot_preview || live.pilot_preview) decision.problems.push("A pilot preview build (simulated reviews) is never deployed or refreshed.");
+  for (const city of Object.keys(live.cities)) if (!next.cities[city]) decision.problems.push(`${city} is live but missing from the new build.`);
+  const shrinks: string[] = [];
   for (const [city, entry] of Object.entries(next.cities)) {
     if (entry.synthetic) decision.problems.push(`${city}: the new build holds synthetic data.`);
-    const before = deployed.cities[city];
-    if (!before) {
+    const before = live.cities[city];
+    const approved = base.cities[city];
+    if (!before || !approved) {
       decision.problems.push(`${city}: a city goes live only through a release, never through a data refresh.`);
       continue;
     }
     if (before.dataset_version !== entry.dataset_version) decision.changed.push(city);
     for (const metric of ["companies", "jobs"] as const) {
-      const was = before.counts[metric];
       const now = entry.counts[metric];
-      if (was > 0 && now < was * (1 - maxDrop)) {
-        const note = `${city}: ${metric} would drop from ${was} to ${now} (more than ${Math.round(maxDrop * 100)}%).`;
-        if (options.allowShrink) decision.allowed.push(note);
-        else decision.problems.push(`${note} A person must check it, then run the refresh by hand with allow_shrink.`);
+      if (dropped(before.counts[metric], now, maxDrop)) {
+        shrinks.push(`${city}: ${metric} would drop from ${before.counts[metric]} to ${now} since the last deployment (more than ${pct(maxDrop)}).`);
+      } else if (dropped(approved[metric], now, maxDrop)) {
+        shrinks.push(`${city}: ${metric} would be ${now}, down from ${approved[metric]} when a person last approved (${base.approved.kind}, run ${base.approved.runId}): more than ${pct(maxDrop)} in all.`);
       }
     }
   }
+  if (shrinks.length && options.allowShrink) {
+    decision.allowed.push(...shrinks);
+    decision.baseline = baselineFrom(next, release, { kind: "shrink", ...options.allowShrink });
+  } else {
+    decision.problems.push(...shrinks.map((s) => `${s} A person must check it, then run the refresh by hand with allow_shrink.`));
+  }
   return decision;
+}
+
+/**
+ * The release record: the deploy-production run that a release tag names (its message holds the run's URL), as the GitHub
+ * API describes it. A refresh trusts a release only if that run deployed exactly this commit from main, finished with
+ * success, and was approved in the `production` environment. The tag's name and tagger are checked too, but never alone.
+ */
+export function verifyReleaseRecord(input: {
+  tag: { name: string; commit: string; message: string };
+  repository: string;
+  run: unknown;
+  approvals: unknown;
+}): { runId: string | null; problems: string[] } {
+  const runId = /\/actions\/runs\/(\d+)\b/.exec(input.tag.message)?.[1] ?? null;
+  if (!runId) return { runId, problems: [`The tag ${input.tag.name} names no deploy-production run.`] };
+  const run = (input.run ?? {}) as Record<string, unknown>;
+  const repo = (run.repository as { full_name?: string } | undefined)?.full_name;
+  const problems = [
+    String(run.id) !== runId && `run ${runId} could not be read`,
+    run.path !== ".github/workflows/deploy-production.yml" && `run ${runId} is not the production release workflow (${String(run.path)})`,
+    repo !== input.repository && `run ${runId} belongs to ${String(repo)}, not ${input.repository}`,
+    (run.status !== "completed" || run.conclusion !== "success") && `run ${runId} did not succeed (${String(run.status)}, ${String(run.conclusion)})`,
+    run.head_sha !== input.tag.commit && `run ${runId} deployed ${String(run.head_sha)}, not the tag's commit ${input.tag.commit}`,
+    run.head_branch !== "main" && `run ${runId} ran on ${String(run.head_branch)}, not main`,
+    run.event !== "workflow_dispatch" && `run ${runId} was started by ${String(run.event)}, not by a person`,
+  ].filter((x): x is string => typeof x === "string");
+  const approvals = Array.isArray(input.approvals) ? (input.approvals as Array<{ state?: string; environments?: Array<{ name?: string }> }>) : [];
+  if (!approvals.some((a) => a.state === "approved" && (a.environments ?? []).some((e) => e.name === "production"))) {
+    problems.push(`run ${runId} has no reviewer's approval for the production environment`);
+  }
+  return { runId, problems };
 }
 
 /**

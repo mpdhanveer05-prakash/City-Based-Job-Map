@@ -39,10 +39,15 @@ jobs:
     name: Find the approved release
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Reads the release's run and its environment approvals through the API.
+    permissions:
+      contents: read
+      actions: read
     outputs:
       found: ${{ steps.release.outputs.found }}
       tag: ${{ steps.release.outputs.tag }}
       commit: ${{ steps.release.outputs.commit }}
+      run_id: ${{ steps.record.outputs.run_id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -59,6 +64,14 @@ jobs:
         run: |
           git fetch --force origin main:refs/remotes/origin/main
           node scripts/release-tag.mts resolve
+      # The tag is only a pointer: the release record is the deploy-production run it names. It must have deployed exactly
+      # this commit from main, succeeded, been started by a person, and been approved for the production environment.
+      - id: record
+        if: steps.release.outputs.found == 'true'
+        working-directory: code
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/release-record.mts --tag "${{ steps.release.outputs.tag }}" --commit "${{ steps.release.outputs.commit }}"
 
   refresh:
     name: Rebuild the release with production data
@@ -111,12 +124,17 @@ jobs:
       - run: npm run build
       - name: Launch gate (each city must pass)
         run: node scripts/launch-gate.mts --out ../launch-gate-report.md
-      # Stops on synthetic data, a missing or new city, or a shrink over 20% (unless a person allowed it on a manual run);
-      # says whether any city's dataset changed.
+      # Stops unless the site is a build of this release with this release's approved baseline, and no city is synthetic,
+      # missing, new, or down more than 20% since the last deployment or since a person last approved (a person may allow
+      # it on a manual run, which makes the new counts the baseline). Says whether any city's dataset changed, and writes
+      # the baseline to deploy with into out/.
       - name: Compare with the deployed site
         id: guard
+        env:
+          ALLOW: ${{ inputs.allow_shrink == true && format('--allow-shrink {0} --by {1}', github.run_id, github.actor) || '' }}
         run: |
-          node scripts/refresh-guard.mts --deployed "${{ vars.SITE_URL }}" ${{ inputs.allow_shrink == true && '--allow-shrink' || '' }}
+          node scripts/refresh-guard.mts --deployed "${{ vars.SITE_URL }}" --release-tag "${{ needs.resolve.outputs.tag }}" \
+            --release-commit "${{ needs.resolve.outputs.commit }}" --release-run "${{ needs.resolve.outputs.run_id }}" $ALLOW
       - name: Record the version now serving
         id: previous
         if: steps.guard.outputs.changed == 'true'
@@ -132,6 +150,15 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy --message "data refresh of ${{ needs.resolve.outputs.tag }}, run ${{ github.run_id }}"
+      - name: Record the version this run deployed
+        id: deployed
+        if: steps.guard.outputs.changed == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler deployments status --json > ../worker-after.json
+          echo "id=$(node scripts/worker-version.mts ../worker-after.json)" >> "$GITHUB_OUTPUT"
       - name: Smoke-test production
         id: smoke
         if: steps.guard.outputs.changed == 'true'
@@ -142,7 +169,17 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PREVIOUS: ${{ steps.previous.outputs.id }}
+          DEPLOYED: ${{ steps.deployed.outputs.id }}
         run: |
+          # Roll back only what this run deployed: if anything newer is serving now, leave it and say so.
+          npx wrangler deployments status --json > ../worker-now.json
+          now=$(node scripts/worker-version.mts ../worker-now.json)
+          if [ "$now" = "$PREVIOUS" ]; then echo "The version from before this run is still serving: nothing to roll back."; exit 0; fi
+          if [ -z "$DEPLOYED" ] || [ "$now" != "$DEPLOYED" ]; then
+            echo "Not rolling back: $now is serving, which is neither the version before this run ($PREVIOUS) nor the one it deployed (${DEPLOYED:-unknown}). A person must check." >&2
+            echo "**Not rolled back:** version \`$now\` is serving, which this run did not deploy." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
           npx wrangler rollback "$PREVIOUS" --message "data refresh run ${{ github.run_id }} failed its checks" --yes
           echo "**Rolled back** to Worker version \`$PREVIOUS\`." >> "$GITHUB_STEP_SUMMARY"
       - name: Summary

@@ -93,38 +93,96 @@ release. A refresh rebuilds the exact commit of the last approved release with f
 **What it does not do:** it never builds `main`, never deploys code that no person approved, never uses staging data or keys,
 and never runs while another production deployment is in progress.
 
-**As built (8 Oct 2026, local, not pushed):**
-- `deploy-production.yml`: after the smoke checks pass, it reads the serving Worker version (`wrangler deployments status
-  --json`, `scripts/worker-version.mts`), creates and pushes the annotated tag (`scripts/release-tag.mts name`), and uploads
-  `out/`, the manifest, the launch-gate report and the version id as `release-<run>` (90 days). The smoke checks moved to
-  `scripts/smoke-production.sh`, shared by both workflows.
-- `refresh-production-data.yml`: a `resolve` job runs `scripts/release-tag.mts resolve` from `main`. It refuses the newest
-  `release/*` tag unless it is annotated, tagged by `github-actions[bot]`, correctly named, and on `main`, and it never falls
-  back to an older tag. The `refresh` job checks out that commit, checks `HEAD`, and from then on uses the tag's own scripts.
-  It runs `check-deploy-env production`, `audit --release`, the `RELEASE_BUILD=1` build, the launch gate and
-  `scripts/refresh-guard.mts`. Only if a city's dataset changed does it record the serving version, deploy, smoke-test and,
-  on any failure, `wrangler rollback` to that version. It keeps `refresh-<run>` (30 days).
-- **Shrink guard:** a drop of more than 20% in a city's companies or jobs, compared with the deployed `manifest.json`,
-  stops the run. Only a manual run with the `allow_shrink` input lets it through, and the summary records it. The guard
-  also stops on synthetic data, a live city missing from the build, a new city (a city goes live only through a release),
-  or an unreadable deployed manifest.
-- **Dispatch:** `request-rebuild` reads `REBUILD_EVENT_TYPE` (unset → `rebuild`, staging; `refresh-production-data` on the
-  production project; any other value fails the dispatch).
-- **Tests:** `tests/unit/release.test.ts` (tag choice, shrink guard, version parsing) and `rebuild-handler.test.ts` (event
-  type). `release-tag.mts resolve` was exercised against a scratch git repository: no tag, a valid tag, a newest tag off
-  `main`, and a newest tag by another tagger. `refresh-guard.mts` was run against a local server: unchanged, changed, a 32%
-  shrink, the same with `--allow-shrink`, and an unreachable site. Both workflows pass `@action-validator/cli` 0.6.0.
+**As built (8 Oct 2026, local, not pushed; hardened the same day):**
+- **`deploy-production.yml`**, before the deploy:
+  - names the release tag (`scripts/release-tag.mts name`);
+  - writes the **approved baseline**, `out/data/approved-baseline.json` (`scripts/approved-baseline.mts`): the release's own
+    counts per city, its tag, commit and run.
 
-**Not verified (needs GitHub and Cloudflare):** the tag push with `GITHUB_TOKEN`; the shape of `wrangler deployments
-status --json` (read defensively; anything unexpected stops the run before it deploys); `wrangler rollback` on an
-assets-only Worker; the schedule and dispatch triggers.
+  After the smoke checks pass, it:
+  - reads the serving Worker version (`wrangler deployments status --json`, `scripts/worker-version.mts`);
+  - creates and pushes the annotated tag, whose message names the run;
+  - uploads `out/`, the manifest, the launch-gate report and the version id as `release-<run>` (90 days).
+
+  The smoke checks are in `scripts/smoke-production.sh`, shared by both workflows. `build-info.json` now records the commit
+  each build was made from.
+- **`refresh-production-data.yml`, `resolve` job** (from `main`, `actions: read`):
+  - `scripts/release-tag.mts resolve` refuses the newest `release/*` tag unless it is annotated, tagged by
+    `github-actions[bot]`, correctly named, and on `main`. It never falls back to an older tag.
+  - **Release provenance comes from the release record, not from the tag.** `scripts/release-record.mts` reads the
+    deploy-production run the tag names, through the GitHub API, and requires all of these:
+    - the workflow is `.github/workflows/deploy-production.yml`, in this repository;
+    - it ran on `main` and was started by a person (`workflow_dispatch`);
+    - it finished with `success`;
+    - its commit is the tag's commit;
+    - a reviewer **approved** its `production` environment.
+
+    The tag's name and tagger are a second check, never the only one.
+- **`refresh` job:**
+  - checks out exactly that commit, checks `HEAD`, and from then on uses the tag's own scripts;
+  - runs `check-deploy-env production`, `audit --release`, the `RELEASE_BUILD=1` build, the launch gate, then
+    `scripts/refresh-guard.mts`;
+  - only if a city's dataset changed, and the guard passed: records the serving version, deploys, records the version it
+    deployed, and smoke-tests;
+  - keeps `refresh-<run>` (30 days).
+- **The guard** (`evaluateRefresh` in `lib/release.ts`) stops the run unless all of these hold:
+  - **The site is a build of this release.** The commit in its `build-info.json` must be the release's commit. A refresh
+    therefore never deploys over a newer release whose tagging failed, or over anything deployed outside the workflows.
+  - **The site's approved baseline names this release:** same tag, commit and run.
+  - **No city is synthetic, missing from the build, or new.** A city goes live only through a release.
+  - **No city's companies or jobs fall by more than 20%,** checked for each city separately, drops to zero included:
+    - against the **last deployment**, which catches a sudden drop;
+    - against the **approved baseline**, which catches a slow one: small drops that each pass the first check (100 → 90 →
+      81 → 73: the third is stopped).
+
+  On a manual run, a person may allow the shrink (the `allow_shrink` input). The new counts then become the approved
+  baseline, recording that person and run. Otherwise an automatic refresh carries the baseline forward unchanged.
+- **No overlap, and no rollback over something newer:**
+  - Both workflows share the concurrency group `deploy-production` (`cancel-in-progress: false`): one production
+    deployment runs at a time. GitHub keeps one more waiting; a newer queued run replaces an older queued one.
+  - The resolve job runs when the run starts, after any release ahead of it.
+  - A refresh rolls back only what it deployed. If the version serving is neither the one from before the run nor the one
+    the run deployed, it does not roll back: it fails and says so.
+- **Dispatch:** `request-rebuild` reads `REBUILD_EVENT_TYPE`:
+  - unset → `rebuild` (staging);
+  - `refresh-production-data` on the production project;
+  - any other value makes the dispatch fail.
+- **Tests:**
+  - `tests/unit/release.test.ts` (35):
+    - tag choice;
+    - each guard rule: per-city drops, drops to zero, exactly 20%, creeping drops, an allowed shrink resetting the
+      baseline, a foreign commit, a missing or other release's baseline, synthetic, missing and new cities;
+    - each release-record rule: another workflow, failure, in progress, another commit, branch, event or repository, no or
+      wrong approval, a tag naming no run;
+    - version parsing.
+  - `rebuild-handler.test.ts` (event type).
+  - Scripts exercised locally:
+    - `release-tag.mts resolve` on a scratch git repository;
+    - `release-record.mts` against a stand-in GitHub API: no approval → exit 1; approved → exit 0;
+    - `refresh-guard.mts` against a stand-in production site: a normal refresh → exit 0 and the baseline carried forward;
+      a site built from another commit → exit 1; jobs halved → exit 1; the same allowed by a person → exit 0 and a new
+      baseline recording the person and run.
+  - All three deploy workflows pass `@action-validator/cli` 0.6.0.
+
+**Hosted checks still outstanding (need GitHub and Cloudflare; none was possible locally):**
+1. The tag push with `GITHUB_TOKEN` under the `release/*` ruleset. Also check that a person cannot create or move a
+   `release/*` tag.
+2. The release-record API calls: `GET /actions/runs/{id}` and `/approvals`, with the `actions: read` token. Check the
+   approvals entry when the `production` environment has required reviewers.
+3. The JSON of `wrangler deployments status --json`. It is read defensively: anything unexpected stops the run before it
+   deploys.
+4. `wrangler rollback` on an assets-only Worker, including the "not rolling back over a newer version" branch.
+5. The schedule and `repository_dispatch` triggers. Check that staging's token cannot send `refresh-production-data`.
+6. Concurrency: start a release and a refresh together and confirm one waits.
+7. A first release end to end: tag, artifact, `approved-baseline.json` and `build-info.json` commit on the live site, then
+   a refresh that deploys, one that finds nothing changed, and one stopped by the guard.
 
 **Owner setup before it can run:**
-- the production Supabase project, and the `production` and `production-data` environments;
+- the production Supabase project, and the `production` (with required reviewers) and `production-data` environments;
 - the `release/*` tag ruleset;
 - a production-only dispatch token, and `REBUILD_EVENT_TYPE=refresh-production-data` in the production project's function
   secrets;
-- the shrink-guard threshold (20% is a proposal);
+- confirm the shrink-guard threshold (20% stays **provisional**);
 - a first release from `deploy-production.yml`.
 
 ## Consequences

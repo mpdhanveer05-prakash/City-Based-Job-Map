@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RELEASE_TAGGER_EMAIL, chooseRelease, compareManifests, deployedVersionId, releaseTagName, type TagRecord } from "@/lib/release";
+import { RELEASE_TAGGER_EMAIL, baselineFrom, chooseRelease, deployedVersionId, evaluateRefresh, releaseTagName, verifyReleaseRecord, type TagRecord } from "@/lib/release";
 import type { Manifest } from "@/lib/filters/dataset-files";
 
 const SHA = "a".repeat(40);
@@ -63,41 +63,136 @@ describe("choosing the release to refresh", () => {
   });
 });
 
-describe("comparing the new build with the deployed manifest", () => {
+describe("whether a refresh may deploy", () => {
+  const release = { tag: "release/20261101-0930-12", commit: SHA, runId: "555" };
+  const approvedAt = (m: Manifest) => baselineFrom(m, release, { kind: "release", runId: "555", by: "owner", at: "2026-11-01T09:31:00Z" });
   const live = manifest({ bangalore: { v: "4-aaaa", companies: 100, jobs: 400 }, chennai: { v: "4-bbbb", companies: 50, jobs: 100 } });
+  const site = (over: Partial<{ manifest: Manifest | null; baseline: ReturnType<typeof approvedAt> | null; commit: string | null }> = {}) => ({
+    manifest: live,
+    baseline: approvedAt(live),
+    commit: SHA,
+    ...over,
+  });
+  const at = (b: { companies: number; jobs: number }, c = { companies: 50, jobs: 100 }, v = "5-") =>
+    manifest({ bangalore: { v: `${v}a${b.companies}-${b.jobs}`, ...b }, chennai: { v: "4-bbbb", ...c } });
 
-  it("finds nothing to deploy when every folder is unchanged", () => {
-    expect(compareManifests(live, live)).toEqual({ changed: [], problems: [], allowed: [] });
+  it("deploys a changed city, and keeps the approved baseline as it was", () => {
+    const d = evaluateRefresh(at({ companies: 101, jobs: 390 }), site(), release);
+    expect(d).toMatchObject({ changed: ["bangalore"], problems: [], allowed: [] });
+    expect(d.baseline).toEqual(approvedAt(live));
   });
 
-  it("lists the cities whose folder changed", () => {
-    const next = manifest({ bangalore: { v: "4-cccc", companies: 101, jobs: 390 }, chennai: { v: "4-bbbb", companies: 50, jobs: 100 } });
-    expect(compareManifests(live, next)).toEqual({ changed: ["bangalore"], problems: [], allowed: [] });
+  it("does nothing when every folder is unchanged", () => {
+    expect(evaluateRefresh(live, site(), release)).toMatchObject({ changed: [], problems: [] });
   });
 
-  it("stops on a drop of more than 20% in companies or jobs, unless a person allows it", () => {
-    const next = manifest({ bangalore: { v: "5-dddd", companies: 79, jobs: 400 }, chennai: { v: "4-bbbb", companies: 50, jobs: 79 } });
-    const stopped = compareManifests(live, next);
-    expect(stopped.problems).toHaveLength(2);
-    expect(stopped.problems[0]).toContain("bangalore: companies would drop from 100 to 79");
-    const allowed = compareManifests(live, next, { allowShrink: true });
-    expect(allowed.problems).toEqual([]);
-    expect(allowed.allowed).toHaveLength(2);
+  it("stops on a drop of more than 20% in one city's companies or jobs, and names only that city", () => {
+    const d = evaluateRefresh(at({ companies: 79, jobs: 400 }, { companies: 60, jobs: 120 }), site(), release);
+    expect(d.problems).toHaveLength(1);
+    expect(d.problems[0]).toMatch(/^bangalore: companies would drop from 100 to 79 since the last deployment/);
+  });
+
+  it("stops when a city drops to zero", () => {
+    const d = evaluateRefresh(at({ companies: 100, jobs: 0 }), site(), release);
+    expect(d.problems.join()).toContain("bangalore: jobs would drop from 400 to 0");
+    // A city that had nothing approved may stay at nothing.
+    const empty = manifest({ bangalore: { v: "4-aaaa", companies: 100, jobs: 400 }, chennai: { v: "1-e", companies: 0, jobs: 0 } });
+    expect(evaluateRefresh(empty, site({ manifest: empty, baseline: approvedAt(empty) }), release).problems).toEqual([]);
   });
 
   it("accepts a drop of exactly 20%", () => {
-    const next = manifest({ bangalore: { v: "5-dddd", companies: 80, jobs: 320 }, chennai: { v: "4-bbbb", companies: 50, jobs: 100 } });
-    expect(compareManifests(live, next).problems).toEqual([]);
+    expect(evaluateRefresh(at({ companies: 80, jobs: 320 }), site(), release).problems).toEqual([]);
+  });
+
+  it("stops small successive drops once they add up to more than 20% of what a person approved", () => {
+    // Each refresh drops 10% from the one before, so each passes the step check; the baseline does not move.
+    let deployed = live;
+    const outcomes: number[] = [];
+    for (const companies of [90, 81, 73]) {
+      const next = at({ companies, jobs: 400 });
+      const d = evaluateRefresh(next, site({ manifest: deployed }), release);
+      outcomes.push(d.problems.length);
+      if (d.problems.length === 0) deployed = next;
+    }
+    expect(outcomes).toEqual([0, 0, 1]);
+    const third = evaluateRefresh(at({ companies: 73, jobs: 400 }), site({ manifest: deployed }), release);
+    expect(third.problems[0]).toMatch(/bangalore: companies would be 73, down from 100 when a person last approved \(release, run 555\)/);
+  });
+
+  it("deploys a shrink a person allowed, and makes the new counts the approved baseline", () => {
+    const next = at({ companies: 73, jobs: 400 });
+    const d = evaluateRefresh(next, site(), release, { allowShrink: { runId: "777", by: "reviewer", at: "2026-11-05T10:00:00Z" } });
+    expect(d.problems).toEqual([]);
+    expect(d.allowed).toHaveLength(1);
+    expect(d.baseline).toMatchObject({ approved: { kind: "shrink", runId: "777", by: "reviewer" }, cities: { bangalore: { companies: 73 } } });
+    // And the next automatic refresh is measured from there.
+    expect(evaluateRefresh(at({ companies: 70, jobs: 400 }, undefined, "6-"), site({ manifest: next, baseline: d.baseline }), release).problems).toEqual([]);
+  });
+
+  it("never deploys over a site that is not a build of this release", () => {
+    for (const commit of ["b".repeat(40), null]) {
+      expect(evaluateRefresh(at({ companies: 101, jobs: 400 }), site({ commit }), release).problems.join()).toMatch(/A newer release may be live without its tag/);
+    }
+  });
+
+  it("stops without an approved baseline, or with one for another release", () => {
+    expect(evaluateRefresh(live, site({ baseline: null }), release).problems.join()).toContain("no approved baseline");
+    const other = { ...approvedAt(live), release: { ...release, tag: "release/20261020-1000-3", runId: "444" } };
+    expect(evaluateRefresh(live, site({ baseline: other }), release).problems.join()).toContain(`is for release/20261020-1000-3 (${SHA.slice(0, 12)}, run 444), not for release/20261101-0930-12 (${SHA.slice(0, 12)}, run 555)`);
+  });
+
+  it("never deploys or refreshes a pilot preview build (simulated reviews), built or live", () => {
+    const preview = { ...at({ companies: 100, jobs: 400 }), pilot_preview: true as const };
+    expect(evaluateRefresh(preview, site(), release).problems.join()).toContain("pilot preview");
+    expect(evaluateRefresh(at({ companies: 100, jobs: 400 }), site({ manifest: { ...live, pilot_preview: true } }), release).problems.join()).toContain("pilot preview");
   });
 
   it("stops on synthetic data, a missing live city, a new city, or an unreadable deployed manifest", () => {
     const synthetic = manifest({ bangalore: { v: "5-x", companies: 100, jobs: 400, synthetic: true }, chennai: { v: "4-bbbb", companies: 50, jobs: 100 } });
-    expect(compareManifests(live, synthetic).problems.join()).toContain("synthetic");
-    const missing = manifest({ bangalore: { v: "4-aaaa", companies: 100, jobs: 400 } });
-    expect(compareManifests(live, missing).problems.join()).toContain("chennai is live but missing");
-    const added = manifest({ ...{ bangalore: { v: "4-aaaa", companies: 100, jobs: 400 } }, chennai: { v: "4-bbbb", companies: 50, jobs: 100 }, pune: { v: "1-e", companies: 5, jobs: 5 } });
-    expect(compareManifests(live, added).problems.join()).toContain("pune: a city goes live only through a release");
-    expect(compareManifests(null, live).problems.join()).toContain("could not be read");
+    expect(evaluateRefresh(synthetic, site(), release).problems.join()).toContain("synthetic");
+    expect(evaluateRefresh(manifest({ bangalore: { v: "4-aaaa", companies: 100, jobs: 400 } }), site(), release).problems.join()).toContain("chennai is live but missing");
+    const added = manifest({ bangalore: { v: "4-aaaa", companies: 100, jobs: 400 }, chennai: { v: "4-bbbb", companies: 50, jobs: 100 }, pune: { v: "1-e", companies: 5, jobs: 5 } });
+    expect(evaluateRefresh(added, site(), release).problems.join()).toContain("pune: a city goes live only through a release");
+    expect(evaluateRefresh(live, site({ manifest: null }), release).problems.join()).toContain("could not be read");
+  });
+});
+
+describe("the release record", () => {
+  const commit = SHA;
+  const tagRef = { name: "release/20261101-0930-12", commit, message: "Production release of x\n\nRun: https://github.com/o/r/actions/runs/555\n" };
+  const run = {
+    id: 555, path: ".github/workflows/deploy-production.yml", repository: { full_name: "o/r" }, status: "completed",
+    conclusion: "success", head_sha: commit, head_branch: "main", event: "workflow_dispatch",
+  };
+  const approvals = [{ state: "approved", environments: [{ name: "production" }], user: { login: "owner" } }];
+  const verify = (over: Partial<{ tag: typeof tagRef; run: unknown; approvals: unknown }> = {}) =>
+    verifyReleaseRecord({ tag: tagRef, repository: "o/r", run, approvals, ...over });
+
+  it("holds up for a successful, approved production run that deployed the tag's commit from main", () => {
+    expect(verify()).toEqual({ runId: "555", problems: [] });
+  });
+
+  it.each([
+    ["another workflow", { path: ".github/workflows/deploy-staging.yml" }, "not the production release workflow"],
+    ["a failed run", { conclusion: "failure" }, "did not succeed"],
+    ["a run still going", { status: "in_progress", conclusion: null }, "did not succeed"],
+    ["another commit", { head_sha: "c".repeat(40) }, "not the tag's commit"],
+    ["another branch", { head_branch: "feature" }, "not main"],
+    ["a scheduled run", { event: "schedule" }, "not by a person"],
+    ["another repository", { repository: { full_name: "fork/r" } }, "belongs to fork/r"],
+  ])("refuses %s", (_label, change, reason) => {
+    expect(verify({ run: { ...run, ...change } }).problems.join()).toContain(reason);
+  });
+
+  it("refuses a run nobody approved for production, or approved only elsewhere", () => {
+    expect(verify({ approvals: [] }).problems.join()).toContain("no reviewer's approval");
+    expect(verify({ approvals: [{ state: "rejected", environments: [{ name: "production" }] }] }).problems.join()).toContain("no reviewer's approval");
+    expect(verify({ approvals: [{ state: "approved", environments: [{ name: "staging" }] }] }).problems.join()).toContain("no reviewer's approval");
+  });
+
+  it("refuses a tag that names no run, or a run that cannot be read", () => {
+    expect(verify({ tag: { ...tagRef, message: "release" } }).problems.join()).toContain("names no deploy-production run");
+    expect(verify({ run: null }).problems.join()).toContain("could not be read");
   });
 });
 
