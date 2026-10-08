@@ -3,10 +3,13 @@
 // Turnstile check, which this function does before it stores anything. All the logic is in ../_shared/feedback-handler.ts.
 //
 // Secrets (supabase secrets set): ALLOWED_ORIGINS (the site's origins), TURNSTILE_SECRET_KEY, FEEDBACK_SALT (a long random
-// string: with the date it makes the daily rate-limit key). SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided.
+// string of at least 32 characters: with the date it makes the daily rate-limit key; without it the form refuses every
+// submission), and CLIENT_IP_HEADER with TRUSTED_PROXY_HOPS (where the platform records the visitor's address: set only
+// after the hosted check with spoofed headers, docs/security.md; until then the form refuses every submission).
+// SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided.
 // TURNSTILE_VERIFY_URL exists so the end-to-end test can use a local stand-in; production leaves it unset.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { handleFeedback, type SubmitResult, type TurnstileResult } from "../_shared/feedback-handler.ts";
+import { clientIpConfig, handleFeedback, MIN_SALT_LENGTH, type SubmitResult, type TurnstileResult } from "../_shared/feedback-handler.ts";
 
 const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -44,4 +47,10 @@ async function submit(row: Parameters<Parameters<typeof handleFeedback>[1]["subm
   return { ok: false, reason: ["22023", "23514", "23502"].includes(error.code ?? "") ? "rejected" : "error" };
 }
 
-Deno.serve((request) => handleFeedback(request, { verifyTurnstile, submit, salt: Deno.env.get("FEEDBACK_SALT") ?? "", allowedOrigins }));
+const salt = Deno.env.get("FEEDBACK_SALT") ?? "";
+if (salt.length < MIN_SALT_LENGTH) console.error(`submit-feedback: FEEDBACK_SALT is missing or shorter than ${MIN_SALT_LENGTH} characters; every submission is refused`);
+// A bad value stops the function at start-up, so the mistake is seen at once; no value at all means the form stays off.
+const clientIp = clientIpConfig((name) => Deno.env.get(name));
+if (!clientIp) console.error("submit-feedback: CLIENT_IP_HEADER and TRUSTED_PROXY_HOPS are not set (hosted check pending); every submission is refused");
+
+Deno.serve((request) => handleFeedback(request, { verifyTurnstile, submit, salt, allowedOrigins, clientIp }));

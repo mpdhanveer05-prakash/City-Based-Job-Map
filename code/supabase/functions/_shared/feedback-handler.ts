@@ -6,10 +6,15 @@
 //   2. the body is parsed and validated with Zod: lengths, https, no unknown keys, the rules for each kind;
 //   3. the Turnstile token is verified with Cloudflare, and its hostname and action are checked, BEFORE anything is stored;
 //   4. only then is the rate-limit key made (a salted hash that changes daily; the address is never kept) and the row inserted.
+// Two things are refused outright rather than worked around (8 Oct 2026): a missing or short FEEDBACK_SALT (every key would
+// be guessable), and a request with no client address the platform's own proxy recorded (all of them would share one key,
+// or a visitor could pick their own by sending X-Forwarded-For).
 // Nothing a visitor sends is published: it lands as `new` for a reviewer.
 import { z } from "zod";
 
 export const MAX_BODY_BYTES = 8 * 1024;
+/** The shortest FEEDBACK_SALT accepted: a long random string (`openssl rand -hex 32` gives 64 characters). */
+export const MIN_SALT_LENGTH = 32;
 export const TURNSTILE_ACTION = "feedback";
 
 const https = (v: string) => /^https:\/\/[^\s]+$/i.test(v);
@@ -48,6 +53,8 @@ export type FeedbackDeps = {
   submit(row: Omit<Feedback, "turnstile_token">, clientHash: string): Promise<SubmitResult>;
   /** The secret that, with the date, makes the daily rate-limit key. */
   salt: string;
+  /** Where the platform records the client's address (clientIpConfig). Null until it is configured: then nothing is accepted. */
+  clientIp: ClientIpConfig | null;
   allowedOrigins: readonly string[];
   now?: () => Date;
 };
@@ -70,8 +77,43 @@ export async function clientKey(ip: string, salt: string, day: string): Promise<
   return [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** The first address in X-Forwarded-For (what the platform's proxy saw), or null. Only hashed, never stored or logged. */
-export const callerIp = (request: Request): string | null => (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
+/** Which header holds the client's address, and how many entries from its right end the trusted proxies wrote. */
+export type ClientIpConfig = { header: string; trustedHops: number };
+
+/**
+ * CLIENT_IP_HEADER and TRUSTED_PROXY_HOPS (function secrets). There is NO default: which header and entry carry the visitor's
+ * address on the hosted platform is checked there, with spoofed headers, before the form is enabled (docs/security.md).
+ * Until both are set this returns null and the form accepts nothing. A half-set or malformed value is a configuration error.
+ */
+export function clientIpConfig(get: (name: string) => string | undefined): ClientIpConfig | null {
+  const header = (get("CLIENT_IP_HEADER") ?? "").trim().toLowerCase();
+  const hops = (get("TRUSTED_PROXY_HOPS") ?? "").trim();
+  if (header === "" && hops === "") return null;
+  if (header === "" || hops === "") throw new Error("CLIENT_IP_HEADER and TRUSTED_PROXY_HOPS are set together, after the hosted check");
+  if (!/^[a-z0-9-]+$/.test(header)) throw new Error("CLIENT_IP_HEADER must be a header name");
+  const trustedHops = Number(hops);
+  if (!Number.isInteger(trustedHops) || trustedHops < 1 || trustedHops > 5) throw new Error("TRUSTED_PROXY_HOPS must be a whole number from 1 to 5");
+  return { header, trustedHops };
+}
+
+const IPV4 = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+const IPV6 = /^(?=.*:)[0-9a-f:.]{2,45}$/i;
+const isIp = (v: string) => IPV4.test(v) || IPV6.test(v);
+
+/**
+ * The client's address as the platform's own proxy recorded it, or null when there is none to trust. Only hashed, never
+ * stored or logged.
+ *
+ * X-Forwarded-For is a list the client can start: a visitor may send "X-Forwarded-For: 1.2.3.4" themselves, and each proxy
+ * appends the address it saw. So the address is the `trustedHops`-th entry from the RIGHT (the one a trusted proxy wrote);
+ * everything to its left was written by the client and is ignored. A header the edge sets whole (CF-Connecting-IP) is read
+ * with trustedHops 1. Which header and hop count are right is never assumed: it is checked on the hosted project.
+ */
+export function trustedClientIp(request: Request, config: ClientIpConfig): string | null {
+  const parts = (request.headers.get(config.header) ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+  const candidate = parts.length >= config.trustedHops ? parts[parts.length - config.trustedHops] : "";
+  return isIp(candidate) ? candidate : null;
+}
 
 export async function handleFeedback(request: Request, deps: FeedbackDeps): Promise<Response> {
   const origin = request.headers.get("origin");
@@ -80,6 +122,9 @@ export async function handleFeedback(request: Request, deps: FeedbackDeps): Prom
   if (request.method === "OPTIONS") return reply(origin && c["Access-Control-Allow-Origin"] ? 204 : 403, c);
   if (request.method !== "POST") return reply(405, { ...c, Allow: "POST, OPTIONS" }, { error: "Use POST." });
   if (!origin || !deps.allowedOrigins.includes(origin)) return reply(403, {}, { error: "This origin is not allowed." });
+  // A missing or short salt would make every rate-limit key guessable, and without a checked source for the visitor's
+  // address no key can be trusted: refuse before anything else runs.
+  if (deps.salt.length < MIN_SALT_LENGTH || !deps.clientIp) return reply(503, c, { error: "This form is not available right now." });
 
   if (Number(request.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) return reply(413, c, { error: "That is too large." });
   const text = await request.text();
@@ -95,7 +140,9 @@ export async function handleFeedback(request: Request, deps: FeedbackDeps): Prom
   if (!parsed.success) return reply(400, c, { error: parsed.error.issues[0]?.message ?? "Check the form and try again.", field: String(parsed.error.issues[0]?.path[0] ?? "") });
   const { turnstile_token, ...row } = parsed.data;
 
-  const ip = callerIp(request);
+  // No address the platform recorded: refuse, rather than put every such request in one bucket or trust the client's word.
+  const ip = trustedClientIp(request, deps.clientIp);
+  if (!ip) return reply(503, c, { error: "This form cannot accept submissions from this connection right now." });
   const verified = await deps.verifyTurnstile(turnstile_token, ip).catch((): TurnstileResult => ({ success: false }));
   const hostnames = deps.allowedOrigins.map((o) => new URL(o).hostname);
   if (!verified.success || verified.action !== TURNSTILE_ACTION || !verified.hostname || !hostnames.includes(verified.hostname)) {
@@ -103,7 +150,7 @@ export async function handleFeedback(request: Request, deps: FeedbackDeps): Prom
   }
 
   const day = (deps.now?.() ?? new Date()).toISOString().slice(0, 10);
-  const hash = await clientKey(ip ?? "unknown", deps.salt, day);
+  const hash = await clientKey(ip, deps.salt, day);
   const result = await deps.submit(row, hash).catch((): SubmitResult => ({ ok: false, reason: "error" }));
   if (result.ok) return reply(201, c, { id: result.id });
   if (result.reason === "rate_limited") return reply(429, c, { error: "Too many submissions from this connection. Try again in an hour." });

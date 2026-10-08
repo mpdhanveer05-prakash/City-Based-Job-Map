@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { callerIp, clientKey, handleFeedback, MAX_BODY_BYTES, type FeedbackDeps, type SubmitResult, type TurnstileResult } from "../../supabase/functions/_shared/feedback-handler";
+import { clientIpConfig, clientKey, handleFeedback, MAX_BODY_BYTES, trustedClientIp, type FeedbackDeps, type SubmitResult, type TurnstileResult } from "../../supabase/functions/_shared/feedback-handler";
 
 const ORIGIN = "https://company-map.example";
 const JOB = "00000000-0000-4000-8000-0000000000d1";
+const SALT = "test-salt-for-the-rate-limit-key-0123456789";
+const XFF = { header: "x-forwarded-for", trustedHops: 1 };
 const GOOD_TURNSTILE: TurnstileResult = { success: true, hostname: "company-map.example", action: "feedback" };
 
-function deps(over: { turnstile?: TurnstileResult | Error; submit?: SubmitResult | Error } = {}) {
+function deps(over: { turnstile?: TurnstileResult | Error; submit?: SubmitResult | Error; salt?: string } = {}) {
   const verifyTurnstile = vi.fn(async () => {
     if (over.turnstile instanceof Error) throw over.turnstile;
     return over.turnstile ?? GOOD_TURNSTILE;
@@ -14,14 +16,14 @@ function deps(over: { turnstile?: TurnstileResult | Error; submit?: SubmitResult
     if (over.submit instanceof Error) throw over.submit;
     return over.submit ?? { ok: true as const, id: "11111111-1111-4111-8111-111111111111" };
   });
-  const d: FeedbackDeps = { verifyTurnstile, submit, salt: "salt-1", allowedOrigins: [ORIGIN], now: () => new Date("2026-10-05T10:00:00Z") };
+  const d: FeedbackDeps = { verifyTurnstile, submit, salt: over.salt ?? SALT, clientIp: XFF, allowedOrigins: [ORIGIN], now: () => new Date("2026-10-05T10:00:00Z") };
   return { d, verifyTurnstile, submit };
 }
 
 const report = { kind: "report", target_type: "job", target_id: JOB, message: "The link says this job is closed.", turnstile_token: "x".repeat(20) };
 const suggestion = { kind: "suggestion", target_type: "other", company_name: "Acme", source_url: "https://acme.example/about", message: "They have an office in Chennai.", turnstile_token: "x".repeat(20) };
 
-const post = (body: unknown, headers: Record<string, string> = { origin: ORIGIN, "x-forwarded-for": "203.0.113.9, 10.0.0.1" }, raw = false) =>
+const post = (body: unknown, headers: Record<string, string> = { origin: ORIGIN, "x-forwarded-for": "198.51.100.7, 203.0.113.9" }, raw = false) =>
   new Request("https://p.supabase.co/functions/v1/submit-feedback", { method: "POST", headers: { "content-type": "application/json", ...headers }, body: raw ? (body as string) : JSON.stringify(body) });
 
 describe("submit-feedback handler", () => {
@@ -127,7 +129,7 @@ describe("submit-feedback handler", () => {
     const hash = (submit.mock.calls[0] as unknown as [unknown, string])[1];
     expect(hash).toMatch(/^[0-9a-f]{64}$/);
     expect(hash).not.toContain("203");
-    expect(hash).toBe(await clientKey("203.0.113.9", "salt-1", "2026-10-05"));
+    expect(hash).toBe(await clientKey("203.0.113.9", SALT, "2026-10-05"));
   });
 
   it("never puts the address, the token, or a secret in a response", async () => {
@@ -135,12 +137,12 @@ describe("submit-feedback handler", () => {
       const text = await (await handleFeedback(post(report), deps(over).d)).text();
       expect(text).not.toContain("203.0.113.9");
       expect(text).not.toContain("x".repeat(20));
-      expect(text).not.toContain("salt-1");
+      expect(text).not.toContain(SALT);
     }
   });
 });
 
-describe("clientKey and callerIp", () => {
+describe("the rate-limit key, and what is refused", () => {
   it("is stable for a sender within a day, and changes with the day, the address, and the salt", async () => {
     const a = await clientKey("203.0.113.9", "salt", "2026-10-05");
     expect(await clientKey("203.0.113.9", "salt", "2026-10-05")).toBe(a);
@@ -149,8 +151,73 @@ describe("clientKey and callerIp", () => {
     expect(await clientKey("203.0.113.9", "other", "2026-10-05")).not.toBe(a);
   });
 
-  it("takes the first address of X-Forwarded-For", () => {
-    expect(callerIp(new Request("https://p.co", { headers: { "x-forwarded-for": " 1.2.3.4 , 5.6.7.8" } }))).toBe("1.2.3.4");
-    expect(callerIp(new Request("https://p.co"))).toBeNull();
+  it("refuses every submission while FEEDBACK_SALT is missing or short, before checking anything else", async () => {
+    for (const salt of ["", "short-salt"]) {
+      const { d, verifyTurnstile, submit } = deps({ salt });
+      const res = await handleFeedback(post(report), d);
+      expect(res.status).toBe(503);
+      expect(verifyTurnstile).not.toHaveBeenCalled();
+      expect(submit).not.toHaveBeenCalled();
+    }
+  });
+
+  it("refuses a request with no client address the platform recorded, instead of sharing one bucket", async () => {
+    const { d, verifyTurnstile, submit } = deps();
+    const res = await handleFeedback(post(report, { origin: ORIGIN }), d);
+    expect(res.status).toBe(503);
+    expect(verifyTurnstile).not.toHaveBeenCalled();
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("does not let a visitor choose their own rate-limit key by sending X-Forwarded-For", async () => {
+    const keys: string[] = [];
+    for (const spoofed of ["1.1.1.1", "2.2.2.2", "9.9.9.9, 8.8.8.8"]) {
+      const { d, submit } = deps();
+      await handleFeedback(post(report, { origin: ORIGIN, "x-forwarded-for": `${spoofed}, 203.0.113.9` }), d);
+      keys.push((submit.mock.calls[0] as unknown as [unknown, string])[1]);
+    }
+    expect(new Set(keys).size).toBe(1);
+    expect(keys[0]).toBe(await clientKey("203.0.113.9", SALT, "2026-10-05"));
+  });
+});
+
+describe("trustedClientIp and clientIpConfig", () => {
+  const req = (headers: Record<string, string>) => new Request("https://p.co", { headers });
+
+  it("takes the entry the nearest trusted proxy wrote, ignoring what the client put before it", () => {
+    expect(trustedClientIp(req({ "x-forwarded-for": " 1.2.3.4 , 5.6.7.8" }), XFF)).toBe("5.6.7.8");
+    expect(trustedClientIp(req({ "x-forwarded-for": "1.2.3.4, 5.6.7.8, 10.0.0.2" }), { header: "x-forwarded-for", trustedHops: 2 })).toBe("5.6.7.8");
+    expect(trustedClientIp(req({ "x-forwarded-for": "2001:db8::1" }), XFF)).toBe("2001:db8::1");
+  });
+
+  it("returns null when there is no trustworthy address", () => {
+    expect(trustedClientIp(req({}), XFF)).toBeNull();
+    expect(trustedClientIp(req({ "x-forwarded-for": "5.6.7.8" }), { header: "x-forwarded-for", trustedHops: 2 })).toBeNull();
+    expect(trustedClientIp(req({ "x-forwarded-for": "1.2.3.4, not-an-address" }), XFF)).toBeNull();
+    expect(trustedClientIp(req({ "x-forwarded-for": "1.2.3.4, 999.1.1.1" }), XFF)).toBeNull();
+  });
+
+  it("can read a header the edge sets whole, such as CF-Connecting-IP", () => {
+    const config = clientIpConfig((name) => ({ CLIENT_IP_HEADER: "CF-Connecting-IP", TRUSTED_PROXY_HOPS: "1" })[name])!;
+    expect(config).toEqual({ header: "cf-connecting-ip", trustedHops: 1 });
+    expect(trustedClientIp(req({ "cf-connecting-ip": "203.0.113.9", "x-forwarded-for": "1.1.1.1" }), config)).toBe("203.0.113.9");
+  });
+
+  it("has no default: unset means off, half-set or malformed is a configuration error", () => {
+    expect(clientIpConfig(() => undefined)).toBeNull();
+    expect(() => clientIpConfig((n) => (n === "CLIENT_IP_HEADER" ? "x-forwarded-for" : undefined))).toThrow(/set together/);
+    expect(() => clientIpConfig((n) => (n === "TRUSTED_PROXY_HOPS" ? "1" : undefined))).toThrow(/set together/);
+    expect(() => clientIpConfig((n) => ({ CLIENT_IP_HEADER: "x forwarded", TRUSTED_PROXY_HOPS: "1" })[n])).toThrow(/header name/);
+    for (const hops of ["0", "-1", "1.5", "six", "9"]) {
+      expect(() => clientIpConfig((n) => ({ CLIENT_IP_HEADER: "x-forwarded-for", TRUSTED_PROXY_HOPS: hops })[n])).toThrow(/TRUSTED_PROXY_HOPS/);
+    }
+  });
+
+  it("refuses every submission while the visitor-address source is not configured", async () => {
+    const { d, verifyTurnstile, submit } = deps();
+    const res = await handleFeedback(post(report), { ...d, clientIp: null });
+    expect(res.status).toBe(503);
+    expect(verifyTurnstile).not.toHaveBeenCalled();
+    expect(submit).not.toHaveBeenCalled();
   });
 });

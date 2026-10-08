@@ -158,7 +158,10 @@ export default async function globalSetup() {
       `GITHUB_API_URL=http://host.docker.internal:${FAKE_GITHUB_PORT}`,
       "TURNSTILE_SECRET_KEY=test-turnstile-secret",
       `TURNSTILE_VERIFY_URL=http://host.docker.internal:${FAKE_GITHUB_PORT}/turnstile/siteverify`,
-      "FEEDBACK_SALT=test-feedback-salt",
+      "FEEDBACK_SALT=test-feedback-salt-for-the-admin-e2e-0123456789",
+      // The LOCAL gateway (Kong) appends the address it saw to X-Forwarded-For; the hosted source is checked separately.
+      "CLIENT_IP_HEADER=x-forwarded-for",
+      "TRUSTED_PROXY_HOPS=1",
     ].join("\n"),
   );
   // The runtime's log goes to a file, kept outside test-results (Playwright empties that folder): a worker that fails to

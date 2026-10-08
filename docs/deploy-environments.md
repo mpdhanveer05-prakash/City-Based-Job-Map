@@ -40,7 +40,7 @@ afterwards. Leaving them there is how one project could end up serving both envi
 - Secrets: `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit; ideally a token used only for staging), `CLOUDFLARE_ACCOUNT_ID`.
 
 **Environment `production`**
-- Protection: *Required reviewers* (a second person if possible, and *Prevent self-review*); *Deployment branches*: `main` only.
+- Protection: *Required reviewers* (a second person if possible, and *Prevent self-review*); *Deployment branches*: `main` only. **Required for the data refresh:** a release counts only if a reviewer approved its run for this environment (`scripts/release-record.mts`), so without required reviewers no release can ever be refreshed.
 - Variables: `DEPLOY_ENV=production`; `SITE_URL=https://officemap.tech`; `SUPABASE_PROJECT_REF` (production), `SUPABASE_URL`,
   `SUPABASE_ANON_KEY`, `OTHER_ENV_SUPABASE_PROJECT_REF` (staging's ref), `GEOAPIFY_KEY` (restricted to officemap.tech),
   `TURNSTILE_SITE_KEY`. Never `ALLOW_SYNTHETIC_DATA`.
@@ -68,7 +68,7 @@ environment's variables.
 
 - **Two Supabase projects**: their own database, Storage buckets (`company-logos`, `company-logos-pending`), Auth users,
   allowlisted `admin_user` rows, and enrolled MFA factors. Create administrators separately in each; don't copy them.
-- **Edge Function secrets in each project**: `TURNSTILE_SECRET_KEY`, `FEEDBACK_SALT` (rate-limit hash; random, per project),
+- **Edge Function secrets in each project**: `TURNSTILE_SECRET_KEY`, `FEEDBACK_SALT` (rate-limit hash; random, per project, at least 32 characters, e.g. `openssl rand -hex 32`, or the form refuses every submission), and `CLIENT_IP_HEADER` with `TRUSTED_PROXY_HOPS`. These are where the platform records the visitor's address. **Set them only after the hosted check with spoofed headers** (docs/security.md). Until then the feedback form refuses every submission, by design.
   `ALLOWED_ORIGINS` (that environment's site only), `GITHUB_DISPATCH_TOKEN` and `GITHUB_REPOSITORY` (a separate token per
   project). **Production only:** `REBUILD_EVENT_TYPE=refresh-production-data`. Staging leaves it unset, so its Publish now
   sends `rebuild`, which only `deploy-staging.yml` listens for. The production project's Publish now sends

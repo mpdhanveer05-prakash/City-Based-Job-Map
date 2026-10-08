@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(68);
+select plan(75);
 
 -- The seed is loaded by `db reset`; these tests use their own fixtures (TRUNCATE is transactional: the rollback restores it).
 truncate public.city, public.source, public.sector, public.company, public.admin_user, public.audit_log, public.import_batch
@@ -258,10 +258,39 @@ select is((select r -> 'results' -> 10 ->> 'message' from imported), 'a startup 
 select is((select count(*)::int from office where address = '14 Road' and status = 'draft'), 1, 'a draft office outside the boundary is accepted (the boundary rule is for publishing)');
 select ok((select (error_count = 10 and row_count = 16 and created_companies = 4 and filename = 'fixture.csv') from import_batch), 'the batch row holds the counts and the file name');
 select is((select jsonb_array_length(errors) from import_batch), 10, 'and the error list');
+
+-- A row that adds an office to an existing company keeps its evidence for the company's facts (20261008100000).
+select is((select r -> 'results' -> 1 -> 'kept_evidence' from imported), '["name", "website", "types", "sectors"]'::jsonb,
+  'attach: the row''s evidence for the company''s facts is kept, not dropped');
+select is((select r -> 'results' -> 1 -> 'proposed' from imported), '[]'::jsonb, 'attach: its values match the company, so nothing is proposed');
+select is((select count(*)::int from field_evidence e join company c on c.id = e.company_id
+           where c.domain = 'acme-pay.test' and e.field = 'name' and e.reviewed_at is null), 2,
+  'attach: kept as unreviewed claims (one from the row that created the company, one from the attached row)');
+
+select tests.become('00000000-0000-0000-0000-00000000e001', 'authenticated');
+create temp table imported_again on commit drop as
+select import_commit('second.csv', jsonb_build_array(
+  tests.csv_row('Acme Payments', 'acme-pay.test', '20 New Road', '{"types": ["product"], "description": "Pays more things"}'),
+  tests.csv_row('Acme Pay', 'acme-pay.test', '21 Other Road') || jsonb_build_object('evidence',
+    (tests.csv_row('Acme Pay', 'acme-pay.test', '21 Other Road') -> 'evidence')
+    || '[{"field": "ownership_status", "source_url": "https://evidence.test/ownership", "verified_at": "2026-09-01"}]'::jsonb)
+)) as r;
+reset role;
+
+select is((select r -> 'results' -> 0 -> 'proposed' from imported_again), '["name", "description", "types"]'::jsonb,
+  'attach: values that differ from the company''s are named as proposed changes');
+select ok((select r -> 'results' -> 0 ->> 'message' from imported_again) like '%applied only after review and an editor''s save%',
+  'attach: the message says a different value changes nothing until it is reviewed and saved');
+select results_eq($$ select c.name, (select count(*)::int from field_evidence e where e.company_id = c.id and e.field = 'name' and e.value = 'Acme Payments' and e.reviewed_at is null)
+                     from company c where c.domain = 'acme-pay.test' $$,
+  $$ values ('Acme Pay', 1) $$, 'attach: the company keeps its name; the new name is recorded as an unreviewed claim for that value');
+select is((select r -> 'results' -> 1 ->> 'message' from imported_again),
+  'there is evidence for the ownership status of acme-pay.test, but this row leaves it empty',
+  'attach: evidence for a field the row leaves empty is refused with a clear message');
 select is((select count(*)::int from audit_log where table_name = 'company' and action = 'insert'), 4, 'the imported companies are in the audit log');
 
 select tests.become('00000000-0000-0000-0000-00000000e001', 'authenticated');
-select is((select count(*)::int from import_batch), 1, 'an editor reads the import batches');
+select is((select count(*)::int from import_batch), 2, 'an editor reads the import batches (fixture.csv and second.csv)');
 reset role;
 select tests.become(null, 'anon');
 select is(tests.sqlstate_of($$ select * from import_batch $$), '42501', 'anon does not');

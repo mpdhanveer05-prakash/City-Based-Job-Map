@@ -53,7 +53,11 @@ How companies, offices, founders, and jobs get into the directory and stay right
 
 - Required columns: `name, domain, city, address, lat, lng, source_url, verified_at`. Optional: `website_url, careers_url, description, types, startup_stage, ownership_status, sectors` (or `industry`), `accuracy, neighbourhood, tech_park, source_covers`, and `<field>_source_url` / `<field>_verified_at` for `name, website, description, types, sectors, startup_stage, ownership_status, address, location`.
 - The admin preview shows what each row would do and every problem; nothing is saved until you confirm. Everything lands as a **draft**.
-- A row whose domain is already listed adds an office to that company and needs evidence for the office only.
+- A row whose domain is already listed adds an office to that company and needs evidence for the office only. Evidence it
+  also gives for the company's facts is **kept**, not dropped (since 8 Oct 2026), as unreviewed claims on that company for
+  the values the row gives. The row's result names what was kept. If a value differs from the company's current one (a
+  different name, say), it is only a **proposed** change: nothing about the company changes until a reviewer reviews that
+  evidence and an editor saves the change. Evidence for a field the row leaves empty is refused with a message.
 - `industry` is read as the sector list and must name known sectors.
 
 ## 6. Refresh
