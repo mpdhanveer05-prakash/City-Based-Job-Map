@@ -33,7 +33,7 @@
 | Hosted integration | **Almost none.** No hosted Supabase project serves the site. Staging is a static synthetic-data site whose latest smoke test **failed** (a configuration cause, explained in [§8.3](#83-hosted-staging-smoke-test-failure-7-oct)). Production has **never been deployed**. |
 | Real data | **Pilot only.** 46 real Bengaluru companies exist as **unreviewed local drafts**, built from 51 source-checked candidates. **0 human-reviewed, 0 published, 0 jobs, 0 logos, 0 founders.** 44 of 46 map points are only locality-accurate and are OSM-derived (licensing unresolved). Chennai has no real data. |
 | Launch readiness | **Not ready.** Launch blockers: real-data volume and human review (D-04), a geocoding provider (D-07), hosted projects and their configuration, the map performance gate on real devices (D-06), an independent security approval of the audit exception, a screen-reader pass, the domain, monitoring and backups. |
-| Git | `main` is **20 commits ahead** of GitHub (`origin/main` = `883de71`). Two of those commits contain OSM-derived files and **should be squashed before any push** (owner decision pending). |
+| Git | `main` is **23 commits ahead** of GitHub (`origin/main` = `883de71`), plus this pass's work, uncommitted. One commit contains OSM-derived files and 20 carry Claude trailers. A rehearsed cleanup plan exists ([docs/history-cleanup-plan.md](docs/history-cleanup-plan.md)); it is **not run** and awaits the owner. |
 
 **Update, later on 7 Oct 2026 (local, not pushed).** The four risks first listed here have been worked on. All of the
 following is verified only locally; see `docs/progress.md`:
@@ -64,6 +64,17 @@ following is verified only locally; see `docs/progress.md`:
    release, and `refresh-production-data.yml` rebuilds only the newest valid release tag with production data, behind every
    release check and a shrink guard, with automatic rollback (§4.5).
 10. **Main local database migrated (8 Oct 2026):** at `20261007160000` after a fresh backup; all counts unchanged.
+11. **Later on 8 Oct (local, not pushed, nothing deployed):**
+    - **Backup drill:** database, Auth and Storage files backed up, restored into the test stack and verified part by part
+      (content, grants, policies, foreign keys, file bytes, an MFA sign-in). A negative control caught every injected break.
+    - **New tests found two real defects, both fixed:** unknown feeds accepted silently (#28), and an empty pilot preview
+      under the listing rule.
+    - **Three security fixes:** the salt is required; the client address comes only from the platform's proxy; import
+      evidence is kept (#29).
+    - **Dependabot:** tested, not merged.
+    - **Option C:** release provenance now comes from the release record, with an approved baseline against slow shrinks
+      and no rollback over newer deployments.
+    - **History cleanup:** a plan, rehearsed, not run.
 
 Latest checks, from `code/`:
 - **On the disposable test stack (7 Oct):** pgTAP 17 files, 711 passed; parity 8 passed; pipeline pytest 89 passed; admin e2e 58 passed.
@@ -288,6 +299,8 @@ For each item, the table separates these levels:
 | DEP-4 | Staging deploys before its smoke test, so a failing build stays live | **Open** |
 | OPS-1 | Admin e2e global setup deletes all `admin_user` rows and adds test companies | **Fixed locally**: it now runs only on the disposable test stack and refuses any other database |
 | UX-1 | "Open jobs" counts differ: the explorer counts active jobs only; the company page and jobs page include *suspect* jobs | **Open** (owner decision) |
+| FEED-1 | `approve_job_feed` / `withdraw_job_feed` accepted an unknown feed silently (a `PERFORM` reset `FOUND`) | **Fixed locally** (`20261008090000`; found by pgTAP `17_feed_review`) |
+| PREVIEW-1 | `preview-db.mts` produced a preview with no companies under the 7 Oct listing rule | **Fixed** (the copy's evidence is marked reviewed by a named stand-in, in the copy only) |
 
 ### 2.3 The running local previews (as of 7 Oct 2026)
 
@@ -615,6 +628,11 @@ flowchart LR
 26. `20261007150000_security_gaps`: SEC-1 to SEC-4, the publication loophole (a company needs a *published* reviewed office), `listed_office()` for listings, and logo approve → copy → activate.
 27. `20261007160000_logo_sha256`: logo activation by server-side SHA-256 (`request_logo_activation`, the `activate-logo` Edge Function, `complete_logo_activation` for `service_role` only); drops `activate_logo(bigint)`.
 
+28. `20261008090000_feed_unknown_feed`: `approve_job_feed` and `withdraw_job_feed` raise "no feed" again for an unknown feed. A `PERFORM` had reset `FOUND`, so the error never fired. Found by the new pgTAP `17_feed_review`.
+29. `20261008100000_import_keeps_company_evidence`: `import_commit` keeps the company evidence on a row that adds an office to an existing company. It is stored as unreviewed claims for the row's values; a different value is only a proposal. The row's result says what was kept. Evidence for a field the row leaves empty is refused.
+
+Migrations 28 and 29 are on the test stack only; the main local database is at #27. Bring it up to date with the same procedure as [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) when the owner says so.
+
 Migrations 26 and 27 were applied to the main local database on 8 Oct 2026 with `supabase migration up`, after a fresh backup and a rehearsal on a restored copy; all counts were unchanged ([docs/main-db-migration-plan.md](docs/main-db-migration-plan.md)).
 
 **Rule:** schema changes go only in **new** migration files. Never edit an applied migration.
@@ -818,7 +836,7 @@ These were found while preparing this handover. I confirmed them by reading the 
 | SEC-2 | The public-bucket insert policy allows a reviewer to copy any *undecided* logo. If the logo is then rejected, or never reviewed, the public copy stays readable. The admin UI copies only at approval time, so only direct API use creates this. Copy bytes are also not compared with the pending file or the SHA-256 in the key. | Make `review_logo` (or a definer function) do the copy, or delete the public object when a logo is rejected; check the hash. |
 | SEC-3 | Pipeline-written jobs bypass the publication and change gates (they apply only with a signed-in user). The pipeline role could activate a job without evidence or without an approved feed. | Enforce feed approval and `job_evidence_complete` in a trigger for the `pipeline` role. |
 | SEC-4 | Callers with no signed-in user can insert already-reviewed evidence, and can set feed approval or `logo_key` directly. | Restrict to the owner and document it, or require a signed-in user. |
-| Minor | `import_commit` silently ignores extra evidence on rows that attach an office to an existing company. `FEEDBACK_SALT` falls back to an empty string if unset. Requests without `X-Forwarded-For` share one rate bucket. The click counter has no rate limit (counts can be inflated; documented). | |
+| Minor | ~~`import_commit` silently ignores extra evidence on rows that attach an office to an existing company~~ **fixed** (#29: kept as claims, reported per row). ~~`FEEDBACK_SALT` falls back to an empty string if unset~~ **fixed** (a missing or short salt refuses every submission). ~~Requests without `X-Forwarded-For` share one rate bucket~~ **fixed**: the key comes from the address the platform's proxy recorded, never from a client-written entry, and a request with none is refused. Hosted check outstanding: which header and hop count, see docs/security.md. Still open: the click counter has no rate limit (counts can be inflated; documented). | |
 
 ### 5.7 Unresolved security work
 - **Hosted projects:**
@@ -1054,14 +1072,16 @@ All runs were on Windows 11 with Node 24, from `code/`, on the uncommitted worki
 | --- | --- | --- | --- |
 | Lint | `npm run lint` | clean | 8 Oct |
 | Types | `npm run typecheck` | clean | 8 Oct |
-| Unit | `npm test` | **45 files, 692 passed** | 8 Oct (after REBUILD-1 and P9-12) |
-| E2E + axe | `npx playwright test --workers=2` (same as `npm run test:e2e` with 2 workers instead of 3, for memory) | **293 passed, 0 failed, 59 skipped** (20.0 min, Geoapify key present; after P9-12). Before P9-12: 292 / 0 / 58 | 8 Oct |
-| pgTAP | `node scripts/test-stack.mts test-db` (test stack) | **17 files, 711 passed** | 7 Oct |
-| Admin e2e | `npm run test:admin` (test stack, after `reset`) | **58 passed, 0 failed** | 7 Oct |
-| Pipeline | `python -m pytest scripts/pipeline/tests` (test stack) | 89 passed | 7 Oct |
+| Unit | `npm test` | **46 files, 735 passed** | 8 Oct (final code of the day) |
+| E2E + axe | `npx playwright test --workers=2` (same as `npm run test:e2e` with 2 workers instead of 3, for memory) | **293 passed, 0 failed, 59 skipped** (19.3 min, Geoapify key present) | 8 Oct (final code of the day) |
+| pgTAP | `node scripts/test-stack.mts test-db` (test stack) | **18 files, 757 passed** | 8 Oct |
+| Admin e2e | `npm run test:admin` (test stack, after `reset`) | **58 passed, 0 failed** (the public-form tests go through the real function and the local gateway) | 8 Oct |
+| Pipeline | `python -m pytest scripts/pipeline/tests` (test stack); `scripts/pilot/tests` (no database) | 89 passed; pilot 24 passed | 8 Oct |
 | Parity | `npm run test:parity` (test stack) | 8 passed | 7 Oct |
 | Smoke policy | beacon tests against an edited build copy (beacon off) | no target: 3 failed; `staging`: 3 failed; `staging-synthetic`: 3 skipped | 8 Oct |
 | Main-DB rehearsal | [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) step 3 on a restored copy | both migrations applied; all counts unchanged | 8 Oct |
+| Backup drill | `scripts/backup-drill.mts` backup → restore → verify (main stack read only → test stack) | passed twice; negative control 21 problems caught | 8 Oct |
+| Dependabot | each PR on today's code in a scratch clone | minor-and-patch compatible; @types/node 26 passes (keep 24); TS 7 and ESLint 10 break lint | 8 Oct |
 | Audit | `npm run audit` / `-- --release` | technical pass / release **fails** (approval pending) | 6 Oct |
 | CI | GitHub Actions on push | 4/4 jobs green on `883de71` | 6 Oct |
 | Staging smoke | `883de71`'s own tests: `npx playwright test --project=desktop` with `PLAYWRIGHT_BASE_URL` set to the staging URL | **134 passed, 7 failed, 8 skipped** | 7 Oct, live staging |
@@ -1082,9 +1102,11 @@ All runs were on Windows 11 with Node 24, from `code/`, on the uncommitted worki
   - keyboard and screen-reader checks of the admin and the forms;
   - hosted Supabase (RLS with real JWTs, MFA, Edge Functions, real Turnstile, CORS);
   - storage policies in CI (the logo pgTAP parts skip in CI's Postgres-only database; they ran on the full local stack);
-  - no tests for `scripts/pilot/*`, the `PILOT_PREVIEW` build guards, the in-page gate runner or the Android CDP mode;
-  - no pgTAP tests for the feed approve, withdraw and resolve functions (pytest and admin e2e cover them);
-  - **the backup drill** does not cover Storage, auth tables or the newer evidence, feed and logo tables, and hasn't run since 5 Oct.
+  - no tests for the in-page gate runner or the Android CDP mode;
+  - **closed 8 Oct 2026:**
+    - the pilot scripts (`scripts/pilot/tests`, 24) and the `PILOT_PREVIEW` guards (unit, and `check-deploy-env` now refuses a pilot preview on every hosted target);
+    - the feed approve, withdraw and resolve functions as each role (pgTAP `17_feed_review`, 39; it found the unknown-feed bug fixed in #28);
+    - the backup drill: it now covers every public table by content hash, Auth users, identities and MFA factors, grants, policies and visibility, foreign keys, and the Storage files with their bytes (docs/backup-restore.md). It passed locally, and a negative control caught every injected break.
 
 ### 8.3 Hosted staging smoke-test failure (7 Oct)
 1. **Trigger.** The nightly cron deployed `883de71`. The deploy step succeeded, so the build is live, and the smoke step that follows failed.
@@ -1238,8 +1260,8 @@ The pilot README's instructions (plain `npm run build`, then `npm run preview`) 
 | DB-MAIN | Bring the main local database (pilot drafts) to migration `20261007160000` without a reset | **Done (8 Oct 2026)**: backup, `migration up`, counts unchanged | P1 | — | [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) followed; counts unchanged | Dev |
 | P9-15 | officemap.tech: DNS on Cloudflare, Worker custom domain, site URL, canonical URLs, CSP, allowed origins | Not started | P0 | ENV-1, release approval | Production smoke on the domain passes | Owner, Dev |
 | P9-05 | Release checklist and a production deploy | In progress (workflow never run) | P0 | everything P0 | Checklist complete; explicit owner authorization | Owner |
-| GIT-1 | Squash local commits `5812ed2`/`b55857e` (OSM-derived files in history) before pushing; then push | Awaiting authorization | P0 | — | No OSM-derived file anywhere in pushed history | Owner (authorize), Dev |
-| DEPS-1 | Review the 4 open Dependabot PRs (TypeScript 7, ESLint 10, @types/node 26 are majors) | Open | P1 | — | CI green after merge | Dev, Owner |
+| GIT-1 | Remove the OSM-derived files from the unpushed history and the Claude trailers from unpushed messages; then push | **Plan written and rehearsed** on a throwaway clone ([docs/history-cleanup-plan.md](docs/history-cleanup-plan.md)): same final tree, a fast-forward push, recovery branch and bundle first. **Not run**: awaiting authorization | P0 | — | No OSM-derived file anywhere in pushed history; no trailer in unpushed messages | Owner (authorize), Dev |
+| DEPS-1 | Review the 4 open Dependabot PRs | **Tested locally 8 Oct 2026** (each applied to today's code in a scratch clone; nothing merged): **minor-and-patch** (Next 16.3.8, React 19.3.0, lucide, eslint-config-next, Supabase CLI, Vitest, Wrangler) compatible; **@types/node 26** passes but is ahead of the Node 24 runtime (keep 24); **TypeScript 7** type-checks and builds, but lint fails (typescript-eslint does not support TS 7); **ESLint 10** lint crashes (eslint-plugin-react in eslint-config-next uses a removed API) | P1 | — | CI green after merge | Owner (merge), Dev |
 
 **Map and performance**
 
@@ -1272,7 +1294,7 @@ The pilot README's instructions (plain `npm run build`, then `npm run preview`) 
 | --- | --- | --- | --- | --- | --- | --- |
 | P9-10 | Sentry and Cloudflare Web Analytics (no personal data), CSP update, privacy notice | Not started | P0 | Owner's DSN and token | Errors and analytics visible; CSP clean | Owner, Dev |
 | P9-14 | Automated off-site backups (database and Storage) with retention; restore drill on a hosted project | Not started | P0 | ENV-1, storage target | Scheduled backup plus a successful hosted restore drill | Owner, Dev |
-| P9-04 | Hosted backup drill; launch gate on real data for each city | In progress (local only) | P0 | ENV-1, DATA-1 | Report files committed | Dev |
+| P9-04 | Hosted backup drill; launch gate on real data for each city | In progress. The drill was rewritten and passed locally on 8 Oct 2026 (database, Auth, Storage files; restore into the test stack; verified part by part). The hosted run and the launch gate on real data cannot run yet | P0 | ENV-1, DATA-1 | Report files committed | Dev |
 | P9-01 | Manual screen-reader pass (NVDA, TalkBack), admin accessibility | In progress | P0 | — | Findings fixed and documented | Dev / tester |
 | OPS-1/2 | Make database and admin tests safe (disposable stack, guards) | Done locally; CI change not yet run on GitHub | P1 | — | Tests never touch the main database | Dev |
 | TEST-1 | Hosted integration tests (RLS with real JWTs, functions, Turnstile); and, **if the owner adopts the proposal**, three consecutive green full suites | Open (proposal: 1 of 3 recorded) | P0 | ENV-1 | Recorded runs | Dev |
@@ -1317,12 +1339,12 @@ P6-04, P5-05, P4-03, Phase 10, the PMTiles migration, Chennai (as the second rel
 | Item | Value |
 | --- | --- |
 | Branch | `main` |
-| Local HEAD | `2e4d8a6` "SEC-1..4, publication loophole, listed offices; disposable test stack and guards; DEP-1 build features; DEP-2 content-versioned datasets (ADR-0025 proposed); stale docs corrected" |
+| Local HEAD | `58fccfc` "P9-12: JavaScript budget …"; this pass's work is uncommitted on top |
 | Remote HEAD (`origin/main`) | `883de71` "P9-06: ownership status separate from startup stage…" (6 Oct 2026) |
-| Unpushed commits | **20** (`93ca2a6` … `2e4d8a6`, 6–7 Oct): evidence gates (P9-07), feed governance, Bengaluru pilot research and import, publication-rule fix, DEF-1/2/3, MFA (P9-13), logos (P9-21), pilot preview, verification records, deploy environments |
-| History cleanup pending | `5812ed2` contains OSM/Nominatim-derived pilot files (37-row `import-rows.json`, `pilot.csv`, `geocode-cache.json`); `b55857e` removed them. **Squash both before any push** so ODbL-derived data is never published (awaiting the owner's authorization; the rule is not to rewrite history without it). `e8bb5ad` and `0f79828` are labelled WIP; the latter's verification is recorded in `18f58b2`. |
-| Working tree | **Uncommitted** follow-ups of 7–8 Oct on top of `2e4d8a6`: migration `20261007160000`, the `activate-logo` function, the new tests (open-tab, snapshot consistency, deploy policy, dataset determinism, logo handler), the smoke-policy changes in both deploy workflows, ADR-0024/0025 updates, `docs/main-db-migration-plan.md`, and these docs. Commit when the owner asks |
-| Open PRs | 4 Dependabot PRs |
+| Unpushed commits | **23** (`93ca2a6` … `58fccfc`, 6–8 Oct) |
+| History cleanup pending | `5812ed2` contains OSM/Nominatim-derived pilot files (`import-rows.json`, `pilot.csv`, `geocode-cache.json`); `b55857e` removed them. 20 unpushed commits carry `Co-Authored-By: Claude` trailers. **Plan, rehearsed: [docs/history-cleanup-plan.md](docs/history-cleanup-plan.md)** (only unpushed commits rewritten; the same final tree; a fast-forward push; recovery branch and bundle first). Not run: awaiting the owner. The 38 pushed commits with trailers would need a force-push (not recommended). `e8bb5ad` and `0f79828` are labelled WIP. |
+| Working tree | **Uncommitted** work of 8 Oct (later) on top of `58fccfc`: the backup drill, `17_feed_review`, the pilot tests, migrations `20261008090000` and `20261008100000`, the feedback and preview fixes, option C hardening (`release-record`, `approved-baseline`, the guard, the workflows), the history plan, docs. Commit when the owner asks |
+| Open PRs | 4 Dependabot PRs (tested locally 8 Oct; see DEPS-1) |
 | Repository visibility | **Public** |
 
 **Authorization status:**
@@ -1384,7 +1406,7 @@ P6-04, P5-05, P4-03, Phase 10, the PMTiles migration, Chennai (as the second rel
 - The code already supports both cities; only data and gate work remain.
 
 ### 12.3 What Dev can do without the owner
-SEC-1 to SEC-4, DEP-1, DEP-2 (proposal), DEP-3/4, OPS-1/2, P9-12, the P9-08 code (pending legal wording), the DOC-1 doc fixes, pgTAP tests for the feed functions, the backup-drill table list, a feed-creation admin UI, and a pre-push squash plan.
+Done locally by 8 Oct 2026: SEC-1 to SEC-4, DEP-1, DEP-2, OPS-1/2, P9-12, REBUILD-1 (option C), the feed tests, the backup drill and the history-cleanup plan. Still possible without the owner: DEP-3/4, the P9-08 code (pending legal wording), the DOC-1 doc fixes, a feed-creation admin UI, a click-counter rate limit, and the gate runner and CDP tests.
 
 ### 12.4 What needs the owner
 Every item in [§10.4](#104-pending-owner-decisions), plus:
@@ -1410,6 +1432,9 @@ Every item in [§10.4](#104-pending-owner-decisions), plus:
 | Real Turnstile behaviour; real `siteverify` | A hosted test with a real site key and secret |
 | `is_admin()` reading `auth.sessions` and `auth.mfa_factors` on hosted Supabase | A hosted pgTAP or admin e2e run |
 | `pg_restore --clean` into the main local database | A drill on a scratch copy first |
+| Which header and hop count carry the visitor's address to the hosted `submit-feedback` | A hosted request with a known address; then set `CLIENT_IP_HEADER` / `TRUSTED_PROXY_HOPS` (docs/security.md) |
+| Option C on GitHub and Cloudflare: tag push under the ruleset, the release-record API with `actions: read`, `wrangler deployments status --json`, `wrangler rollback` on an assets-only Worker, triggers, concurrency, a first release end to end | The seven checks listed in ADR-0025 ("Hosted checks still outstanding") |
+| The backup drill against a hosted project | `backup` with the project's connection string and service key, a restore into a fresh project or the test stack, `verify` with the administrator's own authenticator |
 | Map performance on real devices | P2-09 runs on the named devices |
 | The BRD's exact requirement wording | The BRD document |
 

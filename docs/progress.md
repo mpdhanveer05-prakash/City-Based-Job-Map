@@ -13,6 +13,56 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-08 (later): backup drill, feed and pilot tests, three security fixes, Dependabot report, option C hardened, history-cleanup plan
+- **1. Backup drill rewritten** (`scripts/backup-drill.mts`, `lib/backup-drill.ts`; [backup-restore.md](backup-restore.md)):
+  - **backup**, from the main stack, read only: a full dump, the 5 Storage files with SHA-256, and a snapshot (32 tables by content hash, 13 sequences, 1,459 grant, policy, trigger, bucket and job lines, 60 visibility measures);
+  - **restore**, into the test stack only, after migrations: data only, Auth users, identities and MFA factors, then the files;
+  - **verify:** every part of the snapshot, 61 foreign keys checked for orphans, every file's bytes and each logo record. Through the APIs: anon reads, and `reviewer@admin.test` signed in, was refused evidence at aal1, and read all 275 rows after TOTP.
+  - **Results:** passed, twice in a row. A negative control (an edited row, a deleted sector, a revoked grant, a moved sequence, swapped logo bytes) failed with 21 problems naming each change. A second restore into a stack holding real data was refused. A restore across migrations was refused ("needs the same schema"). The main database was only read.
+- **2. Missing tests:**
+  - **pgTAP `17_feed_review` (39):** approve, withdraw and resolve as anon, an aal2 editor, an aal1 reviewer, `service_role`, the pipeline, an aal2 reviewer and an admin. It found a **real bug**: an unknown feed was accepted silently, because a `PERFORM` reset `FOUND`. Fixed by migration `20261008090000`; the two tests failed before it and pass after.
+  - **`scripts/pilot/tests` (24, no network):** every `verify_research` outcome; candidate selection and later rounds; `build_import` rows, skips, the geocoder fallback and box; refusal of a non-local database.
+  - **Preview safeguards:** `pilotPreviewRefusal()` (unit, including host tricks); `check-deploy-env` refuses `PILOT_PREVIEW` for staging and production.
+  - It also found that **`preview-db.mts` showed no companies** under the 7 Oct listing rule (checked: Bengaluru 0). Fixed: it marks the copy's evidence reviewed by a named stand-in, in the copy only. Checked: Bengaluru 1; the source's evidence is still 0 of 4 reviewed.
+- **3. Security items:**
+  - `FEEDBACK_SALT` missing or under 32 characters → 503 before anything runs.
+  - The rate-limit key comes only from the entry the platform's proxy recorded (`CLIENT_IP_HEADER`, `TRUSTED_PROXY_HOPS`). Client-written entries are ignored, and a request with no trustworthy address gets 503. **There is no default:** with the two unset, the form refuses every submission until the hosted spoofed-header check is done (see below). Unit-tested. The admin e2e sets the local gateway's values, and its real function still issues receipts and still refuses the sixth submission.
+  - `import_commit` keeps a row's extra company evidence as claims, reports it, and names values that differ as proposals (migration `20261008100000`; pgTAP 7 new).
+- **4. Dependabot, tested on today's code in a scratch clone, nothing merged.** Baseline: all green.
+  - **minor-and-patch:** lint, types, 716 unit tests and the build pass. Full e2e: 290 passed and 3 failed under load (51.8 min); the 3 alone: 9 of 9 passed. **Compatible.**
+  - **@types/node 26:** all pass, but ahead of the Node 24 runtime; recommend staying on 24.
+  - **TypeScript 7:** types and build pass; **lint fails** (typescript-eslint does not support TS 7).
+  - **ESLint 10:** **lint crashes** (eslint-plugin-react in eslint-config-next calls the removed `context.getFilename`).
+- **Option C hardened** (ADR-0025 updated, with 7 hosted checks outstanding):
+  - **Release provenance:** read from the release record, the deploy-production run through the API (`scripts/release-record.mts`): this commit, `main`, success, started by a person, approved for `production`.
+  - **Approved baseline:** written by each release (`scripts/approved-baseline.mts`), carried forward by automatic refreshes, and reset only by a person's allow-shrink run.
+  - **Guard (`evaluateRefresh`):** checks each city against the last deployment and against the baseline, drops to zero included. Successive 10% drops are stopped at the third. It never deploys over a site whose `build-info.json` commit is not the release's.
+  - **Rollback** happens only if the version serving is the one the run deployed.
+  - **Tests:** unit 35; `release-record` against a stand-in API (unapproved → 1, approved → 0); `refresh-guard` against a stand-in site (normal 0 with the baseline carried; another commit 1; halved 1; allowed 0 with a new baseline). Workflows schema-valid.
+  - **A Windows-only crash found and fixed:** exiting with `process.exit()` while `fetch` sockets were open gave `0xC0000409` even on success; the scripts now set `process.exitCode`.
+- **History-cleanup plan** ([history-cleanup-plan.md](history-cleanup-plan.md)): rehearsed on a throwaway clone, with recovery branch and bundle first. The final tree is identical; still 23 commits; one commit differs, only in the 3 OSM files; no trailers; authors and dates kept; fast-forward push. **Not run.** The 38 pushed commits with trailers are left alone (that would need a force-push: the owner's decision).
+- **Checks run (8 Oct 2026, from `code/`):**
+  - lint clean; typecheck clean; `npm test` 46 files, 735 passed (after the conditions below); pilot pytest 24 passed;
+  - on the test stack: pgTAP 18 files, 757 passed; parity 8; pipeline pytest 89; admin e2e 58 passed;
+  - `npx playwright test --workers=2`: **293 passed, 0 failed, 59 skipped** (19.0 min; again after the conditions below: 293 / 0 / 59, 19.3 min, and admin e2e 58, pgTAP 757).
+- **Not verified:** everything hosted (option C's seven checks, the client-address header, the drill on a hosted project). Migrations `20261008090000` and `20261008100000` are not on the main database (it is at `20261007160000`).
+- **Before the commits (owner's conditions, 8 Oct 2026):**
+  - **Simulated pilot reviews:**
+    - **Labelled, provenance kept:** the preview copy is marked (`pilot_preview.marker`), each simulated review is listed in `pilot_preview.simulated_review`, and the stand-in account's metadata says `simulated`. Original evidence fields are unchanged.
+    - **Guards:**
+      - the dataset build refuses a marked database unless `PILOT_PREVIEW=1`, and always in a release;
+      - a preview manifest carries `pilot_preview: true`, which the launch gate and the data refresh refuse;
+      - the production smoke check fails on the preview banner;
+      - `check-deploy-env` already refused `PILOT_PREVIEW`.
+    - **Checked on the test stack:** 4 simulated rows listed with source, date and note intact. The source database stayed 0 of 4 reviewed, with no marker. A staging-style build of the copy was refused, and so was a release build. A real preview build's manifest made the launch gate fail.
+  - **Backups:**
+    - `.local-backups/` is ignored and nothing in it is tracked.
+    - Its access was restricted to the owner's account and SYSTEM (`icacls`; before, a `CodexSandboxUsers` group and Administrators could read it). Checked on a dump and on the drill's `backup.json`.
+    - The drill refuses a non-ignored output folder (checked: refused before writing anything).
+    - Encryption before any off-site copy is documented, with commands, in backup-restore.md.
+  - **Visitor address:** no default any more (the form stays off), with a written hosted procedure with spoofed headers in security.md. Supabase's documentation does not settle it; a community thread (#34647) is noted as a lead only.
+  - **Diff checked before committing:** for secrets, backup files, coordinates and unintended changes (see the commit list in the handover, §11).
+
 ### 2026-10-08: P9-12 JavaScript budget (Completed)
 - **Profiled** with `npx next experimental-analyze --output` (Next 16.3.7). The route files were read with a small script: source module → client chunk, compressed size. Then a real build was measured in Chromium (every script fetched, gzipped).
 - **Found:**
