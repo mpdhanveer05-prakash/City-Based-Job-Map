@@ -113,7 +113,9 @@ function powerEvents(from: string, to: string): PowerEvent[] | { error: string }
   try {
     const script = [
       `$f = @{ LogName = 'System'; StartTime = [datetime]'${from}'; EndTime = [datetime]'${to}'; ProviderName = 'Microsoft-Windows-Kernel-Power', 'Microsoft-Windows-Power-Troubleshooter' };`,
-      `Get-WinEvent -FilterHashtable $f -ErrorAction SilentlyContinue | Where-Object { $_.Id -in 1, 42, 107, 506, 507 } | Sort-Object TimeCreated |`,
+      // A window with no matching event is an error to Get-WinEvent ("NoMatchingEventsFound"), and not a failure here.
+      `try { $e = @(Get-WinEvent -FilterHashtable $f -ErrorAction Stop) } catch { if ($_.FullyQualifiedErrorId -like 'NoMatchingEventsFound*') { $e = @() } else { throw } };`,
+      `$e | Where-Object { $_.Id -in 1, 42, 107, 506, 507 } | Sort-Object TimeCreated |`,
       `ForEach-Object { [pscustomobject]@{ at = $_.TimeCreated.ToUniversalTime().ToString('o'); id = $_.Id; message = ((($_.Message -split '\\r?\\n') | Where-Object { $_.Trim() } | Select-Object -First 2) -join ' ').Trim() } } | ConvertTo-Json -Compress`,
     ].join(" ");
     const out = execFileSync("powershell", ["-NoProfile", "-NonInteractive", "-Command", script], { encoding: "utf8", windowsHide: true }).trim();
@@ -185,7 +187,7 @@ function summarize(dir: string, exitCode?: number | null) {
     startedAt: run.startedAt ?? begin?.at,
     finishedAt: done?.at ?? null,
     playwrightStatus: done?.status ?? "no verdict: the run did not finish",
-    exitCode: exitCode ?? null,
+    exitCode: exitCode ?? run.exitCode ?? null,
     total: all.length,
     passed: count("expected"),
     failed: count("unexpected"),
