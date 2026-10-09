@@ -1,6 +1,6 @@
 # History cleanup before the first push: plan (not run)
 
-*Prepared 8 Oct 2026; rehearsed again at `1094e08` (29 unpushed commits); inventory updated 9 Oct 2026 (43 unpushed commits once the final 9 Oct docs commit is made; not rehearsed again). Status: **not run**. Run only when the owner authorizes it; push only when the owner
+*Prepared 8 Oct 2026; rehearsed at `58fccfc` (23 commits), `1094e08` (29) and `33ed204` (43, 9 Oct 2026); inventory updated 9 Oct 2026 (44 unpushed commits with the push-approval docs commit). Status: **not run**. Run only when the owner authorizes it; push only when the owner
 asks (CLAUDE.md, GIT-1).*
 
 ## What it fixes, and what it does not
@@ -11,7 +11,7 @@ before it stay as they are, so the push afterwards is a plain fast-forward. No f
 | Problem | Where | Fix |
 | --- | --- | --- |
 | OSM/Nominatim-derived pilot files (ODbL), kept out of the public repository as a precaution until the owner decides how ODbL obligations would be met (publication is not categorically prohibited; see the handover §1.6) | `code/data/pilot/bangalore/geocode-cache.json`, `import-rows.json`, `pilot.csv`; added by `5812ed2`, removed by `b55857e`; in no pushed commit | removed from every rewritten commit |
-| `Co-Authored-By: Claude …` trailers, against the owner's rule (commits carry only the owner's name) | 20 of the unpushed commits (`93ca2a6` … `2e4d8a6`); none of the 23 since (`db239d4` … `8093e91`, the runner fix after it, and the final 9 Oct docs commit) | the trailer lines are deleted from each message |
+| `Co-Authored-By: Claude …` trailers, against the owner's rule (commits carry only the owner's name) | 20 of the unpushed commits (`93ca2a6` … `2e4d8a6`); none of the 24 since (`db239d4` … `33ed204` and the push-approval docs commit) | the trailer lines are deleted from each message |
 
 **Not covered:**
 - **38 commits already on GitHub carry the same trailer.** Removing them would rewrite published history and need a
@@ -66,8 +66,9 @@ before running (precondition 4).
 | `9e34868` | FIX-ESCAPE-URL: the regression test no longer depends on the popup being open before  | no | — |
 | `743fb2b` | E2E-RUN: keep the machine awake during a run, flag suspension, detach without a shell | no | — |
 | `8093e91` | Docs: full suite on 743fb2b aborted by a Ctrl+C of unknown origin (invalid run); --det | no | — |
-| (the runner fix) | E2E-RUN: power events read when there are none; summarize keeps the exit code | no | — |
-| (the final 9 Oct docs commit) | Docs: full suite on the final code; records for 9 Oct | no | — |
+| `0420704` | E2E-RUN: read Windows power events when there are none; summarize keeps the exit code | no | — |
+| `33ed204` | Docs: full suite on the final code (8093e91): 297 passed, 0 failed, 63 skipped; records | no | — |
+| (the push-approval docs commit) | Docs: 8093e91 validated; runner checks for 0420704; rehearsal at 33ed204; push effects and staging setup | no | — |
 
 `b55857e` deleted the three files, so its tree is the same before and after the rewrite. Only `5812ed2`'s tree changes.
 
@@ -108,7 +109,7 @@ FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f \
 | Check | Command | Expected |
 | --- | --- | --- |
 | Same files at the tip | `git rev-parse 'main^{tree}'` | the tree noted in precondition 4 |
-| Same number of commits | `git rev-list --count origin/main..main` | the count noted (43 once the final 9 Oct docs commit is made, plus any later commits) |
+| Same number of commits | `git rev-list --count origin/main..main` | the count noted (44 with the push-approval docs commit, plus any later commits) |
 | Base untouched; fast-forward possible | `git merge-base --is-ancestor origin/main main && echo ok` | `ok` |
 | No OSM file anywhere in the rewritten commits | `git rev-list origin/main..main -- code/data/pilot/bangalore/geocode-cache.json code/data/pilot/bangalore/import-rows.json code/data/pilot/bangalore/pilot.csv` | nothing |
 | No trailer left | `git log --format=%B origin/main..main \| grep -ci 'co-authored-by: claude'` | `0` |
@@ -143,7 +144,28 @@ git fetch .local-backups/pre-history-cleanup-<date>.bundle 'refs/heads/main:refs
 git reset --hard restore-main
 ```
 
-## Rehearsal (8 Oct 2026, repeated at `1094e08`)
+## Rehearsal (8 Oct 2026, repeated at `1094e08` and `33ed204`)
+
+**Third run, at `33ed204` (43 commits), 9 Oct 2026.** The same steps and checks, on a throwaway clone with `origin/main`
+(`883de71`) fetched in.
+- **Before:**
+  - tip tree `f8f169756dc3`;
+  - 20 trailer lines in 20 commits;
+  - the OSM files in `5812ed2` (added) and `b55857e` (deleted).
+- **Recovery:** the branch was made, and a bundle of all refs was verified.
+- **After, every check held:**
+  - the same tree `f8f169756dc3`;
+  - 43 commits, with `883de71` still the first one's parent;
+  - no OSM file and no trailer;
+  - authors, dates and subjects kept;
+  - each message is the original minus its trailer;
+  - only `5812ed2`'s counterpart differs, and only in the three files;
+  - a fast-forward is possible;
+  - the recovery branch is still at the old head.
+- **Hashes:** the rewrite is deterministic, because names and dates are kept.
+  - `93ca2a6` → `571378f` … `5812ed2` → `760045f` … `33ed204` → `c1548cd`.
+  - Every commit after `883de71` gets a new hash.
+- **Cleanup:** the real repository's `HEAD` stayed at `33ed204`, and its working tree stayed clean.
 
 **Second run, at `1094e08` (29 commits), after the batch commits:**
 - **Tip:** the same tree (`f1cb92985c04`), and still 29 commits on `883de71`.

@@ -13,6 +13,44 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-09 (night): `8093e91` validated; runner checks; rehearsal at `33ed204`; push effects read from GitHub
+- **Validated application commit: `8093e91`.**
+  - The complete suite passed on it: 297 passed, 0 failed, 63 skipped (entry below).
+  - The skips are intentional. All 63 are project scoping: 48 desktop-only tests on mobile and 15 phone-only tests on
+    desktop. Grouped from `progress.jsonl` and matched to each spec's `test.skip`.
+  - No environment-dependent skip fired: the Geoapify tiles, `WEBGL_lose_context` and the edge marker all ran.
+- **Runner change `0420704`, targeted checks (at `33ed204`):**
+  - `npx eslint` on the runner and its reporter, and `npm run typecheck`: clean.
+  - `summarize` on scratch copies of three records (`4511c15`, `743fb2b`, `8093e91`):
+    - the counts are unchanged;
+    - the `4511c15` copy now keeps exit code 1 from `run.json`, where the recorded summary says `null`;
+    - the recorded summaries were not touched.
+  - A short recorded run, launched the verified way (PowerShell `Start-Process`, not `--detach`):
+    `node scripts/e2e-full-run.mts --workers 2 -- tests/e2e/explorer-map.spec.ts --project=desktop`.
+    - Result: 12 passed, exit 0.
+    - `power-events.json` is `[]`; before the fix this case was an error.
+    - Keep-awake held, no suspension.
+    - Lowest free memory 1214 MB.
+    - Record: `.local-test-runs/20261009-124429-33ed204/`.
+  - The runner's power query, run over a window with the known 7 Oct standby pair, returned 5 events.
+  - **`--detach` stays not verified.** The source of the Ctrl+C that ended the `743fb2b` run is still unknown.
+- **History-cleanup rehearsal at `33ed204` (43 commits), on a throwaway clone:** every check held (details in
+  [history-cleanup-plan.md](history-cleanup-plan.md)).
+  - The same tree, `f8f169756dc3`.
+  - 20 trailers and the 3 OSM files removed.
+  - Only `5812ed2`'s counterpart differs.
+  - A fast-forward push is possible; predicted new tip `c1548cd`.
+  - The real repository was not written.
+- **Read from GitHub's public API (nothing changed):**
+  - **What the push would change:**
+    - `main` = `883de71`.
+    - No environments, no rulesets, and `main` is unprotected.
+    - The old nightly `Deploy staging` deployed staging without approval on 7, 8 and 9 Oct (the Deploy step succeeded and
+      the smoke step failed), using repository-level Cloudflare secrets.
+    - `pipeline.yml` and `monitor.yml` fail on every schedule.
+  - **Protection that must exist before the push, and an ordered staging checklist:** PROJECT_HANDOVER.md §14.3–14.4.
+- **Not done (not authorized):** history rewrite, push, deploy, any hosted setting.
+
 ### 2026-10-09 (evening): full suite on the final code (`8093e91`): 297 passed, 0 failed, 63 skipped
 - **Command:** `node scripts/e2e-full-run.mts --workers 2`, started with PowerShell `Start-Process -WindowStyle Hidden` on a
   clean tree at `8093e91`. That commit contains the Escape fix `d9ee940`, the revised regression tests `9e34868` and the

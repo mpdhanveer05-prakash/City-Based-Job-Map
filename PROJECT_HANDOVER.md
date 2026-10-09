@@ -97,7 +97,10 @@ following is verified only locally; see `docs/progress.md`:
         on the fix, idle and under load.
     - **The worker shutdown hang** was traced, by timing, to Modern Standby. The runner now keeps the machine awake and
       flags any suspension (`743fb2b`).
-    - **Full suite on the final code `8093e91`: 297 passed, 0 failed, 63 skipped** (§8.1).
+    - **Full suite on the final code `8093e91`: 297 passed, 0 failed, 63 skipped** (§8.1). `8093e91` is the
+      application commit the complete suite validated. All 63 skips are intentional: each is a desktop-only or
+      phone-only test on the other project, and no skip that depends on the environment (map key, WebGL, a logo near
+      the edge) fired. Later commits change only the runner (`0420704`, checked separately) and documents.
     - An earlier attempt on `743fb2b` was ended by a Ctrl+C of unknown origin and is recorded as invalid.
 
 Latest checks, from `code/`:
@@ -105,6 +108,10 @@ Latest checks, from `code/`:
 - **Without a database (8 Oct, after P9-12):** lint and typecheck clean; unit 45 files, 692 passed; full e2e 293 passed, 0 failed, 59 skipped (by design; 2 workers).
 - **9 Oct, before committing the batch:** lint and typecheck clean; unit 46 files, 736 passed; on the test stack, pgTAP 19 files, 781 passed and admin e2e 60 passed; smoke suite on a synthetic-staging build 6 passed, 4 skipped (by design); CDP attach 3 passed (three runs); `gate-runner.spec.ts` and `hit-test.spec.ts` 9 passed (desktop, alone). **Full e2e on `4511c15`: 294 passed, 1 failed, 61 skipped** (`.local-test-runs/20261009-050929-4511c15/`).
 - **9 Oct, final code `8093e91`:** lint and typecheck clean; unit 46 files, 739 passed; **full e2e 297 passed, 0 failed, 63 skipped** (`.local-test-runs/20261009-105845-8093e91/`).
+- **9 Oct, runner change `0420704` (checked at `33ed204`):** ESLint and typecheck clean. `summarize` on copies of three
+  records gave unchanged counts, and the `4511c15` copy now keeps exit code 1 (it was null before). A short recorded run
+  of `explorer-map.spec.ts` on desktop, started with `Start-Process`, gave 12 passed, exit 0, and an empty standby list,
+  where it was previously an error. The power query over a window with a known standby pair returned 5 events.
 - **P9-12 (8 Oct):** explorer JavaScript 629 → 566 KB gzipped (D-12 target 650 KB); city-selection page 134 KB (its own 150 KB budget, a proposal).
 
 **What to do next, and who does it: [§14 Transition checklist](#14-transition-checklist-9-oct-2026).**
@@ -1134,7 +1141,8 @@ All runs were on Windows 11 with Node 24, from `code/`, on the uncommitted worki
 | **Full e2e on `4511c15`** | `node scripts/e2e-full-run.mts --workers 2` (clean tree, detached; 1.8 GB free at the start, lowest 609 MB, CPU at most 73%) | **294 passed, 1 failed, 61 skipped**; 0 flaky, timed out or unfinished; 19.0 min. Failed: `explorer-map.spec.ts` "Escape and the close button close the popup and clear the selection" (desktop): the popup closed, but `?company=` stayed in the URL (fixed in `d9ee940`). Record: `.local-test-runs/20261009-050929-4511c15/` |
 | URL-related specs under load, `5a60ae3` | the recorded runner, 9 specs, 2 workers, 4 busy threads | 141 passed, 1 failed, 40 skipped. The failure was the new regression test's own trigger, which never fired because the popup appeared after the camera commit; the test was revised (`9e34868`). It was then re-verified on the old code (11 of 12 failed with the defect, 1 aborted at navigation) and on the fix (6/6 idle, 10/10 under load). Record: `.local-test-runs/20261009-072632-5a60ae3/` |
 | Full e2e on `743fb2b` | `--detach` | **Invalid:** ended at 10:55:59Z by a Ctrl+C of unknown origin (`[WebServer] ^C^C`, exit `0xC000013A`); 135 passed, 2 casualties, 223 not run. Record: `.local-test-runs/20261009-104542-743fb2b/` |
-| **Full e2e on the final code `8093e91`** | `node scripts/e2e-full-run.mts --workers 2` via `Start-Process`; keep-awake held | **297 passed, 0 failed, 63 skipped**; 0 flaky, timed out or unfinished; 18.0 min; no suspension, no standby events; lowest free memory 653 MB. Record: `.local-test-runs/20261009-105845-8093e91/` |
+| **Full e2e on the final code `8093e91`** | `node scripts/e2e-full-run.mts --workers 2` via `Start-Process`; keep-awake held | **297 passed, 0 failed, 63 skipped**; 0 flaky, timed out or unfinished; 18.0 min; no suspension, no standby events; lowest free memory 653 MB. Record: `.local-test-runs/20261009-105845-8093e91/`. **The validated application commit**; the 63 skips are all project scoping (desktop-only or phone-only tests) |
+| Runner change `0420704`, at `33ed204` | `Start-Process node scripts/e2e-full-run.mts --workers 2 -- tests/e2e/explorer-map.spec.ts --project=desktop`; `summarize` on copies of three records | 12 passed, exit 0, standby events `[]` (an error before the fix); re-summarized counts unchanged, the `4511c15` copy keeps exit 1. Record: `.local-test-runs/20261009-124429-33ed204/`. `--detach` stays **not verified** |
 
 **Proposal, not an approved requirement:** three consecutive green full suites before a release candidate. Earlier full runs on 7 Oct had 4 and 2 failures (a slot-timeout bug, then DEF-3), and one 275/1 run (the first DEF-1 user-side test). A 7 Oct run with 3 workers and 0.7 GB of free memory had 2 hit-test failures and was cut off; the same four map specs passed alone the next day (41 passed, 1 skipped, 1 worker), then the full run above. Low memory on this laptop still makes full runs unreliable (DEF-2). The night of 8–9 Oct gave another example (above); its cause is not established.
 
@@ -1389,11 +1397,11 @@ P6-04, P5-05, P4-03, Phase 10, the PMTiles migration, Chennai (as the second rel
 | Item | Value |
 | --- | --- |
 | Branch | `main` |
-| Local HEAD | 9 Oct 2026: the final docs commit of the day, on the runner fix after `8093e91` (at `04aa427` when this handover was first written) |
+| Local HEAD | 9 Oct 2026: the push-approval docs commit, on `33ed204` (at `04aa427` when this handover was first written) |
 | Remote HEAD (`origin/main`) | `883de71` "P9-06: ownership status separate from startup stage…" (6 Oct 2026) |
-| Unpushed commits | **43** (`93ca2a6` … `8093e91`, the runner fix and the final 9 Oct docs commit, 6–9 Oct); the full list is in the history-cleanup plan |
+| Unpushed commits | **44** (`93ca2a6` … `33ed204`, then the push-approval docs commit, 6–9 Oct); the full list is in the history-cleanup plan |
 | History cleanup pending | `5812ed2` contains OSM/Nominatim-derived pilot files (`import-rows.json`, `pilot.csv`, `geocode-cache.json`); `b55857e` removed them. 20 unpushed commits carry `Co-Authored-By: Claude` trailers. **Plan, rehearsed: [docs/history-cleanup-plan.md](docs/history-cleanup-plan.md)** (only unpushed commits rewritten; the same final tree; a fast-forward push; recovery branch and bundle first). Not run: awaiting the owner. The 38 pushed commits with trailers would need a force-push (not recommended). `e8bb5ad` and `0f79828` are labelled WIP. |
-| Working tree | Clean after the final 9 Oct docs commit. The 8 Oct work is in `4ea4218` … `e0c6b95`, the 9 Oct work in `9de729f` … `8093e91` and that docs commit |
+| Working tree | Clean after the push-approval docs commit. The 8 Oct work is in `4ea4218` … `e0c6b95`, the 9 Oct work in `9de729f` … `33ed204` and that docs commit |
 | Open PRs | 4 Dependabot PRs (tested locally 8 Oct; see DEPS-1) |
 | Repository visibility | **Public** |
 
@@ -1671,9 +1679,10 @@ commands, the checks and recovery.
 - **Current HEAD and range:** listed in §11 and in the plan's inventory. The rewrite covers `origin/main..main`, so commits
   made after the inventory are included automatically.
   - On 9 Oct 2026 only `5812ed2` holds the OSM-derived files.
-  - The 20 commits from `93ca2a6` to `2e4d8a6` carry Claude trailers. None since does (checked 9 Oct through `8093e91`:
-    43 unpushed commits once the final 9 Oct docs commit is made).
-  - The rehearsal was last run at `1094e08`; re-run it on the final HEAD before running the plan.
+  - The 20 commits from `93ca2a6` to `2e4d8a6` carry Claude trailers. None since does (checked 9 Oct through `33ed204`;
+    the push-approval docs commit after it makes 44 unpushed commits).
+  - **Rehearsed again at `33ed204` (43 commits), 9 Oct:** every check held on a throwaway clone (results in the plan).
+    Re-run it on the final HEAD immediately before running the plan.
 - **Recovery first:** the branch `backup/pre-history-cleanup-<date>`, and a verified bundle of every ref in
   `.local-backups/`.
 - **Must hold afterwards, or recover:**
@@ -1706,44 +1715,129 @@ A workflow started by hand (`workflow_dispatch`) always runs, because starting i
 | `deploy-production.yml` | by hand only, with the typed phrase | **Deploys production** and pushes a release tag. | phrase; `production` environment reviewers; audit; launch gate |
 | Dependabot | weekly | Opens PRs (notifications); CI runs on them. **Merging is the Owner's.** | none needed |
 
-**What GitHub runs today, from `origin/main` = `883de71`:**
-- The old `deploy-staging.yml` has **no** environment gate and no automation gate. Its nightly schedule deployed staging on
-  7 Oct, and keeps doing so with old code and synthetic data.
-- The old `pipeline.yml` and `monitor.yml` fail while `PIPELINE_DATABASE_URL` is unset.
-- After the push, the new gates stop all of these until the Owner sets the variables.
-- **Owner:** decide whether to disable the old schedules on GitHub now (Actions → each workflow → Disable workflow), before
-  the push.
+**What GitHub runs today, from `origin/main` = `883de71`** (read 9 Oct 2026 from GitHub's public API; nothing was changed):
+- The old `deploy-staging.yml` has **no** environment gate and no automation gate. Its nightly schedule ran on 7, 8 and
+  9 Oct (00:07, 00:24 and 00:38 UTC). Each time the **Deploy step succeeded**, so staging was redeployed without approval,
+  and the smoke step failed. The next run is due at 20:45 UTC (or later: GitHub delays schedules).
+- That deploy has no `environment:`, so it reads `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from **repository
+  level**. Those secrets exist and work.
+- The old `pipeline.yml` and `monitor.yml` fail on every schedule while `PIPELINE_DATABASE_URL` is unset.
+- **On GitHub:**
+  - no environments (`total_count: 0`);
+  - no rulesets;
+  - `main` is not protected.
+- After the push, the new gates stop all scheduled and dispatched runs until the Owner sets the variables.
+  - A push starts only `ci.yml`: read-only token, no secrets, no deploy. Its gitleaks job scans the whole pushed history.
+- **Owner:** decide whether to disable `Deploy staging` on GitHub now (Actions → Deploy staging → ⋯ → Disable
+  workflow) rather than let it run nightly until the push. A disabled workflow **stays disabled after the push**. Enable it
+  again before the first by-hand staging deploy.
+
+**Protection that must exist before the push** (each closes a gap that the push would otherwise leave open):
+1. **The variables `AUTOMATION_ENABLED` and `PRODUCTION_REFRESH_ENABLED` are absent or not `true`.** The public API cannot
+   read variables, so the Owner checks under Settings → Secrets and variables → Actions → Variables.
+2. **The environments `staging`, `production` and `production-data` exist**, each limited to deployment branch `main`.
+   `staging` and `production` need required reviewers.
+   - Reason: a job that names an environment which doesn't exist creates it **without protection**. A by-hand run would
+     then deploy with no reviewer step.
+3. **No Cloudflare secret at repository level.** Every job can read a repository secret, including both production
+   workflows. Put `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in `staging` only, delete the repository copies, and
+   revoke the old token in Cloudflare if it is broader than Workers Scripts: Edit.
+4. **No repository-level `SUPABASE_URL`, `SUPABASE_ANON_KEY` or `SITE_URL`.** Values set there are visible to both
+   environments (see [docs/deploy-environments.md](docs/deploy-environments.md)).
+5. **A branch ruleset on `main`** that blocks force pushes and deletion, so the fast-forward stays the only way in.
+   - Don't require pull requests yet: that would refuse the push itself.
+   - Add the PR requirement, plus CODEOWNERS review for `.github/workflows/`, after the push.
+6. **Settings → Actions → General:**
+   - Workflow permissions: *Read repository contents* (the default);
+   - fork pull requests from outside collaborators need approval (the repository is public).
+
+**Before the first production release, not before the push:**
+- the `release/*` tag ruleset;
+- the `production` and `production-data` variables and secrets;
+- the production Supabase project.
+
+With items 1–3 in place, nothing a push enables can deploy or write hosted data without a separate approval:
+- Scheduled and dispatched runs are skipped.
+- A by-hand run waits for an environment reviewer.
+- `pipeline.yml` started by hand fails at its secret check until `PIPELINE_DATABASE_URL` exists.
 
 ### 14.4 Hosted staging setup
 
-**Owner** (dashboards and secrets), with **Dev** following [docs/deploy-environments.md](docs/deploy-environments.md) and
-checking:
-1. **Supabase staging project:**
-   - apply the migrations (`npx supabase db push` with the project linked; Dev can prepare and run it when authorized);
-   - **disable sign-ups**, require TOTP MFA, and create the administrators, each enrolling a factor;
-   - Storage buckets come from the migrations (`company-logos` public, `company-logos-pending` private): check them after
-     the push;
-   - Edge Functions `click`, `submit-feedback`, `request-rebuild`, `activate-logo`, with their secrets:
-     - `ALLOWED_ORIGINS`, `TURNSTILE_SECRET_KEY`;
-     - `FEEDBACK_SALT`, at least 32 characters;
-     - `GITHUB_DISPATCH_TOKEN` (fine-grained, this repository, staging only), `GITHUB_REPOSITORY`;
-     - `REBUILD_EVENT_TYPE` unset on staging;
-     - `CLIENT_IP_HEADER` and `TRUSTED_PROXY_HOPS` **only after 14.5 step 3**. Until then the form refuses submissions, by
-       design;
-   - the pipeline login: a role that is a member of `pipeline`, never the service role. Its URL becomes
-     `PIPELINE_DATABASE_URL`, decided under PIPE-1.
-2. **GitHub, environment `staging`:**
-   - required reviewers, and deployment branches `main` only;
-   - the variables `DEPLOY_ENV`, `SITE_URL`, `SUPABASE_*`, `OTHER_ENV_SUPABASE_PROJECT_REF`, `GEOAPIFY_KEY`,
-     `TURNSTILE_SITE_KEY`, and `ALLOW_SYNTHETIC_DATA` only for a synthetic staging;
-   - the secrets `CLOUDFLARE_API_TOKEN` (scoped to the staging Worker) and `CLOUDFLARE_ACCOUNT_ID`.
-3. **GitHub, repository:**
-   - the `release/*` tag ruleset;
-   - CODEOWNERS and branch protection for `.github/workflows/`;
-   - delete any repository-level Supabase or site variables;
-   - leave `AUTOMATION_ENABLED` and `PRODUCTION_REFRESH_ENABLED` unset until 14.5 is done.
-4. **The `production` and `production-data` environments** (required reviewers on `production`) follow the same pattern
-   later. Nothing deploys production before the release checklist.
+The Owner does each step in order (9 Oct 2026). **Dev** runs the commands marked *Dev* only when authorized, and records
+the results. The details of each value are in [docs/deploy-environments.md](docs/deploy-environments.md).
+
+**Before the push** (the protection in 14.3):
+1. **GitHub → Settings → Secrets and variables → Actions → Variables:**
+   - check that `AUTOMATION_ENABLED` and `PRODUCTION_REFRESH_ENABLED` are absent;
+   - delete any repository-level `SUPABASE_URL`, `SUPABASE_ANON_KEY` or `SITE_URL`.
+2. **Cloudflare → My Profile → API Tokens → Create token:** Account › Workers Scripts › Edit, this account only. Note the
+   token and the Account ID.
+3. **Geoapify:** create a key restricted to the referrer `company-map-staging.company-map.workers.dev`.
+4. **GitHub → Settings → Environments → New environment `staging`:**
+   - Required reviewers: yourself;
+   - Deployment branches: Selected branches, `main`;
+   - secrets: `CLOUDFLARE_API_TOKEN` (step 2), `CLOUDFLARE_ACCOUNT_ID`;
+   - variables:
+     - `DEPLOY_ENV=staging`;
+     - `SITE_URL=https://company-map-staging.company-map.workers.dev`;
+     - `ALLOW_SYNTHETIC_DATA=true`;
+     - `GEOAPIFY_KEY` (step 3).
+5. **New environments `production` and `production-data`:**
+   - deployment branch `main`;
+   - required reviewers on `production` (with *Prevent self-review* once there is a second reviewer);
+   - no values yet.
+6. **Repository secrets:**
+   - delete `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`;
+   - then revoke that old token in Cloudflare.
+   - This also stops the old nightly staging deploy, which needs those secrets.
+7. **Settings → Rules → Rulesets → New branch ruleset:**
+   - target the default branch, Active;
+   - *Restrict deletions* and *Block force pushes*;
+   - no pull-request requirement until after the push.
+8. **Settings → Actions → General:**
+   - Workflow permissions: *Read repository contents*;
+   - fork pull requests: require approval for all outside collaborators.
+
+**The push:**
+
+9. Authorize the history cleanup (14.2), then the push, separately.
+
+**After the push:**
+
+10. **Actions → Deploy staging → Run workflow (`main`)**, then approve the review request. It should report "staging shows
+    the synthetic sample", pass the local smoke suite, deploy, and pass the live smoke suite. *Dev* records the run.
+11. **Supabase → New project**, for staging:
+    - Also create the empty production project now: staging's check requires `OTHER_ENV_SUPABASE_PROJECT_REF`.
+    - In staging: Authentication → disable sign-ups and enable TOTP MFA.
+    - Give *Dev* the database password, for `npx supabase link`, `db push` and `functions deploy`.
+12. **Cloudflare → Turnstile → Add widget** for the staging host. Note the site key and the secret key.
+13. **GitHub → Developer settings → Fine-grained token:**
+    - this repository only, Contents: Read and write (needed for `repository_dispatch`);
+    - for staging only.
+14. **Supabase staging → Edge Functions → Secrets:**
+    - set:
+      - `ALLOWED_ORIGINS` (the staging URL);
+      - `TURNSTILE_SECRET_KEY`;
+      - `FEEDBACK_SALT` (`openssl rand -hex 32`);
+      - `GITHUB_DISPATCH_TOKEN` (step 13);
+      - `GITHUB_REPOSITORY=mpdhanveer05-prakash/City-Based-Job-Map`;
+    - not `REBUILD_EVENT_TYPE`;
+    - not `CLIENT_IP_HEADER` or `TRUSTED_PROXY_HOPS` until 14.5 step 3.
+15. **Supabase → Authentication → Users:** create the administrators. *Dev* adds their `admin_user` rows. Each
+    administrator enrolls TOTP.
+16. **The `staging` environment:**
+    - delete `ALLOW_SYNTHETIC_DATA`;
+    - add:
+      - `SUPABASE_PROJECT_REF`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`;
+      - `OTHER_ENV_SUPABASE_PROJECT_REF` (production's ref);
+      - `TURNSTILE_SITE_KEY`.
+    - Run Deploy staging by hand and approve it.
+17. Approve each step of 14.5 in order. Only then:
+    - set `AUTOMATION_ENABLED=true`;
+    - set `PIPELINE_DATABASE_URL`, once PIPE-1 decides its project.
+
+Production (`release/*` tag ruleset, environment values, CODEOWNERS with required review) comes later. Nothing deploys
+production before the release checklist.
 
 ### 14.5 Hosted validation, in this order
 
