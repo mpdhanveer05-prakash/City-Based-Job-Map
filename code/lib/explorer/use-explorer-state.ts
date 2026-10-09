@@ -3,10 +3,11 @@
 // The explorer's state lives in the URL (CLAUDE.md, Conventions). This hook is the one place components
 // read it and the one place they change it: `parseExplorerState` and `serializeExplorerSearch`
 // (lib/filters/url.ts) do the parsing and writing, `historyMode` decides push, replace, or nothing.
+// Every write starts from the live URL (window.location), never from a render's state, which may be older.
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo } from "react";
 import { rememberExplorer } from "./last-explorer";
-import { explorerHref, historyMode, parseExplorerState, type ExplorerState } from "../filters/url";
+import { canonicalRewrite, explorerHref, historyMode, parseExplorerState, type ExplorerState } from "../filters/url";
 import type { CitySlug } from "../filters/schema";
 
 export type ExplorerChange = Partial<Omit<ExplorerState, "city">>;
@@ -24,13 +25,14 @@ export function useExplorerState(city: CitySlug): readonly [ExplorerState, (chan
 
   // A URL that is not canonical (stages without Startup, a stray parameter, unsorted lists) is rewritten in place, so
   // what the address bar shows is what the page is showing. It replaces the entry: nothing is added to history.
+  // It tidies the URL as it is now, not this render's `state`: the effect can run after a newer change has already
+  // been written (a close pushed in the gap before this render's effects), and must not write the older state back.
   useEffect(() => {
-    const canonical = explorerHref(state);
-    const current = window.location.pathname.replace(/\/$/, "") + window.location.search;
-    if (canonical !== current) window.history.replaceState(null, "", canonical);
+    const { href, rewrite } = canonicalRewrite(city, window.location);
+    if (rewrite) window.history.replaceState(null, "", href);
     // The company pages' "Back to map" returns here, filters and camera included.
-    rememberExplorer(canonical);
-  }, [state]);
+    rememberExplorer(href);
+  }, [city, state]);
 
   const update = useCallback(
     (change: ExplorerChangeInput, options: UpdateOptions = {}) => {

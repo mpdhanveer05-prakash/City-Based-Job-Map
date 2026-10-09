@@ -180,6 +180,17 @@ export function explorerHref(state: ExplorerState): string {
   return search ? `/${state.city}?${search}` : `/${state.city}`;
 }
 
+/**
+ * The canonical form of the explorer URL the browser shows now, and whether the address bar needs rewriting to it.
+ * It reads only the live location, never a render's copy of the state: that copy can be older than the address bar (a
+ * close that pushed a new entry after the render, before its effects ran), and writing it back would undo the newer
+ * change (9 Oct 2026: the company returned to the URL after Escape closed its popup).
+ */
+export function canonicalRewrite(city: CitySlug, live: { pathname: string; search: string }): { href: string; rewrite: boolean } {
+  const href = explorerHref({ city, ...parseExplorerSearch(new URLSearchParams(live.search)) });
+  return { href, rewrite: href !== live.pathname.replace(/\/$/, "") + live.search };
+}
+
 /** What a state change should do to the browser's history. */
 export type HistoryMode = "push" | "replace" | "none";
 

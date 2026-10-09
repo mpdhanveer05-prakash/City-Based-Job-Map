@@ -14,6 +14,7 @@ import {
   type Filters,
 } from "@/lib/filters/schema";
 import {
+  canonicalRewrite,
   defaultExplorerState,
   explorerHref,
   historyMode,
@@ -346,6 +347,32 @@ describe("round trip over generated states", () => {
       const f = normalizeFilters(randomState(r).filters);
       if (f.stages.length > 0) expect(f.types).toContain("startup");
     }
+  });
+});
+
+describe("canonicalRewrite: the URL-tidying effect works on the live URL", () => {
+  const live = (pathname: string, search: string) => ({ pathname, search });
+
+  it("tidies a non-canonical address bar in place", () => {
+    expect(canonicalRewrite("bangalore", live("/bangalore/", "?stage=seed&type=mnc"))).toEqual({ href: "/bangalore?type=mnc", rewrite: true });
+    expect(canonicalRewrite("chennai", live("/chennai", "?type=startup&view=list"))).toEqual({ href: "/chennai?view=list&type=startup", rewrite: true });
+  });
+
+  it("leaves a canonical address bar alone", () => {
+    expect(canonicalRewrite("bangalore", live("/bangalore", ""))).toEqual({ href: "/bangalore", rewrite: false });
+    expect(canonicalRewrite("bangalore", live("/bangalore", "?map=12.97160%2C77.59460%2C11.00"))).toEqual({
+      href: "/bangalore?map=12.97160%2C77.59460%2C11.00",
+      rewrite: false,
+    });
+  });
+
+  // 9 Oct 2026: a render's state can be older than the address bar when its effect runs (a close pushed the URL
+  // without the company in between). The rewrite depends on the live URL alone, so the older company cannot return.
+  it("keeps a company that a newer change removed out of the URL", () => {
+    const afterClose = live("/bangalore", "?map=13.04080%2C77.59587%2C17.00");
+    const { href, rewrite } = canonicalRewrite("bangalore", afterClose);
+    expect(rewrite).toBe(false);
+    expect(href).not.toContain("company=");
   });
 });
 

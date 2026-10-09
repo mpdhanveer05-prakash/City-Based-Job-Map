@@ -103,6 +103,62 @@ test.describe("explorer shell", () => {
     void office;
   });
 
+  // Regression, 9 Oct 2026 (full run on 4511c15): the camera write after the fly to a shared company commits a render
+  // whose effects run a moment later. A close in that gap pushed the URL without the company, then the explorer's
+  // URL-tidying effect, still holding the older state, wrote the company back: the popup closed, the URL kept it.
+  // Here the close is delivered exactly in that gap: in a microtask right after the router commits the camera URL
+  // (the commit re-writes the URL it already shows), before that commit's effects run.
+  for (const how of ["Escape", "the close button"] as const) {
+    test(`closing with ${how} just after the camera reaches the URL clears the company, and Back and Forward still work`, async ({ page, request }, testInfo) => {
+      test.skip(testInfo.project.name === "mobile");
+      await page.addInitScript((closeWith) => {
+        const w = window as unknown as { __closeInGap?: "armed" | "fired" };
+        w.__closeInGap = "armed";
+        const replace = history.replaceState.bind(history);
+        history.replaceState = (data: unknown, unused: string, url?: string | URL | null) => {
+          const href = url == null ? "" : new URL(String(url), location.href).href;
+          const sameUrl = href === location.href;
+          const result = replace(data, unused, url);
+          if (w.__closeInGap === "armed" && sameUrl && /[?&]map=/.test(href) && /[?&]company=/.test(href)) {
+            const popup = document.querySelector<HTMLElement>('[data-testid="map-popup"]');
+            if (popup) {
+              w.__closeInGap = "fired";
+              queueMicrotask(() => {
+                if (closeWith === "Escape") {
+                  popup.focus();
+                  popup.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+                } else {
+                  popup.querySelector<HTMLButtonElement>('button[aria-label^="Close"]')?.click();
+                }
+              });
+            }
+          }
+          return result;
+        };
+      }, how);
+      const data = await loadCityData(request, "bangalore");
+      const { company } = isolatedOffice(data);
+      await openExplorer(page, `/bangalore?company=${company.slug}`);
+
+      const popup = page.getByTestId("map-popup");
+      await expect.poll(() => page.evaluate(() => (window as unknown as { __closeInGap?: string }).__closeInGap), {
+        timeout: 30_000,
+        message: "the close reached the popup in the gap (if never: the router no longer re-writes the URL on commit; revisit this test)",
+      }).toBe("fired");
+      await expect(popup).toBeHidden();
+      await expect(page).not.toHaveURL(/company=/);
+      await expect(page).toHaveURL(/[?&]map=/);
+
+      // The close added a history entry: Back reopens the company, Forward closes it again.
+      await page.goBack();
+      await expect(page).toHaveURL(new RegExp(`company=${company.slug}`));
+      await expect(popup).toBeVisible();
+      await page.goForward();
+      await expect(popup).toBeHidden();
+      await expect(page).not.toHaveURL(/company=/);
+    });
+  }
+
   test("a shared link with ?company= flies to the company and opens its popup", async ({ page, request }, testInfo) => {
     test.skip(testInfo.project.name === "mobile");
     const data = await loadCityData(request, "bangalore");
