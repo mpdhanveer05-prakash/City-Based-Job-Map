@@ -13,6 +13,24 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-09 (evening): full suite on `743fb2b` aborted by a Ctrl+C (not a result)
+- **Command:** `node scripts/e2e-full-run.mts --detach --workers 2`, at 16:15 local. Record:
+  `.local-test-runs/20261009-104542-743fb2b/`.
+- **What happened:**
+  - at 10:55:47Z the map-lifecycle test's tab crashed ("Target crashed");
+  - at 10:55:58Z the gate-runner short run's session closed;
+  - the console shows `[WebServer] ^C^C`;
+  - Playwright exited with `0xC000013A` (`STATUS_CONTROL_C_EXIT`) at 10:55:59Z.
+- **Recorded:** 360 tests, 135 passed, 2 "failed" (both in the second before the kill), 1 never finished, 222 never
+  started. **Invalid: the run was killed.** The two failures are casualties, not results.
+- **Ruled out:** standby (no gap; no Kernel-Power events). The System log has no error or resource event in 10:53–10:58Z.
+- **Not known:** what sent the Ctrl+C.
+  - This was the first full run through `--detach`, whose process has no console, so Playwright's command got a new
+    hidden console. The earlier long runs were started with PowerShell `Start-Process` and were never interrupted.
+  - Memory fell to 513 MB early in the run.
+  - The runner's power-event query also failed at the end.
+- `--detach` is therefore marked not verified; the full suite is relaunched with `Start-Process`.
+
 ### 2026-10-09 (evening): worker shutdown hang traced to Modern Standby; the runner keeps the machine awake
 - **Finding (by timing, not reproduced on purpose):** the System log's Kernel-Power events 506/507 (Modern Standby
   entered/exited) cover every anomaly of the day:
