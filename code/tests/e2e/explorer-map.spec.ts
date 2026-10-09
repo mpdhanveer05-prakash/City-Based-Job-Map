@@ -141,7 +141,19 @@ test.describe("explorer shell", () => {
       await openExplorer(page, `/bangalore?company=${company.slug}`);
 
       const popup = page.getByTestId("map-popup");
-      await expect.poll(() => page.evaluate(() => (window as unknown as { __closeInGap?: string }).__closeInGap), {
+      const trigger = () => page.evaluate(() => (window as unknown as { __closeInGap?: string }).__closeInGap);
+      // On a loaded machine the popup can appear only after the camera's commit, leaving nothing to close in that gap
+      // (9 Oct 2026: the trigger stayed armed). Then a small pan with the popup open writes the camera again: the same
+      // commit, now with the popup there.
+      await expect.poll(async () => (await trigger()) === "fired" || (await popup.isVisible()), { timeout: 30_000 }).toBe(true);
+      if ((await trigger()) === "armed") {
+        await page.evaluate(() => {
+          const map = window.__explorer!.map;
+          const camera = map.getCamera();
+          map.jumpTo({ ...camera, lng: camera.lng + 0.0001 });
+        });
+      }
+      await expect.poll(trigger, {
         timeout: 30_000,
         message: "the close reached the popup in the gap (if never: the router no longer re-writes the URL on commit; revisit this test)",
       }).toBe("fired");

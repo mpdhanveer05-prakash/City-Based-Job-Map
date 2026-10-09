@@ -13,6 +13,29 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-09 (later): URL-related specs under load on `5a60ae3`: 141 passed, 1 failed, 40 skipped
+- **Command:** `node scripts/e2e-full-run.mts --workers 2 -- <9 specs>`, detached; 4 busy threads alongside.
+  - The 9 specs: company pages, explorer filters, explorer map, navigation, open-tab update, phone, stylesheet timing, and
+    a11y keyboard and pages.
+  - Record: `.local-test-runs/20261009-072632-5a60ae3/` (with `failure-contexts/`).
+- **Conditions:** 5.2 GB free before the start; lowest 246 MB; CPU up to 91%.
+- **Result: 182 tests, 141 passed, 1 failed, 40 skipped; 0 flaky, timed out or unfinished; 11.0 min.**
+  - The original Escape test passed, and so did the Escape regression variant.
+- **The failure:** the new regression test, close-button variant (desktop): "the close reached the popup in the gap", with
+  the trigger still `armed` after 30 s.
+  - Under load, the popup appeared only after the camera's commit, so the test's own guard failed: the sequence it
+    recreates never happened. The product defect did not recur.
+  - **Test fixed:** if the trigger has not fired once the popup is visible, a small pan writes the camera again (the
+    same commit, now with the popup open).
+- **The revised regression tests, re-verified** (desktop, both variants):
+  - **Against the unfixed hook** (the effect from `d9ee940^`, put back temporarily, then restored):
+    - idle: 6 of 6 failed, with the full run's URL error;
+    - with 4 busy threads: 6 of 6 failed, 5 with that error and 1 at `page.goto: net::ERR_ABORTED` (that one detected
+      nothing).
+  - **Against the fix:** idle 6 of 6 passed; with 4 busy threads, 10 of 10 passed.
+  - A server outlived my verification script: Git Bash's process ID is not a Windows PID, so its `taskkill` did nothing.
+    The next build then failed with `EBUSY` on `out/`. The server was stopped by hand and the fixed half rerun.
+
 ### 2026-10-09 (afternoon): the Escape/URL failure demonstrated and fixed (`d9ee940`); worker shutdown hang open
 - **Instrumentation** (a temporary spec, never committed; kept outside the suite):
   - every URL write, with its call stack;
