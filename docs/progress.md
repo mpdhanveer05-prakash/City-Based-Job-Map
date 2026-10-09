@@ -13,6 +13,35 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-09 (evening): full suite on the final code (`8093e91`): 297 passed, 0 failed, 63 skipped
+- **Command:** `node scripts/e2e-full-run.mts --workers 2`, started with PowerShell `Start-Process -WindowStyle Hidden` on a
+  clean tree at `8093e91`. That commit contains the Escape fix `d9ee940`, the revised regression tests `9e34868` and the
+  runner changes `743fb2b`.
+- **Record:** `.local-test-runs/20261009-105845-8093e91/`.
+- **Result: 360 tests, 297 passed, 0 failed, 63 skipped; 0 flaky, timed out, interrupted or unfinished; 18.0 min;
+  exit 0.**
+  - Desktop: 165 passed, 15 skipped. Mobile: 132 passed, 48 skipped.
+  - The 63 skips are the 61 by-design skips plus the two new regression variants on mobile (desktop only).
+- **Conditions:** lowest free memory 653 MB, CPU up to 98% (18 samples); keep-awake held; no gap over 3 min.
+- **Standby and sleep events in the window:** none.
+  - The runner's own read failed at the end: `Get-WinEvent` treats "no matching events" as an error, so PowerShell
+    exited 1.
+  - Fixed in `0420704`, after the run (tooling only; no application or test code changed since `8093e91`): no
+    matching events is now an empty list, and any other error is still reported. Checked on a window with the known
+    standby pair, and on this run's window: none.
+  - This run's `power-events.json` was written afterwards with the fixed query, and its summary re-derived (counts
+    unchanged).
+  - `summarize` now also keeps the exit code from `run.json`.
+- **Not verified:** what sent the Ctrl+C that ended the previous attempt on `743fb2b` (entry below); `--detach` for long
+  runs.
+- **Clean-up:** the temporary diagnostics, all outside the repository and never committed, were deleted. They were the
+  instrumented spec, the worker watcher, the CPU-load script, the check scripts and their logs. The `.local-test-runs/`
+  records stay (git-ignored).
+- **Next:**
+  - the owner's open decisions (unchanged; see Current state);
+  - optionally, find the Ctrl+C's source before relying on `--detach`;
+  - the history-cleanup rehearsal again on the final HEAD before any rewrite (not authorized).
+
 ### 2026-10-09 (evening): full suite on `743fb2b` aborted by a Ctrl+C (not a result)
 - **Command:** `node scripts/e2e-full-run.mts --detach --workers 2`, at 16:15 local. Record:
   `.local-test-runs/20261009-104542-743fb2b/`.

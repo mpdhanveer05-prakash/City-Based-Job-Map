@@ -84,15 +84,27 @@ following is verified only locally; see `docs/progress.md`:
 
     **The full e2e suite has no complete result on this code.** A run on the night of 8–9 Oct took about 8 hours on a
     busy laptop and lost its summary. It left two timeouts, `gate-runner.spec.ts` and `hit-test.spec.ts`; both passed
-    when rerun alone. That suggests resource contention but does not prove it.
+    when rerun alone. The System log later showed the laptop in Modern Standby all night (lid closed), with each
+    timeout falling on a standby transition, to the second. That is timing evidence; it was not reproduced on purpose.
 
-    **Full e2e on `4511c15` (9 Oct, recorded):** 294 passed, 1 failed, 61 skipped. The failure is a URL that kept
-    `?company=` after Escape closed the popup; it is under investigation (§8.1).
+    **Full e2e on `4511c15` (9 Oct, recorded):** 294 passed, 1 failed, 61 skipped. The failure: a URL that kept
+    `?company=` after Escape closed the popup.
+13. **Later on 9 Oct (local, committed, not pushed, nothing deployed):**
+    - **The Escape/URL defect was demonstrated and fixed** (`d9ee940`; test revised in `9e34868`).
+      - Cause: `useExplorerState`'s URL-tidying effect wrote its render's older state back when a close landed between a
+        camera commit and that commit's effects. It now tidies the live URL.
+      - Regression e2e for Escape and the close button, Back and Forward included: it fails on the old code and passes
+        on the fix, idle and under load.
+    - **The worker shutdown hang** was traced, by timing, to Modern Standby. The runner now keeps the machine awake and
+      flags any suspension (`743fb2b`).
+    - **Full suite on the final code `8093e91`: 297 passed, 0 failed, 63 skipped** (§8.1).
+    - An earlier attempt on `743fb2b` was ended by a Ctrl+C of unknown origin and is recorded as invalid.
 
 Latest checks, from `code/`:
 - **On the disposable test stack (7 Oct):** pgTAP 17 files, 711 passed; parity 8 passed; pipeline pytest 89 passed; admin e2e 58 passed.
 - **Without a database (8 Oct, after P9-12):** lint and typecheck clean; unit 45 files, 692 passed; full e2e 293 passed, 0 failed, 59 skipped (by design; 2 workers).
 - **9 Oct, before committing the batch:** lint and typecheck clean; unit 46 files, 736 passed; on the test stack, pgTAP 19 files, 781 passed and admin e2e 60 passed; smoke suite on a synthetic-staging build 6 passed, 4 skipped (by design); CDP attach 3 passed (three runs); `gate-runner.spec.ts` and `hit-test.spec.ts` 9 passed (desktop, alone). **Full e2e on `4511c15`: 294 passed, 1 failed, 61 skipped** (`.local-test-runs/20261009-050929-4511c15/`).
+- **9 Oct, final code `8093e91`:** lint and typecheck clean; unit 46 files, 739 passed; **full e2e 297 passed, 0 failed, 63 skipped** (`.local-test-runs/20261009-105845-8093e91/`).
 - **P9-12 (8 Oct):** explorer JavaScript 629 → 566 KB gzipped (D-12 target 650 KB); city-selection page 134 KB (its own 150 KB budget, a proposal).
 
 **What to do next, and who does it: [§14 Transition checklist](#14-transition-checklist-9-oct-2026).**
@@ -1119,7 +1131,10 @@ All runs were on Windows 11 with Node 24, from `code/`, on the uncommitted worki
 | CDP attach | `npx playwright test --config playwright.cdp.config.ts` | 3 passed. The first run exited 1 on an error in its teardown (EPERM removing the stand-in's profile); fixed in `1e78871`, then 3 passed in each of 3 runs |
 | Two map specs | `npx playwright test tests/e2e/gate-runner.spec.ts tests/e2e/hit-test.spec.ts --project=desktop --workers=1` | 9 passed (6.1 min) |
 | **Full e2e** | `npm run test:e2e` | **No complete result.** The run on the night of 8–9 Oct (about 01:05 to 09:12, judged from its build and its last records; its worker count was not recorded) lost its summary and left two timeouts: `gate-runner.spec.ts` (no live markers within 60 s) and `hit-test.spec.ts` (all 61 groups, past 600 s). Both passed when rerun alone (row above). That suggests contention, but the run's outcome is unknown |
-| **Full e2e on `4511c15`** | `node scripts/e2e-full-run.mts --workers 2` (clean tree, detached; 1.8 GB free at the start, lowest 609 MB, CPU at most 73%) | **294 passed, 1 failed, 61 skipped**; 0 flaky, timed out or unfinished; 19.0 min. Failed: `explorer-map.spec.ts` "Escape and the close button close the popup and clear the selection" (desktop): the popup closed, but `?company=` stayed in the URL. Under investigation. Record: `.local-test-runs/20261009-050929-4511c15/` |
+| **Full e2e on `4511c15`** | `node scripts/e2e-full-run.mts --workers 2` (clean tree, detached; 1.8 GB free at the start, lowest 609 MB, CPU at most 73%) | **294 passed, 1 failed, 61 skipped**; 0 flaky, timed out or unfinished; 19.0 min. Failed: `explorer-map.spec.ts` "Escape and the close button close the popup and clear the selection" (desktop): the popup closed, but `?company=` stayed in the URL (fixed in `d9ee940`). Record: `.local-test-runs/20261009-050929-4511c15/` |
+| URL-related specs under load, `5a60ae3` | the recorded runner, 9 specs, 2 workers, 4 busy threads | 141 passed, 1 failed, 40 skipped. The failure was the new regression test's own trigger, which never fired because the popup appeared after the camera commit; the test was revised (`9e34868`). It was then re-verified on the old code (11 of 12 failed with the defect, 1 aborted at navigation) and on the fix (6/6 idle, 10/10 under load). Record: `.local-test-runs/20261009-072632-5a60ae3/` |
+| Full e2e on `743fb2b` | `--detach` | **Invalid:** ended at 10:55:59Z by a Ctrl+C of unknown origin (`[WebServer] ^C^C`, exit `0xC000013A`); 135 passed, 2 casualties, 223 not run. Record: `.local-test-runs/20261009-104542-743fb2b/` |
+| **Full e2e on the final code `8093e91`** | `node scripts/e2e-full-run.mts --workers 2` via `Start-Process`; keep-awake held | **297 passed, 0 failed, 63 skipped**; 0 flaky, timed out or unfinished; 18.0 min; no suspension, no standby events; lowest free memory 653 MB. Record: `.local-test-runs/20261009-105845-8093e91/` |
 
 **Proposal, not an approved requirement:** three consecutive green full suites before a release candidate. Earlier full runs on 7 Oct had 4 and 2 failures (a slot-timeout bug, then DEF-3), and one 275/1 run (the first DEF-1 user-side test). A 7 Oct run with 3 workers and 0.7 GB of free memory had 2 hit-test failures and was cut off; the same four map specs passed alone the next day (41 passed, 1 skipped, 1 worker), then the full run above. Low memory on this laptop still makes full runs unreliable (DEF-2). The night of 8–9 Oct gave another example (above); its cause is not established.
 
@@ -1374,11 +1389,11 @@ P6-04, P5-05, P4-03, Phase 10, the PMTiles migration, Chennai (as the second rel
 | Item | Value |
 | --- | --- |
 | Branch | `main` |
-| Local HEAD | 9 Oct 2026: the docs commit for the 9 Oct batch, on `9d94050` "E2E-RUN: recorded full e2e runs …" (at `04aa427` when this handover was first written) |
+| Local HEAD | 9 Oct 2026: the final docs commit of the day, on the runner fix after `8093e91` (at `04aa427` when this handover was first written) |
 | Remote HEAD (`origin/main`) | `883de71` "P9-06: ownership status separate from startup stage…" (6 Oct 2026) |
-| Unpushed commits | **35** (`93ca2a6` … `9d94050` plus the 9 Oct docs commit, 6–9 Oct); the full list is in the history-cleanup plan |
+| Unpushed commits | **43** (`93ca2a6` … `8093e91`, the runner fix and the final 9 Oct docs commit, 6–9 Oct); the full list is in the history-cleanup plan |
 | History cleanup pending | `5812ed2` contains OSM/Nominatim-derived pilot files (`import-rows.json`, `pilot.csv`, `geocode-cache.json`); `b55857e` removed them. 20 unpushed commits carry `Co-Authored-By: Claude` trailers. **Plan, rehearsed: [docs/history-cleanup-plan.md](docs/history-cleanup-plan.md)** (only unpushed commits rewritten; the same final tree; a fast-forward push; recovery branch and bundle first). Not run: awaiting the owner. The 38 pushed commits with trailers would need a force-push (not recommended). `e8bb5ad` and `0f79828` are labelled WIP. |
-| Working tree | Clean after the 9 Oct docs commit. The 8 Oct work is in `4ea4218` … `e0c6b95`, the 9 Oct work in `9de729f` … `9d94050` and the docs commit |
+| Working tree | Clean after the final 9 Oct docs commit. The 8 Oct work is in `4ea4218` … `e0c6b95`, the 9 Oct work in `9de729f` … `8093e91` and that docs commit |
 | Open PRs | 4 Dependabot PRs (tested locally 8 Oct; see DEPS-1) |
 | Repository visibility | **Public** |
 
@@ -1656,8 +1671,8 @@ commands, the checks and recovery.
 - **Current HEAD and range:** listed in §11 and in the plan's inventory. The rewrite covers `origin/main..main`, so commits
   made after the inventory are included automatically.
   - On 9 Oct 2026 only `5812ed2` holds the OSM-derived files.
-  - The 20 commits from `93ca2a6` to `2e4d8a6` carry Claude trailers. None since does (checked 9 Oct through `9d94050`:
-    35 unpushed commits once the docs commit is made).
+  - The 20 commits from `93ca2a6` to `2e4d8a6` carry Claude trailers. None since does (checked 9 Oct through `8093e91`:
+    43 unpushed commits once the final 9 Oct docs commit is made).
   - The rehearsal was last run at `1094e08`; re-run it on the final HEAD before running the plan.
 - **Recovery first:** the branch `backup/pre-history-cleanup-<date>`, and a verified bundle of every ref in
   `.local-backups/`.

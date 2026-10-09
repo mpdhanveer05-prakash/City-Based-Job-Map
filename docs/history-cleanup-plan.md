@@ -1,6 +1,6 @@
 # History cleanup before the first push: plan (not run)
 
-*Prepared 8 Oct 2026; rehearsed again at `1094e08` (29 unpushed commits); inventory updated 9 Oct 2026 (35 unpushed commits once the 9 Oct docs commit is made; not rehearsed again). Status: **not run**. Run only when the owner authorizes it; push only when the owner
+*Prepared 8 Oct 2026; rehearsed again at `1094e08` (29 unpushed commits); inventory updated 9 Oct 2026 (43 unpushed commits once the final 9 Oct docs commit is made; not rehearsed again). Status: **not run**. Run only when the owner authorizes it; push only when the owner
 asks (CLAUDE.md, GIT-1).*
 
 ## What it fixes, and what it does not
@@ -11,7 +11,7 @@ before it stay as they are, so the push afterwards is a plain fast-forward. No f
 | Problem | Where | Fix |
 | --- | --- | --- |
 | OSM/Nominatim-derived pilot files (ODbL), kept out of the public repository as a precaution until the owner decides how ODbL obligations would be met (publication is not categorically prohibited; see the handover §1.6) | `code/data/pilot/bangalore/geocode-cache.json`, `import-rows.json`, `pilot.csv`; added by `5812ed2`, removed by `b55857e`; in no pushed commit | removed from every rewritten commit |
-| `Co-Authored-By: Claude …` trailers, against the owner's rule (commits carry only the owner's name) | 20 of the unpushed commits (`93ca2a6` … `2e4d8a6`); none of the 15 since (`db239d4` … `9d94050`, and the 9 Oct docs commit) | the trailer lines are deleted from each message |
+| `Co-Authored-By: Claude …` trailers, against the owner's rule (commits carry only the owner's name) | 20 of the unpushed commits (`93ca2a6` … `2e4d8a6`); none of the 23 since (`db239d4` … `8093e91`, the runner fix after it, and the final 9 Oct docs commit) | the trailer lines are deleted from each message |
 
 **Not covered:**
 - **38 commits already on GitHub carry the same trailer.** Removing them would rewrite published history and need a
@@ -59,7 +59,15 @@ before running (precondition 4).
 | `2f99b95` | FEED-CREATE: reviewers add employer feeds in the admin, always unappro | no | — |
 | `1e78871` | P2-09a/b: tests for the device tooling (in-page gate runner, Android a | no | — |
 | `9d94050` | E2E-RUN: recorded full e2e runs that survive an interrupted session | no | — |
-| (the 9 Oct docs commit) | Docs: progress, plan, handover and history-cleanup plan for the 9 Oct batch | no | — |
+| `4511c15` | Docs: progress, plan, handover and history-cleanup plan for the 9 Oct batch; full e2e pen | no | — |
+| `4813482` | Docs: full e2e on 4511c15 recorded: 294 passed, 1 failed, 61 skipped | no | — |
+| `d9ee940` | FIX-ESCAPE-URL: a close in the gap before a render's effects no longer puts the compan | no | — |
+| `5a60ae3` | Docs: Escape/URL failure demonstrated and fixed (d9ee940); under-load run stopped for  | no | — |
+| `9e34868` | FIX-ESCAPE-URL: the regression test no longer depends on the popup being open before  | no | — |
+| `743fb2b` | E2E-RUN: keep the machine awake during a run, flag suspension, detach without a shell | no | — |
+| `8093e91` | Docs: full suite on 743fb2b aborted by a Ctrl+C of unknown origin (invalid run); --det | no | — |
+| (the runner fix) | E2E-RUN: power events read when there are none; summarize keeps the exit code | no | — |
+| (the final 9 Oct docs commit) | Docs: full suite on the final code; records for 9 Oct | no | — |
 
 `b55857e` deleted the three files, so its tree is the same before and after the rewrite. Only `5812ed2`'s tree changes.
 
@@ -100,7 +108,7 @@ FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f \
 | Check | Command | Expected |
 | --- | --- | --- |
 | Same files at the tip | `git rev-parse 'main^{tree}'` | the tree noted in precondition 4 |
-| Same number of commits | `git rev-list --count origin/main..main` | the count noted (35 once the 9 Oct docs commit is made, plus any later commits) |
+| Same number of commits | `git rev-list --count origin/main..main` | the count noted (43 once the final 9 Oct docs commit is made, plus any later commits) |
 | Base untouched; fast-forward possible | `git merge-base --is-ancestor origin/main main && echo ok` | `ok` |
 | No OSM file anywhere in the rewritten commits | `git rev-list origin/main..main -- code/data/pilot/bangalore/geocode-cache.json code/data/pilot/bangalore/import-rows.json code/data/pilot/bangalore/pilot.csv` | nothing |
 | No trailer left | `git log --format=%B origin/main..main \| grep -ci 'co-authored-by: claude'` | `0` |
