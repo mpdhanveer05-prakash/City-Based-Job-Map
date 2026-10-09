@@ -13,6 +13,57 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-09 (afternoon): the Escape/URL failure demonstrated and fixed (`d9ee940`); worker shutdown hang open
+- **Instrumentation** (a temporary spec, never committed; kept outside the suite):
+  - every URL write, with its call stack;
+  - Escape's target and the focused element;
+  - the popup's presence;
+  - the map's `onSelect`/`onCamera`/`setSelectedCompany` calls and `movestart`/`moveend`;
+  - CPU throttling over CDP (×1, ×4, ×8).
+- **Not reproduced by chance:**
+  - 20 of 20 alone;
+  - 30 of 30 with 4 busy threads;
+  - 12 of 12 throttled.
+  In every one, Escape came 200 ms or more after the router had committed the camera URL.
+- **Reproduced by timing:** Escape dispatched in the page at a fixed delay after the popup's first appearance, 0–300 ms.
+  - 9 of 32 failed: ×1 at 200–220 ms; ×4 at 100–260 ms.
+  - Every failure had the same order:
+    1. our camera write (`replaceState`, company and map);
+    2. the router's commit (the same URL);
+    3. Escape → `onClose` → `pushState(?map=…)`;
+    4. 1–2 ms later, a `replaceState` restoring `company=`.
+- **Cause, demonstrated:** the restoring write's stack points into our bundle, at `useExplorerState`'s URL-tidying
+  `useEffect` (checked against the served chunk at that offset).
+  - React ran that commit's passive effects just after the Escape handler. The effect compared its render's `state`,
+    which still held the company, with the live URL and wrote the old URL back.
+  - The router adopted it, so React's `company` never changed and the popup stayed closed.
+- **The stale-router (Next) hypothesis is refuted for this failure:** Next's history sync only re-wrote URLs it had
+  been given.
+- **Fix (`d9ee940`):** the effect tidies the live URL (`canonicalRewrite`, `lib/filters/url.ts`), never the render's
+  state. `update()` already read the live URL.
+- **Regression tests:**
+  - `explorer-map.spec.ts`: the close is delivered in a microtask right after the router commits the camera URL, for
+    Escape and for the close button. Back reopens the company, and Forward closes it again. The test fails if the
+    trigger never fires.
+    - **Before the fix:** 6 of 6 failed, with the full run's exact error.
+    - **After:** 6 of 6 passed.
+  - Unit: `canonicalRewrite` (3 tests).
+- **Checks on `d9ee940`:** lint and typecheck clean; `npx vitest run --maxWorkers=2` 46 files, 739 passed.
+- **Stopped, not a result:** the URL-related specs under load (9 specs, 166 tests, 2 workers, 4 busy threads). Claude
+  Code stopped the run because the laptop was critically low on memory, with 20 passed and 0 failed so far.
+  - Its Playwright runner, workers, web server and browsers outlived the stopped shell and were stopped by hand. The
+    browsers exited by themselves once their worker was gone.
+  - **Not rerun:** to be rerun only when asked, with more free memory.
+- **Worker shutdown hang** (seen once: "worker-15 process did not exit within 300000ms after stop", in a 20-repetition
+  run).
+  - Playwright kills a stopping worker only after 5 minutes **without a heartbeat**. The worker sends one every second
+    while it closes, so a slow browser close does not trigger it: the worker's event loop was blocked, or the process
+    frozen.
+  - `--repeat-each` gives each repetition its own worker, so that run started and stopped about 20 workers.
+  - **Not yet investigated by experiment:** a watcher that samples each worker's CPU time, memory, threads and child
+    processes is written, not run.
+- **Full suite on the final code: not run yet.**
+
 ### 2026-10-09: full e2e on `4511c15`: 294 passed, 1 failed, 61 skipped
 - **Command:** `node scripts/e2e-full-run.mts --workers 2`, started detached at 10:39 local on a clean tree at `4511c15`.
 - **Record:** `.local-test-runs/20261009-050929-4511c15/` (git-ignored): `summary.md`/`.json`, `progress.jsonl`,
