@@ -46,4 +46,6 @@ code/data/pilot/*/import-rows.json
 code/data/pilot/*/pilot.csv
 /.local-backups/
 /.local-previews/
+# Recorded full e2e runs (code/scripts/e2e-full-run.mts): console log, per-test progress, resources, summary
+/.local-test-runs/
 /code/.test-stack/
