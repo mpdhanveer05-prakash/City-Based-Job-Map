@@ -13,6 +13,24 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-09: full e2e on `4511c15`: 294 passed, 1 failed, 61 skipped
+- **Command:** `node scripts/e2e-full-run.mts --workers 2`, started detached at 10:39 local on a clean tree at `4511c15`.
+- **Record:** `.local-test-runs/20261009-050929-4511c15/` (git-ignored): `summary.md`/`.json`, `progress.jsonl`,
+  `console.log`, `resources.jsonl`, `run.json`. The failure's error context is in `failure-contexts/`.
+- **Conditions:**
+  - at the start: 1.8 GB free of 15.9 GB, CPU 19% busy; VS Code (3.1 GB), Edge (1.4 GB + 0.7 GB WebView) and Antigravity
+    (0.6 GB) open and idle; Docker stopped; no other test or build running;
+  - during the run: lowest free memory 609 MB, highest CPU 73% (18 one-minute samples).
+- **Result: 356 tests, 294 passed, 1 failed, 61 skipped; 0 flaky, timed out, interrupted or unfinished; 19.0 min; exit 1.**
+  - Desktop: 162 passed, 1 failed, 15 skipped.
+  - Mobile: 132 passed, 46 skipped.
+  - The 61 skips are the 59 by-design skips of 8 Oct plus the new gate-runner spec's two on mobile.
+  - The overnight run's two timeouts (`gate-runner.spec.ts`, `hit-test.spec.ts`) passed.
+- **The failure:** `explorer-map.spec.ts` › explorer shell › "Escape and the close button close the popup and clear the
+  selection" (desktop, 6.7 s). The popup was hidden, but the URL kept `?company=indigo-forge-synthetic&map=13.04080%2C77.59587%2C17.00`
+  through the 5 s wait. The selection's URL and the screen disagree: a product defect until shown otherwise. Under
+  investigation (next entry); this result stands as recorded.
+
 ### 2026-10-09 (later): the 9 Oct batch reviewed, checked and committed; a recorded full e2e runner; full suite pending
 - **Reviewed:** the whole uncommitted diff (workflows, feeds page, `create_job_feed` and its pgTAP, smoke suite, device
   tooling, docs).

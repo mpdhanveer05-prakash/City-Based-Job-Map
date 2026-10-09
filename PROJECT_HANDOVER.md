@@ -84,12 +84,15 @@ following is verified only locally; see `docs/progress.md`:
 
     **The full e2e suite has no complete result on this code.** A run on the night of 8–9 Oct took about 8 hours on a
     busy laptop and lost its summary. It left two timeouts, `gate-runner.spec.ts` and `hit-test.spec.ts`; both passed
-    when rerun alone. That suggests resource contention but does not prove it. Full-suite validation is pending (§8.1).
+    when rerun alone. That suggests resource contention but does not prove it.
+
+    **Full e2e on `4511c15` (9 Oct, recorded):** 294 passed, 1 failed, 61 skipped. The failure is a URL that kept
+    `?company=` after Escape closed the popup; it is under investigation (§8.1).
 
 Latest checks, from `code/`:
 - **On the disposable test stack (7 Oct):** pgTAP 17 files, 711 passed; parity 8 passed; pipeline pytest 89 passed; admin e2e 58 passed.
 - **Without a database (8 Oct, after P9-12):** lint and typecheck clean; unit 45 files, 692 passed; full e2e 293 passed, 0 failed, 59 skipped (by design; 2 workers).
-- **9 Oct, before committing the batch:** lint and typecheck clean; unit 46 files, 736 passed; on the test stack, pgTAP 19 files, 781 passed and admin e2e 60 passed; smoke suite on a synthetic-staging build 6 passed, 4 skipped (by design); CDP attach 3 passed (three runs); `gate-runner.spec.ts` and `hit-test.spec.ts` 9 passed (desktop, alone). **Full e2e: pending.**
+- **9 Oct, before committing the batch:** lint and typecheck clean; unit 46 files, 736 passed; on the test stack, pgTAP 19 files, 781 passed and admin e2e 60 passed; smoke suite on a synthetic-staging build 6 passed, 4 skipped (by design); CDP attach 3 passed (three runs); `gate-runner.spec.ts` and `hit-test.spec.ts` 9 passed (desktop, alone). **Full e2e on `4511c15`: 294 passed, 1 failed, 61 skipped** (`.local-test-runs/20261009-050929-4511c15/`).
 - **P9-12 (8 Oct):** explorer JavaScript 629 → 566 KB gzipped (D-12 target 650 KB); city-selection page 134 KB (its own 150 KB budget, a proposal).
 
 **What to do next, and who does it: [§14 Transition checklist](#14-transition-checklist-9-oct-2026).**
@@ -1115,7 +1118,8 @@ All runs were on Windows 11 with Node 24, from `code/`, on the uncommitted worki
 | Deployment smoke | a synthetic-staging build, then `EXPECT_DEPLOY_TARGET=staging-synthetic node scripts/smoke-local.mts` | 6 passed, 4 skipped (by design) |
 | CDP attach | `npx playwright test --config playwright.cdp.config.ts` | 3 passed. The first run exited 1 on an error in its teardown (EPERM removing the stand-in's profile); fixed in `1e78871`, then 3 passed in each of 3 runs |
 | Two map specs | `npx playwright test tests/e2e/gate-runner.spec.ts tests/e2e/hit-test.spec.ts --project=desktop --workers=1` | 9 passed (6.1 min) |
-| **Full e2e** | `npm run test:e2e` | **No complete result.** The run on the night of 8–9 Oct (about 01:05 to 09:12, judged from its build and its last records; its worker count was not recorded) lost its summary and left two timeouts: `gate-runner.spec.ts` (no live markers within 60 s) and `hit-test.spec.ts` (all 61 groups, past 600 s). Both passed when rerun alone (row above). That suggests contention, but the run's outcome is unknown. **Pending:** a recorded run (`node scripts/e2e-full-run.mts`) on an idle laptop |
+| **Full e2e** | `npm run test:e2e` | **No complete result.** The run on the night of 8–9 Oct (about 01:05 to 09:12, judged from its build and its last records; its worker count was not recorded) lost its summary and left two timeouts: `gate-runner.spec.ts` (no live markers within 60 s) and `hit-test.spec.ts` (all 61 groups, past 600 s). Both passed when rerun alone (row above). That suggests contention, but the run's outcome is unknown |
+| **Full e2e on `4511c15`** | `node scripts/e2e-full-run.mts --workers 2` (clean tree, detached; 1.8 GB free at the start, lowest 609 MB, CPU at most 73%) | **294 passed, 1 failed, 61 skipped**; 0 flaky, timed out or unfinished; 19.0 min. Failed: `explorer-map.spec.ts` "Escape and the close button close the popup and clear the selection" (desktop): the popup closed, but `?company=` stayed in the URL. Under investigation. Record: `.local-test-runs/20261009-050929-4511c15/` |
 
 **Proposal, not an approved requirement:** three consecutive green full suites before a release candidate. Earlier full runs on 7 Oct had 4 and 2 failures (a slot-timeout bug, then DEF-3), and one 275/1 run (the first DEF-1 user-side test). A 7 Oct run with 3 workers and 0.7 GB of free memory had 2 hit-test failures and was cut off; the same four map specs passed alone the next day (41 passed, 1 skipped, 1 worker), then the full run above. Low memory on this laptop still makes full runs unreliable (DEF-2). The night of 8–9 Oct gave another example (above); its cause is not established.
 
