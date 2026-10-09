@@ -1,14 +1,16 @@
 "use client";
 // Employer feeds (ADR-0022 §7): which feeds the pipeline may read, who approved each and why, the changes held for a
-// person to decide, and the full history of what each feed did. Reviewers approve, withdraw, apply, and reject; editors
-// see everything but cannot act. The database decides every permission (approve_job_feed, withdraw_job_feed,
-// resolve_feed_event); this page only shows the result.
+// person to decide, and the full history of what each feed did. Reviewers add, approve, withdraw, apply, and reject;
+// editors see everything but cannot act. The database decides every permission and rule (create_job_feed,
+// approve_job_feed, withdraw_job_feed, resolve_feed_event); this page only shows the result. A feed is always added
+// unapproved: approving it is a separate act, with a note.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
 import { useAdmin } from "@/components/admin/admin-root";
+import { CompanyPicker, type PickedCompany } from "@/components/admin/company-picker";
 import type { AnyError } from "@/components/admin/use-reference";
-import { DataTable, Notice, PageHeader, TextInput } from "@/components/admin/ui";
+import { DataTable, Field, Notice, PageHeader, Select, TextInput } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { describeError } from "@/lib/admin/errors";
 import { formatDate } from "@/lib/format-date";
@@ -22,8 +24,18 @@ type Feed = {
   approved_at: string | null;
   approval_note: string | null;
   withdrawn_note: string | null;
+  created_by: string | null;
+  created_at: string | null;
   company: { id: string; name: string; domain: string } | null;
 };
+
+const PROVIDERS = [
+  { value: "greenhouse", label: "Greenhouse", hint: "The board name: boards.greenhouse.io/<name>" },
+  { value: "lever", label: "Lever", hint: "The board name: jobs.lever.co/<name>" },
+  { value: "ashby", label: "Ashby", hint: "The board name: jobs.ashbyhq.com/<name>" },
+  { value: "workable", label: "Workable", hint: "The board name: apply.workable.com/<name>" },
+  { value: "jsonld", label: "Careers page (JSON-LD)", hint: "An https link to the careers page, on the company's own domain" },
+] as const;
 type FeedEvent = {
   id: number;
   feed_id: number;
@@ -60,13 +72,50 @@ export default function FeedsPage() {
   const [message, setMessage] = useState<{ kind: "error" | "success"; text: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const who = (id: string | null) => (!id ? "" : id === userId ? "you" : `reviewer ${id.slice(0, 8)}`);
+  const [company, setCompany] = useState<PickedCompany | null>(null);
+  const [newFeed, setNewFeed] = useState({ source: "", provider: "greenhouse", identifier: "" });
+
+  const sources = useQuery({
+    queryKey: ["admin", "feed-sources"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("source").select("id, name, kind").in("kind", ["ats_feed", "jsonld"]).order("name");
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: number; name: string; kind: "ats_feed" | "jsonld" }>;
+    },
+  });
+  const wantKind = newFeed.provider === "jsonld" ? "jsonld" : "ats_feed";
+  const usableSources = (sources.data ?? []).filter((x) => x.kind === wantKind);
+
+  async function addFeed(e: React.FormEvent) {
+    e.preventDefault();
+    if (!company || !newFeed.source || !newFeed.identifier.trim()) {
+      setMessage({ kind: "error", text: "Choose the company and the source, and give the board name or the careers page." });
+      return;
+    }
+    setBusy("add");
+    setMessage(null);
+    const { error } = await supabase.rpc("create_job_feed", {
+      p_company: company.id,
+      p_source: Number(newFeed.source),
+      p_provider: newFeed.provider,
+      p_identifier: newFeed.identifier,
+    });
+    setBusy(null);
+    if (error) {
+      setMessage({ kind: "error", text: describeError(error) });
+      return;
+    }
+    setNewFeed((f) => ({ ...f, identifier: "" }));
+    setMessage({ kind: "success", text: "Feed added, NOT approved: the pipeline does not read it until a reviewer approves it below, with a note." });
+    await queryClient.invalidateQueries({ queryKey: ["admin"] });
+  }
 
   const feeds = useQuery({
     queryKey: ["admin", "feeds"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("job_feed")
-        .select("id, provider, identifier, active, approved_by, approved_at, approval_note, withdrawn_note, company:company_id(id, name, domain)")
+        .select("id, provider, identifier, active, approved_by, approved_at, approval_note, withdrawn_note, created_by, created_at, company:company_id(id, name, domain)")
         .order("id");
       if (error) throw error;
       return (data ?? []) as unknown as Feed[];
@@ -193,6 +242,55 @@ export default function FeedsPage() {
         )}
       </section>
 
+      <section aria-labelledby="add-feed" className="mb-8" data-testid="add-feed">
+        <h2 id="add-feed" className="text-xl font-bold">
+          Add a feed
+        </h2>
+        <p className="mb-2 max-w-[72ch] text-sm text-muted-foreground">
+          Only the employer&apos;s own feed or an authorised source. A new feed is not approved: the pipeline reads nothing from it until a reviewer approves it
+          below, with a note.
+          {!reviewer && " Adding a feed needs a reviewer or an admin."}
+        </p>
+        <form onSubmit={(e) => void addFeed(e)} className="grid max-w-3xl gap-3 sm:grid-cols-2">
+          <Field label="Company">
+            {(f) => <CompanyPicker id={f.id} picked={company} onPick={setCompany} describedBy={f["aria-describedby"]} />}
+          </Field>
+          <Field label="Provider" hint={PROVIDERS.find((x) => x.value === newFeed.provider)?.hint}>
+            {(f) => (
+              <Select {...f} value={newFeed.provider} disabled={!reviewer} onChange={(e) => setNewFeed({ ...newFeed, provider: e.target.value, source: "" })} data-testid="feed-provider">
+                {PROVIDERS.map((x) => (
+                  <option key={x.value} value={x.value}>
+                    {x.label}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label="Source" hint={usableSources.length === 0 ? `No ${wantKind === "jsonld" ? "careers-page (jsonld)" : "ATS-feed"} source yet: add one on the Sources page.` : undefined}>
+            {(f) => (
+              <Select {...f} value={newFeed.source} disabled={!reviewer} onChange={(e) => setNewFeed({ ...newFeed, source: e.target.value })} data-testid="feed-source">
+                <option value="">Choose a source</option>
+                {usableSources.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label={newFeed.provider === "jsonld" ? "Careers page" : "Board name"}>
+            {(f) => (
+              <TextInput {...f} value={newFeed.identifier} disabled={!reviewer} onChange={(e) => setNewFeed({ ...newFeed, identifier: e.target.value })} data-testid="feed-identifier" />
+            )}
+          </Field>
+          <div className="sm:col-span-2">
+            <Button type="submit" disabled={!reviewer || busy === "add"} data-testid="add-feed-submit">
+              Add the feed (unapproved)
+            </Button>
+          </div>
+        </form>
+      </section>
+
       <section aria-labelledby="feeds" className="mb-8">
         <h2 id="feeds" className="text-xl font-bold">
           Feeds
@@ -220,9 +318,15 @@ export default function FeedsPage() {
                     {!f.active && <div className="text-sm text-muted-foreground">Inactive</div>}
                   </td>
                   <td className="max-w-[28ch] text-sm">
+                    {f.created_by && (
+                      <div className="text-muted-foreground" data-testid="feed-added-by">
+                        Added {when(f.created_at)} by {who(f.created_by)}.
+                      </div>
+                    )}
                     {f.approved_at ? (
                       <>
                         Approved {when(f.approved_at)} by {who(f.approved_by)}: {f.approval_note}
+                        {f.created_by && f.created_by === f.approved_by && <div className="text-muted-foreground">Approved by the person who added it.</div>}
                       </>
                     ) : (
                       <>Not approved: the pipeline does not read it.{f.withdrawn_note ? ` Withdrawn: ${f.withdrawn_note}` : ""}</>

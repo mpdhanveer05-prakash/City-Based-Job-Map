@@ -918,6 +918,49 @@ test.describe("employer feeds", () => {
     await expect(page.getByTestId("history-rows")).toContainText("Applied");
     await expect(page.getByTestId("history-rows")).toContainText("The careers page now links this board");
   });
+
+  // Adding a feed (20261008110000 create_job_feed): reviewers only, always unapproved, approval a separate act.
+  test("an editor sees the form to add a feed, but cannot add one", async ({ page }) => {
+    await signInAs(page, "editor");
+    await page.goto("/admin/feeds");
+    await expect(page.getByTestId("add-feed")).toContainText("Adding a feed needs a reviewer or an admin.");
+    await expect(page.getByTestId("add-feed-submit")).toBeDisabled();
+  });
+
+  test("a reviewer adds a feed: it starts unapproved, a careers page elsewhere is refused, and approval is separate", async ({ page }) => {
+    const db = new pg.Client({ connectionString: DB });
+    await db.connect();
+    await db.query("insert into source (name, kind, permission_note) values ('E2E ATS feeds', 'ats_feed', 'end-to-end test'), ('E2E careers pages', 'jsonld', 'end-to-end test') on conflict (name) do nothing");
+    await db.end();
+
+    await signInAs(page, "reviewer");
+    await page.goto("/admin/feeds");
+    const form = page.getByTestId("add-feed");
+    await form.getByTestId("company-picker").fill("e2e-test");
+    await form.getByRole("button", { name: /E2E Test Co/ }).click();
+    await form.getByTestId("feed-provider").selectOption("lever");
+    await form.getByTestId("feed-source").selectOption({ label: "E2E ATS feeds" });
+    await form.getByTestId("feed-identifier").fill("e2e-test-co");
+    await form.getByTestId("add-feed-submit").click();
+    await expect(page.getByRole("status").filter({ hasText: "Feed added, NOT approved" })).toBeVisible();
+    const added = page.locator("[data-feed]").filter({ hasText: "lever: e2e-test-co" });
+    await expect(added).toHaveAttribute("data-approved", "false");
+    await expect(added.getByTestId("feed-added-by")).toContainText("by you");
+
+    // The database refuses a careers page that is not on the company's own domain, and the page says why.
+    await form.getByTestId("feed-provider").selectOption("jsonld");
+    await form.getByTestId("feed-source").selectOption({ label: "E2E careers pages" });
+    await form.getByTestId("feed-identifier").fill("https://jobs.elsewhere.example/e2e");
+    await form.getByTestId("add-feed-submit").click();
+    await expect(alertOf(page)).toContainText("own domain");
+
+    // Approval is a separate act, with a note, through approve_job_feed.
+    const id = await added.getAttribute("data-feed");
+    await added.getByTestId(`note-feed-${id}`).fill("Lever board linked from the company's careers page");
+    await added.getByTestId("approve-feed").click();
+    await expect(added).toHaveAttribute("data-approved", "true");
+    await expect(added).toContainText("Approved by the person who added it.");
+  });
 });
 
 test.describe("logos", () => {
