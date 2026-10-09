@@ -6,6 +6,7 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 import { Button } from "@/components/ui/button";
 import { MapA11yList, type MirrorListEntry } from "@/components/explorer/map-a11y-list";
 import { MapPopup, type PopupCompany, type PopupLayout } from "@/components/explorer/map-popup";
+import { GATE_CYCLES, runnerCycles } from "@/map/fixtures/gate-filters";
 import { GateRunner } from "./gate-runner";
 import { buildGlyphSheet, cellSizeForDpr } from "@/map/atlas/glyph-sheet";
 import { pageBytes, PAGE_SIZE } from "@/map/atlas/budget";
@@ -104,6 +105,7 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "fallback">("loading");
   // ?runner=1 shows the in-page gate runner (P2-09b); the dataset is ?size=. Read after hydration: the page is prerendered.
   const [runnerSize, setRunnerSize] = useState<string | null>(null);
+  const [runnerCycleCount, setRunnerCycleCount] = useState(GATE_CYCLES);
   const [message, setMessage] = useState("");
   const [scenario, setScenario] = useState<Scenario>("static");
   const [stats, setStats] = useState<LayerStats | null>(null);
@@ -149,7 +151,10 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
     (async () => {
       step("start");
       const params = new URLSearchParams(location.search);
-      if (params.get("runner") === "1") setRunnerSize(params.get("size") ?? "default");
+      if (params.get("runner") === "1") {
+        setRunnerSize(params.get("size") ?? "default");
+        setRunnerCycleCount(runnerCycles(params.get("cycles")));
+      }
       // No WebGL2, no map: land on the list with a notice (map-spec §9).
       if (!checkWebGl2().ok) {
         setStatus("fallback");
@@ -382,7 +387,7 @@ export function MapLayerDemo({ apiKey }: { apiKey: string }) {
           </Button>
         </div>
         {status === "loading" && <p className="text-sm text-muted-foreground">Loading the map…</p>}
-        {runnerSize && status === "ready" && <GateRunner size={runnerSize} />}
+        {runnerSize && status === "ready" && <GateRunner size={runnerSize} cycles={runnerCycleCount} />}
         {stats && (
           <p className="text-sm tabular-nums" data-testid="layer-stats">
             {stats.drawn} drawn, {stats.culled} culled, {stats.drawCalls} draw call

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DROPPED_FRAME_MS, STEP_WINDOW_MS, percentile, summariseFrames, type RawRecording } from "@/tests/gate/gate-recorder";
+import { GATE_CYCLES, runnerCycles } from "@/map/fixtures/gate-filters";
 
 const recording = (frames: number[], updates: number[] = [], longTasks: number[] = []): RawRecording => ({
   frames,
@@ -89,5 +90,15 @@ describe("summariseFrames", () => {
   it("reports long tasks", () => {
     const s = summariseFrames(recording(steady(10, 16.67), [], [62, 120]));
     expect(s.longTasks).toEqual({ count: 2, maxMs: 120 });
+  });
+});
+
+describe("the in-page runner's cycle count", () => {
+  it("is the gate's 20 unless the page asks for 1 to 20", () => {
+    expect(GATE_CYCLES).toBe(20);
+    expect(runnerCycles(null)).toBe(20);
+    expect(runnerCycles("2")).toBe(2);
+    expect(runnerCycles("20")).toBe(20);
+    for (const bad of ["0", "21", "500", "-3", "2.5", "two", ""]) expect(runnerCycles(bad)).toBe(20);
   });
 });

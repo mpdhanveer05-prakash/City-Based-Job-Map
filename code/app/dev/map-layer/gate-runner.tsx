@@ -4,9 +4,11 @@
 // `npm run gate` (tests/gate/gate-recorder.ts, installed in this page) through scenarios 1 and 2, warm filter latency,
 // and hit accuracy, and shows the raw numbers to copy or download. It judges nothing: the report does
 // (docs/real-device-test-procedure.md). Memory is not measured here: Safari's Web Inspector does that by hand.
+// ?cycles=N (1 to 20) shortens the zoom scenarios for the runner's own test (tests/e2e/gate-runner.spec.ts); a gate run
+// uses the default 20, and the result records the number, so a short run can never pass for a gate result.
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { GATE_FILTERS, type GateFilter } from "@/map/fixtures/gate-filters";
+import { GATE_CYCLES, GATE_FILTERS, type GateFilter } from "@/map/fixtures/gate-filters";
 import { CITY_SHAPES } from "@/map/fixtures/hotspots";
 import { installGate, percentile, summariseFrames, type RawRecording } from "@/tests/gate/gate-recorder";
 
@@ -38,7 +40,7 @@ function environment() {
 
 const correctness = (raw: RawRecording) => ({ framesChecked: raw.framesChecked, duplicateKeyFrames: raw.duplicateKeyFrames, longTasks: raw.longTasks.length });
 
-export function GateRunner({ size }: { size: string }) {
+export function GateRunner({ size, cycles = GATE_CYCLES }: { size: string; cycles?: number }) {
   const [step, setStep] = useState("");
   const [result, setResult] = useState<string>("");
 
@@ -48,11 +50,11 @@ export function GateRunner({ size }: { size: string }) {
       if (!window.__liveControl || (window.__liveKeys ?? []).length === 0) throw new Error('Tap "Live clusters" first, and wait for the markers.');
       installGate();
       const gate = window.__gate!;
-      const out: Record<string, unknown> = { runner: "in-page", size, environment: environment(), startedAt: new Date().toISOString() };
+      const out: Record<string, unknown> = { runner: "in-page", size, cycles, environment: environment(), startedAt: new Date().toISOString() };
       const zoom = (filters: Record<number, GateFilter>, checkKeys: boolean) =>
-        gate.zoomCycles({ centre: CENTRE, low: 11, high: 17, cycles: 20, cycleMs: 1500, filters, checkKeys });
+        gate.zoomCycles({ centre: CENTRE, low: 11, high: 17, cycles, cycleMs: 1500, filters, checkKeys });
 
-      setStep("Scenario 1: 20 zoom cycles (twice)…");
+      setStep(`Scenario 1: ${cycles} zoom cycles (twice)…`);
       await goTo(11);
       const s1 = await zoom({}, false);
       const s1Check = await zoom({}, true);
