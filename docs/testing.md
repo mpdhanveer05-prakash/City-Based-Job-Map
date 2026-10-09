@@ -38,6 +38,39 @@ Every one of these refuses a database that is on port 54322, lacks the `test_sta
 - Deselecting Startup clears the stages. A URL with a stage but no Startup is normalised.
 - A job row's DOM contains only the title and Apply.
 
+## Deployment smoke suite (DEP-3/4, 9 Oct 2026)
+- `tests/smoke/site.spec.ts`, `playwright.smoke.config.ts`. It asks the site what it holds and checks that the pages show it:
+  - build-info against the deployment policy, and optionally the commit;
+  - each city's pointer, files, sizes, cache headers and counts;
+  - the pages' status, CSP and robots;
+  - no pilot-preview banner;
+  - no sample-data notice outside synthetic staging;
+  - the explorer's counts against the manifest;
+  - company and jobs pages against the data, with safe links.
+- Staging runs it twice: on the exact build served locally before deploying (`scripts/smoke-local.mts`), and on the live
+  site afterwards, with a rollback.
+
+## Device tooling
+- `playwright.cdp.config.ts`: the Android attach mode of `tests/device-test.ts`, against a local Chromium with a DevTools
+  port standing in for the phone.
+- `tests/e2e/gate-runner.spec.ts`: the in-page runner's refusal and a short complete run (`?cycles=2`), including the download.
+
+## Full e2e run on a laptop (recorded)
+- `node scripts/e2e-full-run.mts [--workers 2]` (from `code/`) runs `npm run test:e2e` (both projects) and keeps its record in
+  the git-ignored `.local-test-runs/<time>-<commit>/`:
+  - `run.json`: the commit, the tree's state, the settings, and the machine's free memory, CPU load and largest processes at the start;
+  - `console.log`;
+  - `progress.jsonl`: one line per test as it starts and ends, written as it happens (`tests/reporters/progress-reporter.ts`);
+  - `resources.jsonl`: free memory and CPU load each minute;
+  - `summary.json` and `summary.md`.
+- A run that is cut off keeps every result it reached. `node scripts/e2e-full-run.mts summarize <folder>` re-derives its
+  summary, listing the tests that started but never finished.
+- It refuses to start while something answers on port 3100 (the config would reuse that server and test an old build), or
+  while tracked files differ from the commit (unless `--allow-dirty`). Map-heavy specs stay one at a time (`tests/map-slot.ts`)
+  whatever the worker count.
+- On a laptop, start it detached, so it outlives the terminal or session that started it, and leave the machine otherwise idle:
+  the map specs draw WebGL in software.
+
 ## CI (on pull requests)
 Lint, typecheck, Vitest, pgTAP (local Supabase in CI), dependency audit, secret scan, and Playwright against a local build. Preview-Worker journeys are added after P1-02.
 

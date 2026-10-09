@@ -1,5 +1,6 @@
-// The full e2e suite (`npm run test:e2e`, both projects) as a recorded local run. A full run takes hours on a laptop, and
-// on 9 Oct 2026 one lost its summary when the session that started it ended. This keeps every record outside the session:
+// The full e2e suite (`npm run test:e2e`, both projects) as a recorded local run. On 8 Oct 2026 it took 19 min with two
+// workers; on 9 Oct a run on a busy laptop took about 8 hours and lost its summary when the session that started it ended.
+// This keeps every record outside the session:
 //
 //   node scripts/e2e-full-run.mts [--workers 2] [--allow-dirty] [-- <more playwright args>]
 //   node scripts/e2e-full-run.mts summarize <run folder>      (re-derives the summary, e.g. after an interrupted run)

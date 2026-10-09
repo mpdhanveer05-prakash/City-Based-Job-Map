@@ -13,6 +13,103 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-09 (later): the 9 Oct batch reviewed, checked and committed; a recorded full e2e runner; full suite pending
+- **Reviewed:** the whole uncommitted diff (workflows, feeds page, `create_job_feed` and its pgTAP, smoke suite, device
+  tooling, docs).
+  - The staging workflow's `scripts/worker-version.mts` exists (`a624c2f`).
+  - Minor gap, not fixed: `create_job_feed`'s duplicate check is case-sensitive, so `Acme` and `acme` on the same provider
+    both pass.
+- **Checks before committing (9 Oct, from `code/`):**
+  - lint and typecheck clean; `npm test` 46 files, 736 passed;
+  - on the disposable test stack: `npm run test:db` 19 files, 781 passed (`18_feed_create` included); `reset`, then
+    `npm run test:admin` 60 passed (both add-feed tests included). The stack was stopped afterwards. The main stack was not
+    started, and its volumes are intact;
+  - a synthetic-staging build (`SITE_ENV=staging DEV_ROUTES=on DATA_SOURCE=seed`), then
+    `EXPECT_DEPLOY_TARGET=staging-synthetic node scripts/smoke-local.mts`: 6 passed, 4 skipped (by design);
+  - `npx playwright test --config playwright.cdp.config.ts`: 3 passed, but **exit 1** on an error in its teardown.
+- **Found and fixed (CDP stand-in teardown):** EPERM removing the stand-in Chromium's profile. `browser.kill()` ends only
+  the parent on Windows, and the 500 ms sleep did not wait for the children. The teardown now ends the whole process tree
+  (`taskkill /T`), waits for the exit, and removes the profile with retries. After the fix: 3 passed in each of 3 runs.
+  The run's leftover temporary profile was removed.
+- **Commits (local, not pushed, no co-author trailers):**
+  - `9de729f` DEP-3/4 and the automation gate;
+  - `2f99b95` FEED-CREATE;
+  - `1e78871` P2-09a/b device tooling tests, with the teardown fix;
+  - `9d94050` E2E-RUN;
+  - then this docs commit.
+- **E2E-RUN** (`scripts/e2e-full-run.mts`, `tests/reporters/progress-reporter.ts`; [testing.md](testing.md)): a recorded
+  full e2e run, kept in the git-ignored `.local-test-runs/`.
+  - **What it records:** commit and tree state; settings; free memory, CPU load and the largest processes at the start;
+    the console log; per-test progress written as it happens; resources each minute; `summary.json`/`.md`.
+  - **Safeguards:** it refuses to start while a server answers on :3100 (the config would reuse it) or while the tree is
+    dirty.
+  - **Self-test:** `csp.spec.ts` through it, 9 passed, with the summary written (`.local-test-runs/20261009-044431-e0c6b95`,
+    run with `--allow-dirty` before these commits). A truncated copy of its progress was summarised with its 3 unfinished
+    tests listed (exit 1).
+- **Full e2e: pending.** The overnight run's outcome is unknown (entry below). It is to be run with the runner, detached,
+  on an otherwise idle laptop, with 2 workers and map-heavy specs one at a time.
+  - **At 10:00 on 9 Oct the laptop was not idle:** 2.2–2.4 GB of 15.9 GB free, CPU about 50% busy. The largest users were
+    VS Code (3.7 GB), Edge (1.4 GB), Antigravity, and Slack.
+- **Not done or not verified:** a real-data staging smoke run (done before these commits, not repeated); parity and pipeline
+  pytest (nothing they cover changed); anything on GitHub or a hosted project.
+
+### 2026-10-09: staging smoke suite and validation before deploying; adding feeds; device tooling tests; transition checklist
+- **1. Staging smoke suite (DEP-3/4)** (`tests/smoke/site.spec.ts`, `playwright.smoke.config.ts`, `scripts/smoke-local.mts`).
+  - **Where expectations come from:** the site under test (manifest, dataset files, build-info) and the deployment policy (`EXPECT_DEPLOY_TARGET`, optionally `EXPECT_COMMIT`). Nothing comes from the synthetic fixtures.
+  - **What it checks:**
+    - pages, CSP and robots;
+    - pointer, files, sizes, cache headers and counts;
+    - the explorer's counts;
+    - company and jobs pages against the data, with safe outbound links;
+    - no preview banner, and no sample-data notice outside synthetic staging.
+  - **`deploy-staging.yml`** now validates the exact build served locally, then deploys, smoke-tests live, and rolls back only what it deployed.
+  - **Verified locally:**
+    - a synthetic-staging build passed (6 tests, 4 by-design mobile skips);
+    - a **real-data staging build**, read through the test stack's API with every required feature on, passed;
+    - the synthetic build checked as real-data staging was refused by 3 tests, and a wrong `EXPECT_COMMIT` was refused.
+  - **Found and fixed:**
+    - the old production curl smoke grepped the bare word "synthetic", which a real page's serialized props contain (`"synthetic": false`). It would have failed every real production deploy at `/bangalore`. Both suites now look for the notice elements and the visible text.
+    - `smoke-local.mts` split quoted arguments on Windows.
+- **Automation gate:**
+  - scheduled and dispatched runs of staging, pipeline and monitor need `AUTOMATION_ENABLED=true`;
+  - the production refresh needs `PRODUCTION_REFRESH_ENABLED=true`;
+  - a run by hand always runs. So a push no longer starts deployment, hosted writes or alert e-mails.
+- **2. Adding employer feeds** (migration `20261008110000_create_job_feed`; Feeds page "Add a feed"):
+  - aal2 reviewers and admins only;
+  - company and source checked (ATS source for ATS providers, jsonld source for careers pages);
+  - plain board names, and https careers pages on the company's own domain or a subdomain;
+  - no duplicates; trimmed; `created_by` and `created_at` recorded;
+  - **always unapproved**: approval stays `approve_job_feed`, with a note, and direct writes of the approval columns are refused.
+  - **Tests:**
+    - pgTAP `18_feed_create` (24) as anon, editor, aal1 reviewer, `service_role`, pipeline, reviewer and admin;
+    - admin e2e: an editor sees the form disabled. A reviewer adds a feed and sees it unapproved and "added by you". A careers page on another domain is refused with the database's reason. Approving afterwards shows "approved by the person who added it".
+- **3. Device tooling tests:**
+  - **In-page gate runner:** `?cycles=N` (1 to 20, default 20, recorded in the result; unit-tested clamp). `gate-runner.spec.ts` checks the "Live clusters first" refusal, a complete short run in the gate's shape with 0 duplicate-key frames, and that the download equals the shown result: 2 passed.
+  - **Android attach mode:** `playwright.cdp.config.ts` starts a local Chromium with a DevTools port standing in for the phone. It checks attaching over CDP, reusing the single context, relative paths resolved against the base URL, and each test's tab closed: 3 passed.
+- **Transition checklist:** PROJECT_HANDOVER.md §14 covers:
+  - the pending main-database migrations, rehearsed 9 Oct on a copy restored into the test stack's Postgres (all three applied, every count unchanged; the main stack was not touched);
+  - the history cleanup;
+  - the workflow effects;
+  - hosted staging setup;
+  - the hosted validation order;
+  - Dev versus Owner actions.
+- **Documentation corrected:**
+  - OSM licensing and coordinate accuracy are separate, and ODbL data may be published when its terms are met: handover §1.5 and §1.6, pilot README, history plan, `CLAUDE.md`, and the log lines of 6–7 Oct, annotated;
+  - approved employer-feed jobs follow ADR-0022's automation exception: handover §1.6 and `CLAUDE.md`; the curation guide already said so;
+  - minor-and-patch Dependabot is a merge candidate until GitHub's required checks pass: handover, plan, this log;
+  - three consecutive green suites was already described as a proposal everywhere; no change.
+- **Deferred:** founder work (P9-08), until the owner decides whether founders launch.
+- **Checks run (9 Oct 2026, from `code/`):**
+  - lint clean; typecheck clean; `npm test` 46 files, 736 passed;
+  - pgTAP 19 files, 781 passed; admin e2e 60 passed;
+  - smoke suite (above); CDP attach 3 passed; gate runner 2 passed; workflows schema-valid (6);
+  - full e2e (`npm run test:e2e`, both projects): **no complete result.** The run went from about 01:05 to 09:12 on 9 Oct (8 Oct's took 19.3 min), and its summary was lost. It left two failure records, both timeouts (the cause is not established):
+    - `gate-runner.spec.ts` › short run: `__liveKeys` still empty after 60 s;
+    - `hit-test.spec.ts` › every co-location group: past its 600 s cap.
+  - Rerun alone (`npx playwright test tests/e2e/gate-runner.spec.ts tests/e2e/hit-test.spec.ts --project=desktop --workers=1`): **9 passed (6.1 min)**. The short run took 42 s; the 61-group hit-test took 3.2 min. The isolated passes suggest resource contention, but they do not show that the two failures were not regressions: the full run's outcome is unknown.
+  - The other specs' results from the overnight run are unknown. **Full-suite validation is pending.**
+- **Not verified:** anything on GitHub or a hosted project (staging validation, deploy, rollback; the automation variables; feed creation with hosted logins).
+
 ### 2026-10-08 (later): backup drill, feed and pilot tests, three security fixes, Dependabot report, option C hardened, history-cleanup plan
 - **1. Backup drill rewritten** (`scripts/backup-drill.mts`, `lib/backup-drill.ts`; [backup-restore.md](backup-restore.md)):
   - **backup**, from the main stack, read only: a full dump, the 5 Storage files with SHA-256, and a snapshot (32 tables by content hash, 13 sequences, 1,459 grant, policy, trigger, bucket and job lines, 60 visibility measures);
@@ -29,7 +126,7 @@ Update this after every task: what changed, how it was verified (the commands ac
   - The rate-limit key comes only from the entry the platform's proxy recorded (`CLIENT_IP_HEADER`, `TRUSTED_PROXY_HOPS`). Client-written entries are ignored, and a request with no trustworthy address gets 503. **There is no default:** with the two unset, the form refuses every submission until the hosted spoofed-header check is done (see below). Unit-tested. The admin e2e sets the local gateway's values, and its real function still issues receipts and still refuses the sixth submission.
   - `import_commit` keeps a row's extra company evidence as claims, reports it, and names values that differ as proposals (migration `20261008100000`; pgTAP 7 new).
 - **4. Dependabot, tested on today's code in a scratch clone, nothing merged.** Baseline: all green.
-  - **minor-and-patch:** lint, types, 716 unit tests and the build pass. Full e2e: 290 passed and 3 failed under load (51.8 min); the 3 alone: 9 of 9 passed. **Compatible.**
+  - **minor-and-patch:** lint, types, 716 unit tests and the build pass. Full e2e: 290 passed and 3 failed under load (51.8 min); the 3 alone: 9 of 9 passed. **A merge candidate** (corrected 9 Oct 2026: not "compatible" until the required checks pass on GitHub, on the PR rebased onto current main).
   - **@types/node 26:** all pass, but ahead of the Node 24 runtime; recommend staying on 24.
   - **TypeScript 7:** types and build pass; **lint fails** (typescript-eslint does not support TS 7).
   - **ESLint 10:** **lint crashes** (eslint-plugin-react in eslint-config-next calls the removed `context.getFilename`).
@@ -293,7 +390,7 @@ Update this after every task: what changed, how it was verified (the commands ac
 - Either device tool on a real phone.
 - That DEF-2 cannot recur.
 
-**Release criteria proposed (not approved):** three consecutive green full suites; OSM coordinates replaced before publication; DEF-1 to DEF-3 closed.
+**Release criteria proposed (not approved):** three consecutive green full suites; OSM coordinates replaced before publication; DEF-1 to DEF-3 closed. *(Corrected 9 Oct 2026: OSM data is not categorically barred; publication needs accurate points and, for OSM-derived ones, the ODbL terms met or the points re-derived. See the handover §1.5.)*
 
 ### 2026-10-06 (later): pilot round 3, report corrections, release-criteria proposals
 - **Pilot (P9-20):** research groups J and K added. `verify_research`: 143 researched, **51 source-checked candidates awaiting human review** (name, website, and Bengaluru address found on the company's own pages by the script; none verified by a person; pilot target 50); 394 evidence items verified. `build_import --import` (local only): 9 more created, **46 draft companies locally**, 0 reviewed, 0 published. Atlassian, BYJU'S, InMobi, ThoughtSpot and Wipro could not be placed by the geocoder. BYJU'S needs a human check of its operating status. Launch coverage (how many companies a city needs) remains **undecided**. Unbox Robotics dropped (no Bengaluru office).
@@ -305,12 +402,12 @@ Update this after every task: what changed, how it was verified (the commands ac
   - for launch, `job_evidence_complete` and `company_evidence_complete` apply;
   - the gates apply to signed-in users; the seed and the migration owner are exempt, which `RELEASE_BUILD` and the launch gate cover.
 - **Correction: coordinate licensing and accuracy are separate issues.**
-  - *Licensing:* the pilot coordinates come from OSM Nominatim (ODbL). They stay local and uncommitted until D-07 (the geocoding provider) is decided.
+  - *Licensing:* the pilot coordinates come from OSM Nominatim (ODbL). They stay local and uncommitted until D-07 (the geocoding provider) is decided. *(Clarified 9 Oct 2026: a precaution, not a ban; ODbL data may be published when its terms are met.)*
   - *Accuracy:* almost all matched only at locality level (fallback queries), so each point needs manual placement whatever the provider decision.
 - **External push history (confirmed from the origin/main reflog):** the latest push was 2026-10-06 13:06:35 +0530 (`883de71`), with earlier pushes on 4 Oct (`d55c016`, `2aa3f60`), 2 Oct and 1 Oct, all from this clone. This session pushed nothing. Commits `5812ed2`/`b55857e`, which once contained and then removed OSM-derived files, are local only; squashing them **awaits authorization**.
 - **Release criteria: proposals, not approved requirements.**
   - three consecutive green full e2e suites before a release candidate;
-  - OSM-derived coordinates re-derived or hand-placed with the D-07 provider before publication;
+  - OSM-derived coordinates re-derived or hand-placed with the D-07 provider before publication *(corrected 9 Oct 2026: or published under the ODbL's terms; accuracy is required either way)*;
   - DEF-1 (Apply height) either explained or shown absent across those suites.
 
 ### 2026-10-06: Bengaluru pilot (research, verification, local draft import), feed admin, device procedure, export-repair proof

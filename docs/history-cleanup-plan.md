@@ -1,6 +1,6 @@
 # History cleanup before the first push: plan (not run)
 
-*Prepared 8 Oct 2026; rehearsed again at `1094e08` (29 unpushed commits). Status: **not run**. Run only when the owner authorizes it; push only when the owner
+*Prepared 8 Oct 2026; rehearsed again at `1094e08` (29 unpushed commits); inventory updated 9 Oct 2026 (35 unpushed commits once the 9 Oct docs commit is made; not rehearsed again). Status: **not run**. Run only when the owner authorizes it; push only when the owner
 asks (CLAUDE.md, GIT-1).*
 
 ## What it fixes, and what it does not
@@ -10,15 +10,15 @@ before it stay as they are, so the push afterwards is a plain fast-forward. No f
 
 | Problem | Where | Fix |
 | --- | --- | --- |
-| OSM/Nominatim-derived pilot files (ODbL), which must never be published | `code/data/pilot/bangalore/geocode-cache.json`, `import-rows.json`, `pilot.csv`; added by `5812ed2`, removed by `b55857e`; in no pushed commit | removed from every rewritten commit |
-| `Co-Authored-By: Claude …` trailers, against the owner's rule (commits carry only the owner's name) | 20 of the unpushed commits (`93ca2a6` … `2e4d8a6`); none of the 9 since (`db239d4` … `1094e08`, and this plan's own update) | the trailer lines are deleted from each message |
+| OSM/Nominatim-derived pilot files (ODbL), kept out of the public repository as a precaution until the owner decides how ODbL obligations would be met (publication is not categorically prohibited; see the handover §1.6) | `code/data/pilot/bangalore/geocode-cache.json`, `import-rows.json`, `pilot.csv`; added by `5812ed2`, removed by `b55857e`; in no pushed commit | removed from every rewritten commit |
+| `Co-Authored-By: Claude …` trailers, against the owner's rule (commits carry only the owner's name) | 20 of the unpushed commits (`93ca2a6` … `2e4d8a6`); none of the 15 since (`db239d4` … `9d94050`, and the 9 Oct docs commit) | the trailer lines are deleted from each message |
 
 **Not covered:**
 - **38 commits already on GitHub carry the same trailer.** Removing them would rewrite published history and need a
   force-push over `main`. That is a separate decision for the owner, and not recommended.
 - **Files are untouched.** The working tree after the rewrite is byte-for-byte the same as before (checked below).
 
-## The unpushed commits (8 Oct 2026, `origin/main` = `883de71`)
+## The unpushed commits (8 Oct 2026, updated 9 Oct; `origin/main` = `883de71`)
 
 The rewrite covers `origin/main..main`, so any commit made after this list is included automatically. Count again
 before running (precondition 4).
@@ -54,7 +54,12 @@ before running (precondition 4).
 | `35190ce` | SEC-MINOR: feedback refuses without a salt or a checked client-address | no | — |
 | `85c054e` | REBUILD-1: release provenance from the release record; approved baseli | no | — |
 | `1094e08` | Docs: progress, plan and handover for the 8 Oct batch; history-cleanup | no | — |
-| (this plan's update) | GIT-1: history-cleanup plan covers the 8 Oct commits | no | — |
+| `e0c6b95` | GIT-1: history-cleanup plan covers the 8 Oct commits (inventory of all | no | — |
+| `9de729f` | DEP-3/4: staging smoke suite from the site's own data; validate before | no | — |
+| `2f99b95` | FEED-CREATE: reviewers add employer feeds in the admin, always unappro | no | — |
+| `1e78871` | P2-09a/b: tests for the device tooling (in-page gate runner, Android a | no | — |
+| `9d94050` | E2E-RUN: recorded full e2e runs that survive an interrupted session | no | — |
+| (the 9 Oct docs commit) | Docs: progress, plan, handover and history-cleanup plan for the 9 Oct batch | no | — |
 
 `b55857e` deleted the three files, so its tree is the same before and after the rewrite. Only `5812ed2`'s tree changes.
 
@@ -95,7 +100,7 @@ FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f \
 | Check | Command | Expected |
 | --- | --- | --- |
 | Same files at the tip | `git rev-parse 'main^{tree}'` | the tree noted in precondition 4 |
-| Same number of commits | `git rev-list --count origin/main..main` | the count noted (30 once this plan's update is committed, plus any later commits) |
+| Same number of commits | `git rev-list --count origin/main..main` | the count noted (35 once the 9 Oct docs commit is made, plus any later commits) |
 | Base untouched; fast-forward possible | `git merge-base --is-ancestor origin/main main && echo ok` | `ok` |
 | No OSM file anywhere in the rewritten commits | `git rev-list origin/main..main -- code/data/pilot/bangalore/geocode-cache.json code/data/pilot/bangalore/import-rows.json code/data/pilot/bangalore/pilot.csv` | nothing |
 | No trailer left | `git log --format=%B origin/main..main \| grep -ci 'co-authored-by: claude'` | `0` |

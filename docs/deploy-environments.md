@@ -52,6 +52,13 @@ afterwards. Leaving them there is how one project could end up serving both envi
 - Variables: the same values as `production`.
 - Secrets: `CLOUDFLARE_ACCOUNT_ID`, and a `CLOUDFLARE_API_TOKEN` scoped to the `company-map` Worker only.
 
+**Repository variables that switch automation on (9 Oct 2026).** Pushing does not start anything that deploys, writes hosted
+data or alerts. Scheduled and dispatched runs do nothing until the owner sets:
+- `AUTOMATION_ENABLED=true`: the nightly and Publish-now staging deploys, the pipeline and the monitor;
+- `PRODUCTION_REFRESH_ENABLED=true`: the production data refresh (a separate decision).
+
+A run started by hand always runs. Set them only after the hosted validation (PROJECT_HANDOVER.md §14.5).
+
 **Repository ruleset for release tags** (Settings → Rules → Rulesets → New tag ruleset)
 - Target `refs/tags/release/*`. Restrict creation to the GitHub Actions app (bypass list: none for people), and block
   updates and deletions. `deploy-production.yml` creates one tag per successful release (its job has `contents: write`

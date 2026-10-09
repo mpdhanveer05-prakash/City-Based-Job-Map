@@ -75,11 +75,24 @@ following is verified only locally; see `docs/progress.md`:
     - **Option C:** release provenance now comes from the release record, with an approved baseline against slow shrinks
       and no rollback over newer deployments.
     - **History cleanup:** a plan, rehearsed, not run.
+12. **9 Oct (local, committed, not pushed, nothing deployed):** four commits on `e0c6b95`:
+    - `9de729f` DEP-3/4 and the automation gate: the staging smoke suite, validation before deploying, and nothing
+      scheduled or dispatched runs until the owner sets the variables;
+    - `2f99b95` FEED-CREATE: reviewers add employer feeds, always unapproved;
+    - `1e78871` P2-09a/b: tests for the device tooling, with a teardown fix for the CDP stand-in;
+    - `9d94050` E2E-RUN: a recorded full e2e runner that survives an interrupted session.
+
+    **The full e2e suite has no complete result on this code.** A run on the night of 8–9 Oct took about 8 hours on a
+    busy laptop and lost its summary. It left two timeouts, `gate-runner.spec.ts` and `hit-test.spec.ts`; both passed
+    when rerun alone. That suggests resource contention but does not prove it. Full-suite validation is pending (§8.1).
 
 Latest checks, from `code/`:
 - **On the disposable test stack (7 Oct):** pgTAP 17 files, 711 passed; parity 8 passed; pipeline pytest 89 passed; admin e2e 58 passed.
 - **Without a database (8 Oct, after P9-12):** lint and typecheck clean; unit 45 files, 692 passed; full e2e 293 passed, 0 failed, 59 skipped (by design; 2 workers).
+- **9 Oct, before committing the batch:** lint and typecheck clean; unit 46 files, 736 passed; on the test stack, pgTAP 19 files, 781 passed and admin e2e 60 passed; smoke suite on a synthetic-staging build 6 passed, 4 skipped (by design); CDP attach 3 passed (three runs); `gate-runner.spec.ts` and `hit-test.spec.ts` 9 passed (desktop, alone). **Full e2e: pending.**
 - **P9-12 (8 Oct):** explorer JavaScript 629 → 566 KB gzipped (D-12 target 650 KB); city-selection page 134 KB (its own 150 KB budget, a proposal).
+
+**What to do next, and who does it: [§14 Transition checklist](#14-transition-checklist-9-oct-2026).**
 
 Sections below were written at `04aa427` and updated where these changes apply. Where a row still says "open" for these
 items, the status tables in §2.2 and §10 take precedence.
@@ -178,12 +191,15 @@ flowchart LR
   **The owner must decide which applies (D-04).**
 - **Release criteria proposed but not approved:**
   1. three consecutive green full test suites (one so far);
-  2. all OSM/Nominatim coordinates re-derived with the chosen geocoding provider, or placed by hand, before publication;
+  2. every map point placed accurately (building-level, or reviewed by hand) before publication, and, for any point that
+     comes from OSM/Nominatim, the ODbL terms met (attribution; share-alike for a derived database) or the point re-derived
+     with the D-07 provider. These are two separate conditions: accuracy is a quality requirement, licensing a compliance
+     one. OSM-derived data is not categorically prohibited;
   3. DEF-1 to DEF-3 closed.
 - **Release checklist:** `docs/release-checklist.md` has about 19 rows, mostly owner actions, none done for a real launch.
 
 ### 1.6 Data policy (ADR-0016, ADR-0021, ADR-0022, ADR-0023)
-- **Real data only, with evidence.** Every published fact must have **evidence**: a source URL and a date. Publishing requires a **human-reviewed** source. AI may extract and organise data, but **never invents** companies, founders, locations, jobs, verification dates or logos.
+- **Real data only, with evidence.** Every published fact must have **evidence**: a source URL and a date. Publishing requires a **human-reviewed** source, **with one exception (ADR-0022's automation exception):** jobs from an employer feed that a reviewer has **approved** are listed and updated by the pipeline with the evidence it records from that feed (claimed, not person-reviewed); a link moving to another domain, or a repeated reference, is held for a person, and the feed's approval can be withdrawn. AI may extract and organise data, but **never invents** companies, founders, locations, jobs, verification dates or logos.
 - **Synthetic data** must always be labelled synthetic. **Production refuses it.**
 - **Founders** are in scope as verified professional facts only, with a public correction and removal process (P9-08, not built). No founder data has been loaded.
 - **Definitions (exact owner wording; ADR-0023 for Startup and MNC, ADR-0016 for Product). Use these words verbatim; do not paraphrase them:**
@@ -295,8 +311,8 @@ For each item, the table separates these levels:
 | SEC-4 | Callers with no signed-in user (service role) could insert pre-reviewed evidence, publish, approve feeds, set logos | **Fixed locally** (only the database owner is trusted) |
 | DEP-1 | Deploy workflows didn't pass the Geoapify or Turnstile site keys | **Fixed locally** (workflows map them; deploy and prebuild checks fail without them) |
 | DEP-2 | Rebuilds could change data under the same URL; no cache rule for `/data/*` | **Fixed locally** (content-hashed folders, ADR-0025 part 1; determinism, snapshot consistency and the open-tab notice are tested). The production rebuild policy awaits the owner; option C is now a concrete proposal |
-| DEP-3 | The staging smoke test runs the whole synthetic-data desktop suite | **Partly fixed**: which features are required comes from deployment policy (`EXPECT_DEPLOY_TARGET` set by the workflow, `REQUIRED` in `lib/build-features.ts`), not from the build's `build-info.json`. A required feature the build lacks fails the test; only a feature the target doesn't require may skip. The suite still assumes synthetic fixtures |
-| DEP-4 | Staging deploys before its smoke test, so a failing build stays live | **Open** |
+| DEP-3 | The staging smoke test runs the whole synthetic-data desktop suite | **Fixed locally (9 Oct 2026)**: `tests/smoke` (playwright.smoke.config.ts) takes every expectation from the site's own manifest, data files and build-info, and from the deployment policy (`EXPECT_DEPLOY_TARGET`). It passed on a synthetic-staging build and on a real-data staging build (built from the test stack's API), and refused a synthetic build checked as real-data staging, and a wrong commit |
+| DEP-4 | Staging deploys before its smoke test, so a failing build stays live | **Fixed locally (9 Oct 2026)**: `deploy-staging.yml` validates the exact build served locally (`scripts/smoke-local.mts`) before deploying, smoke-tests the live site after, and rolls back to the previous version (only if the version serving is the one it deployed). Never run on GitHub |
 | OPS-1 | Admin e2e global setup deletes all `admin_user` rows and adds test companies | **Fixed locally**: it now runs only on the disposable test stack and refuses any other database |
 | UX-1 | "Open jobs" counts differ: the explorer counts active jobs only; the company page and jobs page include *suspect* jobs | **Open** (owner decision) |
 | FEED-1 | `approve_job_feed` / `withdraw_job_feed` accepted an unknown feed silently (a `PERFORM` reset `FOUND`) | **Fixed locally** (`20261008090000`; found by pgTAP `17_feed_review`) |
@@ -631,7 +647,9 @@ flowchart LR
 28. `20261008090000_feed_unknown_feed`: `approve_job_feed` and `withdraw_job_feed` raise "no feed" again for an unknown feed. A `PERFORM` had reset `FOUND`, so the error never fired. Found by the new pgTAP `17_feed_review`.
 29. `20261008100000_import_keeps_company_evidence`: `import_commit` keeps the company evidence on a row that adds an office to an existing company. It is stored as unreviewed claims for the row's values; a different value is only a proposal. The row's result says what was kept. Evidence for a field the row leaves empty is refused.
 
-Migrations 28 and 29 are on the test stack only; the main local database is at #27. Bring it up to date with the same procedure as [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) when the owner says so.
+30. `20261008110000_create_job_feed`: `create_job_feed()` for aal2 reviewers and admins (company and source checked, board name or careers page on the company's domain, no duplicates); a new feed is always unapproved; `job_feed.created_by`, `created_at`.
+
+Migrations 28 to 30 are on the test stack only; the main local database is at #27 (rehearsed on a copy, 9 Oct: §14.1). Bring it up to date with the same procedure as [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) when the owner says so.
 
 Migrations 26 and 27 were applied to the main local database on 8 Oct 2026 with `supabase migration up`, after a fresh backup and a rehearsal on a restored copy; all counts were unchanged ([docs/main-db-migration-plan.md](docs/main-db-migration-plan.md)).
 
@@ -887,8 +905,8 @@ flowchart LR
   - each `source` has a required `permission_note`;
   - logos carry a full provenance record.
 - **Licensing:**
-  - Nominatim coordinates are ODbL-licensed, so the derived files (`geocode-cache.json`, `import-rows.json`, `pilot.csv`) have been **git-ignored** since commit `b55857e`. The earlier local commit `5812ed2` still contains 37-row versions; **squash before pushing**.
-  - Production geocoding needs the D-07 provider, and every point must be re-derived and reviewed.
+  - Nominatim coordinates are ODbL data. As a precaution, until the owner decides how ODbL obligations would be met, the derived files (`geocode-cache.json`, `import-rows.json`, `pilot.csv`) have been **git-ignored** since commit `b55857e`, and the history plan removes them from the one unpushed commit (`5812ed2`) that holds them. This is a decision deferred, not a ban: ODbL data may be published when its terms are met.
+  - Accuracy is a separate matter: most points are locality-level and need placing on the building, whatever the source; production geocoding is decision D-07.
 - **Failure handling:**
   - an unverifiable fact is dropped, never guessed;
   - an ungeocodable address is skipped and listed;
@@ -1081,12 +1099,25 @@ All runs were on Windows 11 with Node 24, from `code/`, on the uncommitted worki
 | Smoke policy | beacon tests against an edited build copy (beacon off) | no target: 3 failed; `staging`: 3 failed; `staging-synthetic`: 3 skipped | 8 Oct |
 | Main-DB rehearsal | [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) step 3 on a restored copy | both migrations applied; all counts unchanged | 8 Oct |
 | Backup drill | `scripts/backup-drill.mts` backup → restore → verify (main stack read only → test stack) | passed twice; negative control 21 problems caught | 8 Oct |
-| Dependabot | each PR on today's code in a scratch clone | minor-and-patch compatible; @types/node 26 passes (keep 24); TS 7 and ESLint 10 break lint | 8 Oct |
+| Dependabot | each PR on today's code in a scratch clone | minor-and-patch a merge candidate (passed locally; mergeable only once the required GitHub checks pass); @types/node 26 passes (keep 24); TS 7 and ESLint 10 break lint | 8 Oct |
 | Audit | `npm run audit` / `-- --release` | technical pass / release **fails** (approval pending) | 6 Oct |
 | CI | GitHub Actions on push | 4/4 jobs green on `883de71` | 6 Oct |
 | Staging smoke | `883de71`'s own tests: `npx playwright test --project=desktop` with `PLAYWRIGHT_BASE_URL` set to the staging URL | **134 passed, 7 failed, 8 skipped** | 7 Oct, live staging |
 
-**Proposal, not an approved requirement:** three consecutive green full suites before a release candidate. Earlier full runs on 7 Oct had 4 and 2 failures (a slot-timeout bug, then DEF-3), and one 275/1 run (the first DEF-1 user-side test). A 7 Oct run with 3 workers and 0.7 GB of free memory had 2 hit-test failures and was cut off; the same four map specs passed alone the next day (41 passed, 1 skipped, 1 worker), then the full run above. Low memory on this laptop still makes full runs unreliable (DEF-2).
+**9 Oct 2026, on the batch committed as `9de729f` … `9d94050`** (run on the working tree just before those commits):
+
+| Suite | Command | Result |
+| --- | --- | --- |
+| Lint / types | `npm run lint`, `npm run typecheck` | clean |
+| Unit | `npm test` | 46 files, 736 passed |
+| pgTAP | `npm run test:db` (test stack) | 19 files, 781 passed |
+| Admin e2e | `npm run test:admin` (test stack, after `reset`) | 60 passed |
+| Deployment smoke | a synthetic-staging build, then `EXPECT_DEPLOY_TARGET=staging-synthetic node scripts/smoke-local.mts` | 6 passed, 4 skipped (by design) |
+| CDP attach | `npx playwright test --config playwright.cdp.config.ts` | 3 passed. The first run exited 1 on an error in its teardown (EPERM removing the stand-in's profile); fixed in `1e78871`, then 3 passed in each of 3 runs |
+| Two map specs | `npx playwright test tests/e2e/gate-runner.spec.ts tests/e2e/hit-test.spec.ts --project=desktop --workers=1` | 9 passed (6.1 min) |
+| **Full e2e** | `npm run test:e2e` | **No complete result.** The run on the night of 8–9 Oct (about 01:05 to 09:12, judged from its build and its last records; its worker count was not recorded) lost its summary and left two timeouts: `gate-runner.spec.ts` (no live markers within 60 s) and `hit-test.spec.ts` (all 61 groups, past 600 s). Both passed when rerun alone (row above). That suggests contention, but the run's outcome is unknown. **Pending:** a recorded run (`node scripts/e2e-full-run.mts`) on an idle laptop |
+
+**Proposal, not an approved requirement:** three consecutive green full suites before a release candidate. Earlier full runs on 7 Oct had 4 and 2 failures (a slot-timeout bug, then DEF-3), and one 275/1 run (the first DEF-1 user-side test). A 7 Oct run with 3 workers and 0.7 GB of free memory had 2 hit-test failures and was cut off; the same four map specs passed alone the next day (41 passed, 1 skipped, 1 worker), then the full run above. Low memory on this laptop still makes full runs unreliable (DEF-2). The night of 8–9 Oct gave another example (above); its cause is not established.
 
 ### 8.2 Skips and coverage gaps
 - **The 59 e2e skips are all by design.** Each test runs only on the project (desktop or emulated phone) it applies to:
@@ -1254,14 +1285,14 @@ The pilot README's instructions (plain `npm run build`, then `npm run preview`) 
 | ENV-2 | GitHub `staging` and `production` environments (required reviewers, `main` only, variables, secrets); delete repository-level Supabase and site variables; push `04aa427` | Prepared locally | P0 | ENV-1, push approval | Staging run waits for approval and passes `check-deploy-env` | Owner |
 | DEP-1 | Map `NEXT_PUBLIC_GEOAPIFY_KEY` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in both deploy workflows and add them to `check-deploy-env` | Done locally; needs the environment variables | P0 | ENV-2 | Hosted builds show the basemap and the forms | Dev |
 | DEP-2 | Content-versioned datasets, caching, open-tab update notice (ADR-0025 part 1) | Done locally; not deployed | P1 | — | Documented policy and a test | Dev |
-| DEP-3/4 | Staging smoke suite fit for a real-data staging site; test before going live | Open | P1 | ENV-1 | Smoke passes on real-data staging; a failing build does not go live | Dev |
+| DEP-3/4 | Staging smoke suite fit for a real-data staging site; test before going live | **Done locally (9 Oct 2026)**; needs the hosted staging run | P1 | ENV-1 | Smoke passes on real-data staging; a failing build does not stay live | Dev |
 | PIPE-1 | Decide which project the pipeline serves; set `PIPELINE_DATABASE_URL` (per environment); give the jobs an `environment:` | Open | P0 | ENV-1 | `pipeline.yml` and `monitor.yml` green | Owner, Dev |
 | REBUILD-1 | How production rebuilds after a publication | **Decided: option C (8 Oct 2026); built locally, never run** (`refresh-production-data.yml`, release tags) | P0 | ENV-1, ENV-2, the tag ruleset, a first release | A refresh of a real release deploys changed data, refuses a forged tag and a large shrink, and rolls back a failed smoke | Owner (setup), Dev |
 | DB-MAIN | Bring the main local database (pilot drafts) to migration `20261007160000` without a reset | **Done (8 Oct 2026)**: backup, `migration up`, counts unchanged | P1 | — | [docs/main-db-migration-plan.md](docs/main-db-migration-plan.md) followed; counts unchanged | Dev |
 | P9-15 | officemap.tech: DNS on Cloudflare, Worker custom domain, site URL, canonical URLs, CSP, allowed origins | Not started | P0 | ENV-1, release approval | Production smoke on the domain passes | Owner, Dev |
 | P9-05 | Release checklist and a production deploy | In progress (workflow never run) | P0 | everything P0 | Checklist complete; explicit owner authorization | Owner |
 | GIT-1 | Remove the OSM-derived files from the unpushed history and the Claude trailers from unpushed messages; then push | **Plan written and rehearsed** on a throwaway clone ([docs/history-cleanup-plan.md](docs/history-cleanup-plan.md)): same final tree, a fast-forward push, recovery branch and bundle first. **Not run**: awaiting authorization | P0 | — | No OSM-derived file anywhere in pushed history; no trailer in unpushed messages | Owner (authorize), Dev |
-| DEPS-1 | Review the 4 open Dependabot PRs | **Tested locally 8 Oct 2026** (each applied to today's code in a scratch clone; nothing merged): **minor-and-patch** (Next 16.3.8, React 19.3.0, lucide, eslint-config-next, Supabase CLI, Vitest, Wrangler) compatible; **@types/node 26** passes but is ahead of the Node 24 runtime (keep 24); **TypeScript 7** type-checks and builds, but lint fails (typescript-eslint does not support TS 7); **ESLint 10** lint crashes (eslint-plugin-react in eslint-config-next uses a removed API) | P1 | — | CI green after merge | Owner (merge), Dev |
+| DEPS-1 | Review the 4 open Dependabot PRs | **Tested locally 8 Oct 2026** (each applied to today's code in a scratch clone; nothing merged): **minor-and-patch** (Next 16.3.8, React 19.3.0, lucide, eslint-config-next, Supabase CLI, Vitest, Wrangler) a merge candidate: it passed locally, and stays a candidate until the required checks pass on GitHub on the PR rebased onto current main; **@types/node 26** passes but is ahead of the Node 24 runtime (keep 24); **TypeScript 7** type-checks and builds, but lint fails (typescript-eslint does not support TS 7); **ESLint 10** lint crashes (eslint-plugin-react in eslint-config-next uses a removed API) | P1 | — | CI green after merge | Owner (merge), Dev |
 
 **Map and performance**
 
@@ -1339,11 +1370,11 @@ P6-04, P5-05, P4-03, Phase 10, the PMTiles migration, Chennai (as the second rel
 | Item | Value |
 | --- | --- |
 | Branch | `main` |
-| Local HEAD | `58fccfc` "P9-12: JavaScript budget …"; this pass's work is uncommitted on top |
+| Local HEAD | 9 Oct 2026: the docs commit for the 9 Oct batch, on `9d94050` "E2E-RUN: recorded full e2e runs …" (at `04aa427` when this handover was first written) |
 | Remote HEAD (`origin/main`) | `883de71` "P9-06: ownership status separate from startup stage…" (6 Oct 2026) |
-| Unpushed commits | **23** (`93ca2a6` … `58fccfc`, 6–8 Oct) |
+| Unpushed commits | **35** (`93ca2a6` … `9d94050` plus the 9 Oct docs commit, 6–9 Oct); the full list is in the history-cleanup plan |
 | History cleanup pending | `5812ed2` contains OSM/Nominatim-derived pilot files (`import-rows.json`, `pilot.csv`, `geocode-cache.json`); `b55857e` removed them. 20 unpushed commits carry `Co-Authored-By: Claude` trailers. **Plan, rehearsed: [docs/history-cleanup-plan.md](docs/history-cleanup-plan.md)** (only unpushed commits rewritten; the same final tree; a fast-forward push; recovery branch and bundle first). Not run: awaiting the owner. The 38 pushed commits with trailers would need a force-push (not recommended). `e8bb5ad` and `0f79828` are labelled WIP. |
-| Working tree | **Uncommitted** work of 8 Oct (later) on top of `58fccfc`: the backup drill, `17_feed_review`, the pilot tests, migrations `20261008090000` and `20261008100000`, the feedback and preview fixes, option C hardening (`release-record`, `approved-baseline`, the guard, the workflows), the history plan, docs. Commit when the owner asks |
+| Working tree | Clean after the 9 Oct docs commit. The 8 Oct work is in `4ea4218` … `e0c6b95`, the 9 Oct work in `9de729f` … `9d94050` and the docs commit |
 | Open PRs | 4 Dependabot PRs (tested locally 8 Oct; see DEPS-1) |
 | Repository visibility | **Public** |
 
@@ -1550,3 +1581,200 @@ Where these conflict, **the implementation, as described in this handover, is co
 ---
 
 *End of handover. Reviewed commit `04aa427`. Contains no passwords, tokens, TOTP secrets or database credentials.*
+
+---
+
+## 14. Transition checklist (9 Oct 2026)
+
+What has to happen, in order, to move from this laptop to hosted staging and on toward production. Every step names who
+acts. **Dev** means work the developer (or the AI assistant) can do locally without new authority. **Owner** means a decision,
+an authorization, or access only the owner has.
+
+**Authorized today:** local work and local commits.
+
+**Not authorized:**
+- the main-database migration;
+- history rewriting;
+- Dependabot merges;
+- the push;
+- any deployment;
+- any hosted change.
+
+**Each authorization covers only itself.** In particular, approving the push does not approve a deployment: see 14.3.
+
+### 14.1 Main local database: pending migrations
+
+**State.** The main database (project `company-map`, port 54322) is at `20261007160000` and holds the 46 pilot drafts.
+
+**Pending, exactly:**
+
+| Migration | What it changes | Data it touches |
+| --- | --- | --- |
+| `20261008090000_feed_unknown_feed` | `approve_job_feed` and `withdraw_job_feed` raise "no feed" for an unknown feed (row count taken before a `PERFORM` reset `FOUND`) | none |
+| `20261008100000_import_keeps_company_evidence` | `import_commit` keeps a row's company evidence when it adds an office to an existing company (claims; proposals named) | none; affects only future imports |
+| `20261008110000_create_job_feed` | adds `job_feed.created_by` and `created_at` (null for existing rows); adds `create_job_feed()` for reviewers | adds two empty columns |
+
+**Rehearsed 9 Oct 2026**, on a copy of the main database restored into the test stack's Postgres; the main stack was not
+involved:
+- all three applied with exit 0;
+- every count was unchanged: 46 draft companies, 46 draft offices, 262 pilot evidence items with 0 reviewed; 117
+  companies, 137 offices, 115 jobs, 275 evidence items, 3 logo uploads; Bengaluru lists 49, Chennai 24;
+- `create_job_feed` exists and `anon` cannot execute it.
+
+**Steps (Dev, after the Owner approves):**
+1. **Start only the database:** `npx supabase db start`, from `code/`.
+2. **Fresh backup**, kept in the restricted `.local-backups/`:
+   `docker exec supabase_db_company-map pg_dump -U postgres -Fc -d postgres -f /tmp/pre.dump`, then `docker cp` it to
+   `.local-backups/pre-migrate-<date>.dump`. Check it: `pg_restore -l` lists the table data.
+3. **Counts before:** the queries in `docs/main-db-migration-plan.md` step 2. They must equal the values above.
+4. **Check what is pending:** `npx supabase migration list --local` must show exactly the three migrations above.
+5. **Apply without a reset:** `npx supabase migration up --local`. **Never `db reset`.**
+6. **Integrity:**
+   - the counts must equal the values above;
+   - `migration list` shows all three applied;
+   - `create_job_feed(uuid,integer,text,text)` exists and anon cannot execute it;
+   - `job_feed` has `created_by` and `created_at`.
+7. **Stop** with a plain `npx supabase stop`, which keeps the data.
+
+**Recovery.**
+- A migration that fails rolls back its own transaction and changes nothing: stop and investigate.
+- If the result is wrong, the step-2 dump is the way back. A `pg_restore --clean` over the main database has **not** been
+  rehearsed; rehearse it on a scratch copy first.
+- Never drop the volume without the Owner's word.
+
+**Owner:** review and approve. **Dev:** run, then record the results in `docs/progress.md`.
+
+### 14.2 History cleanup before the first push
+
+**Plan:** [docs/history-cleanup-plan.md](docs/history-cleanup-plan.md). It holds the complete list of affected commits, the
+commands, the checks and recovery.
+
+- **Current HEAD and range:** listed in §11 and in the plan's inventory. The rewrite covers `origin/main..main`, so commits
+  made after the inventory are included automatically.
+  - On 9 Oct 2026 only `5812ed2` holds the OSM-derived files.
+  - The 20 commits from `93ca2a6` to `2e4d8a6` carry Claude trailers. None since does (checked 9 Oct through `9d94050`:
+    35 unpushed commits once the docs commit is made).
+  - The rehearsal was last run at `1094e08`; re-run it on the final HEAD before running the plan.
+- **Recovery first:** the branch `backup/pre-history-cleanup-<date>`, and a verified bundle of every ref in
+  `.local-backups/`.
+- **Must hold afterwards, or recover:**
+  - the same final tree (`git rev-parse 'main^{tree}'` unchanged);
+  - the same commit count, and the same authors, dates and subjects;
+  - only `5812ed2`'s counterpart differs, and only in the three files;
+  - no trailer left;
+  - `origin/main` is an ancestor, so the push is a **fast-forward without force**.
+- **Already-pushed history is not changed.** The 38 pushed commits that carry trailers stay as they are.
+
+**Owner:** authorize the rewrite, then separately authorize the push. **Dev:** re-run the rehearsal on the final HEAD,
+then run the plan, the checks, and the push.
+
+### 14.3 Workflow effects: what can deploy, write hosted data, or notify
+
+Pushing to GitHub activates the workflows below. **Since this batch, nothing scheduled or dispatched acts until the Owner
+sets a repository variable**:
+- `AUTOMATION_ENABLED=true` for staging, the pipeline and the monitor;
+- `PRODUCTION_REFRESH_ENABLED=true` for the production data refresh.
+
+A workflow started by hand (`workflow_dispatch`) always runs, because starting it is the decision.
+
+| Workflow | Triggers | Effects | Guard |
+| --- | --- | --- | --- |
+| `ci.yml` | push to `main`, pull requests, by hand | Tests and a build on GitHub's runners; no deploy, no hosted data. A failure e-mails the author and watchers. | none needed |
+| `deploy-staging.yml` | nightly 20:45 UTC; `repository_dispatch: rebuild` (staging's Publish now, the pipeline); by hand | Builds, validates the build locally with the smoke suite, **deploys the staging Worker**, smoke-tests, rolls back on failure. A run waits for the `staging` environment's reviewers, who are notified. | `AUTOMATION_ENABLED` for schedule and dispatch; environment reviewers; `check-deploy-env` |
+| `pipeline.yml` | every 6 h at :17; by hand | **Writes hosted data** (feed jobs, link and evidence checks) through `PIPELINE_DATABASE_URL`, then **dispatches `rebuild`**, which deploys staging. Fails, and so notifies, while the secret is unset. | `AUTOMATION_ENABLED` |
+| `monitor.yml` | hourly at :07; by hand | Reads heartbeats; **a failure e-mails watchers**, including while its secret is unset. | `AUTOMATION_ENABLED` |
+| `refresh-production-data.yml` | every 6 h at :47; `repository_dispatch: refresh-production-data` (the production project's Publish now); by hand | **Deploys production data**, only for a verified, approved release; rolls back on failure. | `PRODUCTION_REFRESH_ENABLED`; release record; guard |
+| `deploy-production.yml` | by hand only, with the typed phrase | **Deploys production** and pushes a release tag. | phrase; `production` environment reviewers; audit; launch gate |
+| Dependabot | weekly | Opens PRs (notifications); CI runs on them. **Merging is the Owner's.** | none needed |
+
+**What GitHub runs today, from `origin/main` = `883de71`:**
+- The old `deploy-staging.yml` has **no** environment gate and no automation gate. Its nightly schedule deployed staging on
+  7 Oct, and keeps doing so with old code and synthetic data.
+- The old `pipeline.yml` and `monitor.yml` fail while `PIPELINE_DATABASE_URL` is unset.
+- After the push, the new gates stop all of these until the Owner sets the variables.
+- **Owner:** decide whether to disable the old schedules on GitHub now (Actions → each workflow → Disable workflow), before
+  the push.
+
+### 14.4 Hosted staging setup
+
+**Owner** (dashboards and secrets), with **Dev** following [docs/deploy-environments.md](docs/deploy-environments.md) and
+checking:
+1. **Supabase staging project:**
+   - apply the migrations (`npx supabase db push` with the project linked; Dev can prepare and run it when authorized);
+   - **disable sign-ups**, require TOTP MFA, and create the administrators, each enrolling a factor;
+   - Storage buckets come from the migrations (`company-logos` public, `company-logos-pending` private): check them after
+     the push;
+   - Edge Functions `click`, `submit-feedback`, `request-rebuild`, `activate-logo`, with their secrets:
+     - `ALLOWED_ORIGINS`, `TURNSTILE_SECRET_KEY`;
+     - `FEEDBACK_SALT`, at least 32 characters;
+     - `GITHUB_DISPATCH_TOKEN` (fine-grained, this repository, staging only), `GITHUB_REPOSITORY`;
+     - `REBUILD_EVENT_TYPE` unset on staging;
+     - `CLIENT_IP_HEADER` and `TRUSTED_PROXY_HOPS` **only after 14.5 step 3**. Until then the form refuses submissions, by
+       design;
+   - the pipeline login: a role that is a member of `pipeline`, never the service role. Its URL becomes
+     `PIPELINE_DATABASE_URL`, decided under PIPE-1.
+2. **GitHub, environment `staging`:**
+   - required reviewers, and deployment branches `main` only;
+   - the variables `DEPLOY_ENV`, `SITE_URL`, `SUPABASE_*`, `OTHER_ENV_SUPABASE_PROJECT_REF`, `GEOAPIFY_KEY`,
+     `TURNSTILE_SITE_KEY`, and `ALLOW_SYNTHETIC_DATA` only for a synthetic staging;
+   - the secrets `CLOUDFLARE_API_TOKEN` (scoped to the staging Worker) and `CLOUDFLARE_ACCOUNT_ID`.
+3. **GitHub, repository:**
+   - the `release/*` tag ruleset;
+   - CODEOWNERS and branch protection for `.github/workflows/`;
+   - delete any repository-level Supabase or site variables;
+   - leave `AUTOMATION_ENABLED` and `PRODUCTION_REFRESH_ENABLED` unset until 14.5 is done.
+4. **The `production` and `production-data` environments** (required reviewers on `production`) follow the same pattern
+   later. Nothing deploys production before the release checklist.
+
+### 14.5 Hosted validation, in this order
+
+Each step must pass before the next. Record every result in `docs/progress.md`. **Dev** runs the checks; the **Owner**
+provides access and signs off.
+
+1. **Permissions and real logins:**
+   - pgTAP (`supabase test db` on a **disposable** branch or project, never on data that matters);
+   - the anonymous REST probe;
+   - an administrator signing in with password and TOTP, and refused admin data at aal1;
+   - an editor, a reviewer and an admin each doing only what their role allows.
+2. **Logo integrity:**
+   - upload, approve, copy, then activate through `activate-logo`;
+   - a public copy replaced with other bytes must be refused;
+   - a direct API copy of an undecided logo must be refused.
+3. **Turnstile, and spoofed proxy headers:**
+   - a real widget and a real `siteverify`;
+   - the visitor-address check with spoofed headers ([docs/security.md](docs/security.md)). Then set `CLIENT_IP_HEADER`
+     and `TRUSTED_PROXY_HOPS`, and show that six submissions in an hour are refused however `X-Forwarded-For` varies.
+4. **Cache updates:**
+   - version folders are `immutable` and `current.json` is `no-cache` on the deployed Worker;
+   - an open explorer tab offers a reload after a data change, and a reload shows the new snapshot.
+5. **Encrypted backup restoration:**
+   - `scripts/backup-drill.mts` against the staging project (its connection string and service key);
+   - the backup encrypted as in [docs/backup-restore.md](docs/backup-restore.md) and copied off-site;
+   - then decrypted, restored into a fresh project or the test stack, and `verify` passing.
+6. **Option C, isolated rehearsal.** In a separate test repository or fork, never against production:
+   - the `release/*` tag and its ruleset;
+   - the release-record API calls;
+   - `wrangler deployments status --json`;
+   - a refresh that deploys, one that finds nothing to do, and one stopped by the guard;
+   - a rollback, including the "not rolling back over a newer version" branch;
+   - a release and a refresh started together, to show one waits.
+
+   Seven checks are listed in [ADR-0025](docs/decisions/0025-dataset-versions-and-rebuild-policy.md).
+
+### 14.6 Work Dev can still do locally, and what waits for the Owner
+
+**Dev, now or on request:**
+- run 14.1 and 14.2 once authorized;
+- the click-counter rate limit;
+- the P9-08 correction route — deferred until the Owner decides whether founders launch;
+- tests for the in-page runner on a real phone, which needs the devices;
+- a production smoke suite built on `tests/smoke`.
+
+**Owner, in this order:**
+1. Review the main-database migration plan (14.1) and decide whether to apply it.
+2. Decide the old GitHub schedules (14.3), then authorize the history cleanup and, separately, the push (14.2).
+3. Decide the launch questions: D-04 (coverage and gate), D-07 (geocoder; and how ODbL obligations would be met for any
+   OSM-derived point), D-06 (devices and gate owner), founders at launch.
+4. Create the staging project, environments, secrets and ruleset (14.4).
+5. Approve each step of the hosted validation in order (14.5), then set `AUTOMATION_ENABLED`.
+6. Decide the Dependabot merges. The minor-and-patch group is a merge candidate once its required checks pass on GitHub.
