@@ -68,8 +68,18 @@ Every one of these refuses a database that is on port 54322, lacks the `test_sta
 - It refuses to start while something answers on port 3100 (the config would reuse that server and test an old build), or
   while tracked files differ from the commit (unless `--allow-dirty`). Map-heavy specs stay one at a time (`tests/map-slot.ts`)
   whatever the worker count.
-- On a laptop, start it detached, so it outlives the terminal or session that started it, and leave the machine otherwise idle:
-  the map specs draw WebGL in software.
+- On a laptop, start it with `--detach`, so it outlives the terminal or session that started it, and leave the machine
+  otherwise idle: the map specs draw WebGL in software. `--detach` starts the run without a shell, so a `-g` title with
+  spaces arrives intact. A hand-written `Start-Process` split one on 9 Oct 2026, and the run became most of the suite
+  repeated 30 times.
+- **The machine must not sleep during a run.**
+  - On 9 Oct 2026, Windows Modern Standby explained every anomaly seen that day: the overnight run's 8 hours, its two
+    timeouts (each at a standby transition, to the second), and a worker force-killed for a missing heartbeat.
+  - On Windows the runner holds a keep-awake request for the run (`--allow-sleep` turns it off). Closing the lid still
+    sleeps the machine: keep it open and on mains power.
+  - The summary flags any gap of over 3 min between the minute samples ("suspended or frozen"), and lists Windows'
+    standby and sleep events during the run (`power-events.json`). A run with a gap is not a valid result for the tests
+    that ran in it.
 
 ## CI (on pull requests)
 Lint, typecheck, Vitest, pgTAP (local Supabase in CI), dependency audit, secret scan, and Playwright against a local build. Preview-Worker journeys are added after P1-02.

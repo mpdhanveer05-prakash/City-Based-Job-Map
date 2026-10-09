@@ -13,6 +13,42 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-09 (evening): worker shutdown hang traced to Modern Standby; the runner keeps the machine awake
+- **Finding (by timing, not reproduced on purpose):** the System log's Kernel-Power events 506/507 (Modern Standby
+  entered/exited) cover every anomaly of the day:
+
+  | Anomaly | Time (local) | Power state |
+  | --- | --- | --- |
+  | Overnight full run, about 8 h | 01:05–09:12 | Lid closed 01:08, standby until 09:09 |
+  | Overnight `hit-test` timeout | failure written 01:56:48 | Standby exit/re-entry 01:56:46 |
+  | Overnight `gate-runner` timeout | failure written 07:27:29 | Standby exit (hibernate) 07:27:29 |
+  | 20-repetition run: 44 min, one worker force-killed ("did not exit within 300000ms") | 10:58:56–11:43:17 | Idle-timeout standby 10:50:14–11:41:16, brief exits 11:02, 11:04, 11:13 |
+  | A run's sampler silent for 2.5 h | 13:36–16:05 | Idle-timeout standby 13:26:40–16:05:33 |
+
+  - **Why the force-kill:** Playwright kills a stopping worker only after 5 minutes **without a heartbeat**, and the
+    worker sends one every second while it closes. A suspended machine stops both timers, and on waking the deadline
+    has passed.
+  - **Also checked, none a cause:** teardown hooks (the map slot is released in `finally`; the CDP teardown is fixed),
+    browser contexts and browsers (they exit once their worker is gone), and the web server (Playwright stops it).
+  - **Leftovers seen were mine:** the children of a stopped shell outlive it on Windows, and my verification script
+    passed a Git Bash PID to `taskkill`.
+- **Runner changes (`scripts/e2e-full-run.mts`):**
+  - keep-awake on Windows (`SetThreadExecutionState`, system and display required) while the run lives; `--allow-sleep`
+    turns it off;
+  - the summary flags gaps of over 3 min between the minute samples, and lists the standby and sleep events in the run's
+    window (`power-events.json`); a failure to read them is reported as an error, never as "none";
+  - `--detach` starts the run in its own process without a shell.
+- **Verified:**
+  - `summarize` flags the mis-launched run (`20261009-080152-9e34868`: one gap of 149.6 min, in which a test timed out)
+    and finds none in the `4511c15` run;
+  - a detached one-test run: passed, keep-awake held and released, no gap;
+  - the event query, as the runner builds it, returns the 07:56:40Z/10:35:33Z standby pair.
+  - **Found while verifying:** the first version of the query never parsed (a missing `;`) and was silently reported as
+    "none". Fixed; that self-test record was deleted.
+- **The mis-launched experiment (not a result):** a hand-written `Start-Process` split `-g "is not in this city"`, so the
+  run selected 1,980 tests (most of the suite, ×30). It was stopped after 45 tests (44 passed, 1 timed out inside the
+  standby gap).
+
 ### 2026-10-09 (later): URL-related specs under load on `5a60ae3`: 141 passed, 1 failed, 40 skipped
 - **Command:** `node scripts/e2e-full-run.mts --workers 2 -- <9 specs>`, detached; 4 busy threads alongside.
   - The 9 specs: company pages, explorer filters, explorer map, navigation, open-tab update, phone, stylesheet timing, and
