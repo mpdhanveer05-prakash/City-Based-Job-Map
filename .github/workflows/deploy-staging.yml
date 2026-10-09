@@ -3,7 +3,8 @@ name: Deploy staging
 # Builds the static export and deploys it to the assets-only Worker
 # `company-map-staging` (ADR-0006, ADR-0007). Triggered by hand, or by
 # `repository_dispatch` (type `rebuild`) from the request-rebuild Edge Function
-# and the pipeline (P8-05).
+# and the pipeline (P8-05), or nightly. Scheduled and dispatched runs do nothing until the repository variable
+# AUTOMATION_ENABLED is true (the owner's separate decision after a push); a run by hand always runs.
 #
 # Needs the `staging` GitHub environment with required reviewers, its variables, and its CLOUDFLARE_API_TOKEN
 # (Account > Workers Scripts: Edit) and CLOUDFLARE_ACCOUNT_ID secrets: docs/deploy-environments.md.
@@ -29,8 +30,11 @@ env:
 jobs:
   deploy:
     name: Build and deploy staging
+    # Pushing this repository must not start automation by itself (owner, 8 Oct 2026): a scheduled or dispatched run does
+    # nothing until the owner sets the repository variable AUTOMATION_ENABLED to true. A run started by hand always runs.
+    if: github.event_name == 'workflow_dispatch' || vars.AUTOMATION_ENABLED == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     # Required reviewers on the `staging` environment hold every run (by hand, nightly, or Publish now) until a person
     # approves it, so nothing reaches the staging Worker without approval (CLAUDE.md, Hard rules).
     environment:
@@ -68,17 +72,60 @@ jobs:
       - run: npm ci
       # `postbuild` enforces the static-assets Free limits and the secret scan of out/.
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      # DEP-3/4: the smoke suite (tests/smoke) takes every expectation from the site's own manifest and data files, so it
+      # suits real data as well as the synthetic sample. It runs twice: on the exact build, served here, BEFORE anything is
+      # deployed; and on the live site after the deploy, with a rollback if that fails.
+      - name: Validate the build before deploying
+        env:
+          # The deployment policy's target (lib/build-features.ts REQUIRED), from this environment's settings, not from the
+          # build: a required feature the build lacks fails the suite instead of being skipped.
+          EXPECT_DEPLOY_TARGET: ${{ vars.ALLOW_SYNTHETIC_DATA == 'true' && 'staging-synthetic' || 'staging' }}
+          EXPECT_COMMIT: ${{ github.sha }}
+        run: node scripts/smoke-local.mts
+      - name: Record the version now serving
+        id: previous
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # The first deployment has nothing to roll back to.
+          if npx wrangler deployments status --env staging --json > ../worker-before.json 2>/dev/null; then
+            echo "id=$(node scripts/worker-version.mts ../worker-before.json || true)" >> "$GITHUB_OUTPUT"
+          fi
       - name: Deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler deploy --env staging
+        run: npx wrangler deploy --env staging --message "staging run ${{ github.run_id }} (${{ github.sha }})"
+      - name: Record the version this run deployed
+        id: deployed
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler deployments status --env staging --json > ../worker-after.json
+          echo "id=$(node scripts/worker-version.mts ../worker-after.json)" >> "$GITHUB_OUTPUT"
       - name: Smoke-test staging
         env:
           PLAYWRIGHT_BASE_URL: ${{ vars.SITE_URL }}
-          # The deployment policy's target (lib/build-features.ts REQUIRED), from this environment's settings, not from the
-          # build: a required feature the deployed build lacks fails the smoke test instead of being skipped.
           EXPECT_DEPLOY_TARGET: ${{ vars.ALLOW_SYNTHETIC_DATA == 'true' && 'staging-synthetic' || 'staging' }}
+          EXPECT_COMMIT: ${{ github.sha }}
+        run: npx playwright test --config playwright.smoke.config.ts
+      # Roll back only what this run deployed; if anything else is serving now, leave it and say so.
+      - name: Roll back
+        if: failure() && steps.previous.outputs.id != '' && steps.deployed.outputs.id != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PREVIOUS: ${{ steps.previous.outputs.id }}
+          DEPLOYED: ${{ steps.deployed.outputs.id }}
         run: |
-          npx playwright install --with-deps chromium
-          npx playwright test --project=desktop
+          npx wrangler deployments status --env staging --json > ../worker-now.json
+          now=$(node scripts/worker-version.mts ../worker-now.json)
+          if [ "$now" != "$DEPLOYED" ]; then
+            echo "Not rolling back: $now is serving, not the version this run deployed ($DEPLOYED). A person must check." >&2
+            exit 1
+          fi
+          npx wrangler rollback "$PREVIOUS" --env staging --message "staging run ${{ github.run_id }} failed its smoke test" --yes
+          echo "**Rolled back** staging to \`$PREVIOUS\`." >> "$GITHUB_STEP_SUMMARY"

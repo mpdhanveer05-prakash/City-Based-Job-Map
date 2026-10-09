@@ -37,6 +37,10 @@ env:
 jobs:
   resolve:
     name: Find the approved release
+    # A separate variable from staging's AUTOMATION_ENABLED: automatic production changes are their own decision.
+    # Also: pushing this repository must not start automation by itself (owner, 8 Oct 2026): a scheduled or dispatched run does
+    # nothing until the owner sets the repository variable PRODUCTION_REFRESH_ENABLED to true. A run started by hand always runs.
+    if: github.event_name == 'workflow_dispatch' || vars.PRODUCTION_REFRESH_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     # Reads the release's run and its environment approvals through the API.

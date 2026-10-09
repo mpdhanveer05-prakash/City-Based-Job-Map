@@ -16,7 +16,8 @@ for path in / /bangalore /chennai /suggest /sitemap.xml; do
     /sitemap.xml) ;;
     *)
       grep -q 'http-equiv="Content-Security-Policy"' /tmp/page.html || { echo "$path has no Content-Security-Policy" >&2; fail=1; }
-      if grep -qi 'synthetic' /tmp/page.html; then echo "$path mentions synthetic data" >&2; fail=1; fi
+      # The sample-data notice and note, not the bare word: a real page's serialised props contain "synthetic":false.
+      if grep -qE 'data-testid="(sample-data-notice|synthetic-note)"' /tmp/page.html; then echo "$path shows the sample-data notice" >&2; fail=1; fi
       if grep -q 'pilot-preview-banner' /tmp/page.html; then echo "$path is a pilot preview build" >&2; fail=1; fi
       ;;
   esac
