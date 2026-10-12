@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkDeployEnv } from "../../scripts/check-deploy-env.mts";
+import { checkDeployEnv, NO_PRODUCTION_PROJECT_YET } from "../../scripts/check-deploy-env.mts";
 
 const STAGING_REF = "abcdefghijklmnopqrst";
 const PROD_REF = "zyxwvutsrqponmlkjihg";
@@ -47,6 +47,55 @@ describe("checkDeployEnv", () => {
 
   it("refuses the same Supabase project for both environments", () => {
     expect(checkDeployEnv("production", { ...production, OTHER_ENV_SUPABASE_PROJECT_REF: PROD_REF }).problems.join()).toMatch(/separate projects/);
+  });
+
+  describe("the other environment's project ref", () => {
+    const otherRef = (target: "staging" | "production", value: string) =>
+      checkDeployEnv(target, { ...(target === "staging" ? staging : production), OTHER_ENV_SUPABASE_PROJECT_REF: value });
+
+    it(`lets staging say "${NO_PRODUCTION_PROJECT_YET}" while no production project exists`, () => {
+      expect(NO_PRODUCTION_PROJECT_YET).toBe("none-yet");
+      expect(otherRef("staging", "none-yet")).toEqual({ problems: [], dataSource: "" });
+    });
+
+    it("never lets production use it: production must name staging's actual project", () => {
+      expect(otherRef("production", "none-yet").problems.join()).toMatch(/production must name staging's actual project ref/);
+    });
+
+    it.each(["none", "NONE-YET", "None-yet", "none_yet", "none-yet-", "tbd", "placeholder", "production", "reserved-prod-ref", "-"])(
+      "refuses the arbitrary placeholder %j in both environments",
+      (value) => {
+        for (const target of ["staging", "production"] as const) {
+          expect(otherRef(target, value).problems.join()).toMatch(/OTHER_ENV_SUPABASE_PROJECT_REF is not a 20-character project ref/);
+        }
+      },
+    );
+
+    it.each([
+      ["19 characters", "abcdefghijklmnopqrs"],
+      ["21 characters", "abcdefghijklmnopqrstu"],
+      ["upper case", "ZYXWVUTSRQPONMLKJIHG"],
+      ["a URL instead of a ref", `https://${PROD_REF}.supabase.co`],
+    ])("refuses a malformed ref (%s)", (_, value) => {
+      expect(otherRef("staging", value).problems.join()).toMatch(/not a 20-character project ref/);
+      expect(otherRef("production", value).problems.join()).toMatch(/not a 20-character project ref/);
+    });
+
+    it("still requires a value, and still refuses the environment's own project", () => {
+      expect(otherRef("staging", "").problems.join()).toMatch(/OTHER_ENV_SUPABASE_PROJECT_REF is missing/);
+      expect(otherRef("production", "").problems.join()).toMatch(/OTHER_ENV_SUPABASE_PROJECT_REF is missing/);
+      expect(otherRef("staging", STAGING_REF).problems.join()).toMatch(/separate projects/);
+    });
+
+    it("ignores surrounding whitespace, as for every other value", () => {
+      expect(otherRef("staging", "  none-yet \n")).toEqual({ problems: [], dataSource: "" });
+      expect(otherRef("production", ` ${STAGING_REF} `)).toEqual({ problems: [], dataSource: "" });
+    });
+
+    it("is not read by an explicitly synthetic staging build, which has no Supabase project", () => {
+      const opted = { DEPLOY_ENV: "staging", NEXT_PUBLIC_SITE_URL: staging.NEXT_PUBLIC_SITE_URL, ALLOW_SYNTHETIC_DATA: "true", NEXT_PUBLIC_GEOAPIFY_KEY: "geo" };
+      expect(checkDeployEnv("staging", opted)).toEqual({ problems: [], dataSource: "seed" });
+    });
   });
 
   it("refuses a URL from a different project than the ref", () => {

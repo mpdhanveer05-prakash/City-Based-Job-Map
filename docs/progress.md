@@ -13,6 +13,39 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-12 (evening): DEP-5: the other environment's project reference tightened; production-data reviewer for the rehearsal
+- **Change** (`scripts/check-deploy-env.mts`, owner's request): `OTHER_ENV_SUPABASE_PROJECT_REF` accepts:
+  - exactly `none-yet` (`NO_PRODUCTION_PROJECT_YET`), only for **staging**, while no production project exists. The
+    run then logs "no production project yet";
+  - otherwise only a 20-character project ref, different from the environment's own.
+  - **Production refuses `none-yet`**: it must name staging's actual project.
+  - Arbitrary placeholders are refused in both environments.
+  - An explicitly synthetic staging build still reads no Supabase value.
+- **Tests** (`tests/unit/check-deploy-env.test.ts`, 16 new cases written first and failing, then 19 new in total):
+  - `none-yet` passes for staging and fails for production;
+  - ten placeholders are refused in both environments: `none`, `NONE-YET`, `None-yet`, `none_yet`, `none-yet-`, `tbd`,
+    `placeholder`, `production`, `reserved-prod-ref`, `-`;
+  - malformed refs are refused: 19 and 21 characters, upper case, a URL;
+  - an empty value is still missing, and the environment's own ref is still refused;
+  - surrounding whitespace is trimmed;
+  - synthetic staging is unaffected.
+- **The CLI as the workflows call it:**
+  - staging with `none-yet`: exit 0, with the notice;
+  - staging with `tbd`: exit 1;
+  - production with `none-yet`: exit 1;
+  - production with a real staging ref: exit 0;
+  - synthetic staging: exit 0.
+- **Checks:** `npm run lint` and `npm run typecheck` clean; `npx vitest run --maxWorkers=2` 46 files, 758 passed (739 + 19).
+- **Docs:**
+  - [deploy-environments.md](deploy-environments.md): the rule table and staging variables;
+  - the `production-data` policy: **the owner as required reviewer during the initial hosted rehearsal**, with
+    `PRODUCTION_REFRESH_ENABLED` unset; unattended refresh is a later approval;
+  - [release-checklist.md](release-checklist.md) item 2a: replace `none-yet` the day production is created;
+  - handover §14.3–14.4.
+- The read-only GitHub check script now also requires a reviewer on `production-data`.
+- **Not done (not authorized):** push, deployment, hosted changes, enabling automation. The GitHub protections are being
+  configured by the owner; not verified yet.
+
 ### 2026-10-12 (later): push readiness: protections not yet on GitHub; reviewer, production-data and smoke policies written
 - **Read anonymously from GitHub's public API (nothing written):**
   - `Deploy staging` is `disabled_manually` (the owner disabled it). The last run is still run 7.

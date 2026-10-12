@@ -1747,7 +1747,7 @@ A workflow started by hand (`workflow_dispatch`) always runs, because starting i
 1. **The variables `AUTOMATION_ENABLED` and `PRODUCTION_REFRESH_ENABLED` are absent or not `true`.** The public API cannot
    read variables, so the Owner checks under Settings → Secrets and variables → Actions → Variables.
 2. **The environments `staging`, `production` and `production-data` exist**, each limited to deployment branch `main`.
-   `staging` and `production` need required reviewers.
+   `staging`, `production` and (during the initial hosted rehearsal) `production-data` need required reviewers; admin bypass off on all three.
    - Reason: a job that names an environment which doesn't exist creates it **without protection**. A by-hand run would
      then deploy with no reviewer step.
 3. **No Cloudflare secret at repository level.** Every job can read a repository secret, including both production
@@ -1795,7 +1795,7 @@ the results. The details of each value are in [docs/deploy-environments.md](docs
      - `GEOAPIFY_KEY` (step 3).
 5. **New environments `production` and `production-data`:**
    - deployment branch `main`;
-   - required reviewers on `production` (you; *Prevent self-review* only once there is a second reviewer), none on `production-data`;
+   - required reviewers: `production` (you; *Prevent self-review* only once there is a second reviewer) and `production-data` (you, during the initial hosted rehearsal; unattended refresh is a later approval);
    - *Allow administrators to bypass* off on both (policy: docs/deploy-environments.md, "Reviewer settings");
    - no values yet.
 6. **Repository secrets:**
@@ -1843,13 +1843,11 @@ the results. The details of each value are in [docs/deploy-environments.md](docs
     - delete `ALLOW_SYNTHETIC_DATA`;
     - add:
       - `SUPABASE_PROJECT_REF`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`;
-      - `OTHER_ENV_SUPABASE_PROJECT_REF`: production's ref once that project exists. **Until then (12 Oct 2026, open
-        decision):** Supabase assigns refs at creation, so none can be reserved. The check today only requires the value
-        to be non-empty and different from staging's ref; it never checks format or existence. A recorded placeholder is
-        therefore accepted, and safe while no production project exists (staging cannot point at a project that doesn't
-        exist). Two conditions: it is replaced with production's real ref the day that project is created (release
-        checklist), and preferably the check is tightened first to accept only an explicit sentinel for staging and a
-        real 20-character ref otherwise (proposal; not built);
+      - `OTHER_ENV_SUPABASE_PROJECT_REF`: production's ref once that project exists; **until then exactly `none-yet`**
+        (decided and built 12 Oct 2026). Supabase assigns refs at creation, so none can be reserved. `check-deploy-env`
+        accepts `none-yet` only for staging, refuses it for production, and refuses every other value that is not a
+        20-character ref (unit-tested). It is safe while no production project exists: staging cannot point at a
+        project that doesn't exist. Release-checklist item 2a replaces it the day production is created;
       - `TURNSTILE_SITE_KEY`.
     - Run Deploy staging by hand and approve it.
 17. Approve each step of 14.5 in order. Only then:

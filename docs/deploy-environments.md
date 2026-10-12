@@ -15,7 +15,7 @@ synthetic sample. The rules are unit-tested in `tests/unit/check-deploy-env.test
 | A person approves the run (environment required reviewers) | Yes: by-hand, nightly, and Publish-now runs all wait | Yes, plus the typed confirmation phrase |
 | `DEPLOY_ENV` equals the environment name | `staging` | `production` |
 | `SITE_URL` | https; must not be a production host | must be `officemap.tech`, `www.officemap.tech`, or the `company-map` workers.dev host |
-| Supabase | `SUPABASE_URL` must be `https://<SUPABASE_PROJECT_REF>.supabase.co`; anon key set; `OTHER_ENV_SUPABASE_PROJECT_REF` set and different | the same |
+| Supabase | `SUPABASE_URL` must be `https://<SUPABASE_PROJECT_REF>.supabase.co`; anon key set; `OTHER_ENV_SUPABASE_PROJECT_REF` a different 20-character ref, **or exactly `none-yet`** while no production project exists | the same, except `none-yet` is refused: production always names staging's actual project |
 | Synthetic sample | only with `ALLOW_SYNTHETIC_DATA=true` **and no** Supabase values (explicit opt-in, no silent fallback) | refused (`ALLOW_SYNTHETIC_DATA`, `DATA_SOURCE`); `RELEASE_BUILD=1` also refuses it at build |
 | `/dev` pages | built (`DEV_ROUTES=on`) | refused if `DEV_ROUTES=on`; the post-deploy check fails if `/dev/tokens` answers 200 |
 | Visitor features (DEP-1, `lib/build-features.ts`) | with a Supabase project: basemap, admin, beacon and forms all required (`GEOAPIFY_KEY`, Supabase values, `TURNSTILE_SITE_KEY`); with `ALLOW_SYNTHETIC_DATA`: basemap only, the rest are off by design | all four required |
@@ -35,7 +35,7 @@ afterwards. Leaving them there is how one project could end up serving both envi
 **Environment `staging`**
 - Protection: *Required reviewers* (you); *Deployment branches*: `main` only.
 - Variables: `DEPLOY_ENV=staging`; `SITE_URL=https://company-map-staging.company-map.workers.dev`; `GEOAPIFY_KEY` (public, restricted by referrer to the staging host); and either
-  - `SUPABASE_PROJECT_REF` (staging project), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `OTHER_ENV_SUPABASE_PROJECT_REF` (the production project's ref), `TURNSTILE_SITE_KEY` (public), or
+  - `SUPABASE_PROJECT_REF` (staging project), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `OTHER_ENV_SUPABASE_PROJECT_REF` (the production project's ref, or exactly `none-yet` until that project exists; any other placeholder is refused, and release-checklist item 2a replaces it), `TURNSTILE_SITE_KEY` (public), or
   - `ALLOW_SYNTHETIC_DATA=true` alone, until the staging project exists.
 - Secrets: `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit; ideally a token used only for staging), `CLOUDFLARE_ACCOUNT_ID`.
 
@@ -47,8 +47,8 @@ afterwards. Leaving them there is how one project could end up serving both envi
 - Secrets: `CLOUDFLARE_API_TOKEN` (a separate production token), `CLOUDFLARE_ACCOUNT_ID`.
 
 **Environment `production-data`** (the data refresh, `refresh-production-data.yml`; ADR-0025 option C, accepted 8 Oct 2026)
-- Protection: *Deployment branches*: `main` only; administrators may not bypass. Required reviewers are optional: the release
-  tag, the release record and the shrink guard are its gate (policy below).
+- Protection: *Deployment branches*: `main` only; administrators may not bypass; the owner as required reviewer during the
+  initial hosted rehearsal (policy below).
 - Variables: the same values as `production`.
 - Secrets: `CLOUDFLARE_ACCOUNT_ID`, and a `CLOUDFLARE_API_TOKEN` scoped to the `company-map` Worker only.
 
@@ -60,13 +60,15 @@ configured protection rules* (on by default) lets a repository admin deploy with
 | --- | --- | --- | --- | --- |
 | `staging` | the owner | **off**: with one reviewer it would block every run the owner starts. A scheduled run counts as started by whoever last edited the workflow's schedule | **off** | Selected branches: `main` |
 | `production` | the owner now; add a second person when there is one | **off while the owner is the only reviewer**, on once a second reviewer exists. On with one reviewer, no release could be approved, and `release-record.mts` refuses a release without an approval, so the data refresh would never run either | **off**: a bypassed deploy has no approval record | Selected branches: `main` |
-| `production-data` | none (see below) | n/a | **off** | Selected branches: `main` |
+| `production-data` | **the owner, during the initial hosted rehearsal** (owner, 12 Oct 2026); removing it for unattended refreshes is a later, separate approval | off (one reviewer) | **off** | Selected branches: `main` |
 
 A self-approval is still a recorded approval. It shows who approved, but it is not an independent check. That is why the
 second reviewer, and then *Prevent self-review*, are listed before the first production release.
 
-**`production-data` policy (ADR-0025 option C).** It deploys production *data* without a person, by design, so required
-reviewers there would hold every scheduled refresh. Its gate is elsewhere, and every part must hold:
+**`production-data` policy (ADR-0025 option C).** Option C's end state deploys production *data* without a person, so
+required reviewers there would hold every scheduled refresh. **Decided 12 Oct 2026:** during the initial hosted rehearsal
+the owner is a required reviewer on `production-data`, and `PRODUCTION_REFRESH_ENABLED` stays unset; unattended refresh
+(removing the reviewer, setting the variable) is a later approval. Its other gate, every part of which must hold:
 - `PRODUCTION_REFRESH_ENABLED=true` for scheduled and dispatched runs (absent until the owner decides);
 - the newest `release/*` tag: annotated, made by `github-actions[bot]`, on `main`. The tag ruleset protects it;
 - a release record: the `deploy-production` run named by the tag deployed that commit from `main`, succeeded, was started by
@@ -75,8 +77,7 @@ reviewers there would hold every scheduled refresh. Its gate is elsewhere, and e
 - deployment branch `main` only, and no admin bypass.
 
 It holds only production values and a production-only Cloudflare token. Until the first release, it has no values, and
-a refresh started by hand stops at "No approved release exists yet". **Stricter option:** make the owner a required
-reviewer here until the first automatic refreshes have been checked, then remove it.
+a refresh started by hand stops at "No approved release exists yet".
 
 **What the synthetic staging smoke suite expects** (`EXPECT_DEPLOY_TARGET=staging-synthetic`, chosen by the workflow when
 `ALLOW_SYNTHETIC_DATA=true`). It runs twice: on the exact build served on the runner before deploying, and against the

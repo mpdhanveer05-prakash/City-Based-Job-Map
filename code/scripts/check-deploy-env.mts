@@ -20,6 +20,14 @@ export interface DeployEnvResult {
 }
 
 const supabaseUrl = (ref: string): string => `https://${ref}.supabase.co`;
+const PROJECT_REF = /^[a-z0-9]{20}$/;
+
+/**
+ * The only placeholder accepted for OTHER_ENV_SUPABASE_PROJECT_REF, and only in staging, while the production project does
+ * not exist (Supabase assigns refs at creation, so none can be reserved). Replace it with production's actual ref the day
+ * that project is created (docs/release-checklist.md). Production must always name staging's actual project.
+ */
+export const NO_PRODUCTION_PROJECT_YET = "none-yet";
 
 function host(url: string): string | null {
   try {
@@ -66,13 +74,17 @@ export function checkDeployEnv(target: DeployTarget, env: Readonly<Record<string
     return { problems, dataSource: problems.length === 0 ? "seed" : "" };
   }
   if (synthetic) problems.push("ALLOW_SYNTHETIC_DATA=true and Supabase settings are both set: choose one.");
-  if (!/^[a-z0-9]{20}$/.test(ref)) problems.push("SUPABASE_PROJECT_REF is missing or not a 20-character project ref.");
+  if (!PROJECT_REF.test(ref)) problems.push("SUPABASE_PROJECT_REF is missing or not a 20-character project ref.");
   if (!url) problems.push("SUPABASE_URL is missing.");
   else if (ref && url.replace(/\/+$/, "") !== supabaseUrl(ref)) problems.push(`SUPABASE_URL does not belong to project ${ref}.`);
   if (!key) problems.push("SUPABASE_ANON_KEY is missing.");
   const other = v("OTHER_ENV_SUPABASE_PROJECT_REF");
   if (!other) problems.push("OTHER_ENV_SUPABASE_PROJECT_REF is missing: set the other environment's project ref so the two cannot match.");
-  else if (other === ref) problems.push("SUPABASE_PROJECT_REF equals the other environment's project: staging and production must use separate projects.");
+  else if (other === NO_PRODUCTION_PROJECT_YET) {
+    if (target === "production") problems.push(`OTHER_ENV_SUPABASE_PROJECT_REF is "${NO_PRODUCTION_PROJECT_YET}": production must name staging's actual project ref.`);
+  } else if (!PROJECT_REF.test(other)) {
+    problems.push(`OTHER_ENV_SUPABASE_PROJECT_REF is not a 20-character project ref${target === "staging" ? ` (or exactly "${NO_PRODUCTION_PROJECT_YET}" while no production project exists)` : ""}.`);
+  } else if (other === ref) problems.push("SUPABASE_PROJECT_REF equals the other environment's project: staging and production must use separate projects.");
   // Every visitor feature needs its public configuration (DEP-1): the basemap key, Supabase, and the Turnstile site key.
   problems.push(...missingFeatures(target, env));
   return { problems, dataSource: "" };
@@ -91,4 +103,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   }
   if (process.env.GITHUB_ENV) appendFileSync(process.env.GITHUB_ENV, `DATA_SOURCE=${dataSource}\n`);
   console.log(`check-deploy-env (${target}): configuration complete${dataSource === "seed" ? "; staging shows the synthetic sample (ALLOW_SYNTHETIC_DATA)" : ""}.`);
+  if (dataSource === "" && (process.env.OTHER_ENV_SUPABASE_PROJECT_REF ?? "").trim() === NO_PRODUCTION_PROJECT_YET) {
+    console.log(`check-deploy-env (${target}): no production project yet (OTHER_ENV_SUPABASE_PROJECT_REF=${NO_PRODUCTION_PROJECT_YET}); replace it with production's ref when that project is created.`);
+  }
 }
