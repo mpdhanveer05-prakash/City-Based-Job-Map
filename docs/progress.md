@@ -8,10 +8,42 @@ Update this after every task: what changed, how it was verified (the commands ac
 - **Databases:** the **main local database** (project `company-map`, port 54322) holds the 46 Bengaluru pilot drafts and must **never be reset or used by a test**. It is at migration `20261007160000` (applied 8 Oct 2026, [main-db-migration-plan.md](main-db-migration-plan.md)). Every database and admin test runs on the **disposable test stack** (`node scripts/test-stack.mts start|reset|test-db|stop`, project `company-map-test`, port 55322); the tests refuse any other database. Backups: `.local-backups/` (git-ignored).
 - **Previews:** preserved copies of the synthetic and pilot builds are in `.local-previews/{synthetic,pilot}` (git-ignored). Serve them from `code/` with `npx wrangler dev --config ../.local-previews/synthetic/wrangler.jsonc --port 8788` or `.../pilot/... --port 8789`.
 - **Latest checks:** see the newest log entry below.
-- **Owner actions open:** the GitHub `staging` and `production` environments and their variables ([deploy-environments.md](deploy-environments.md)); the production data refresh's setup ([ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md) option C, chosen 8 Oct 2026: the `production-data` environment, the `release/*` tag ruleset, the production project's secrets); D-04 coverage and gate thresholds; D-06 devices and gate owner; D-07 geocoding provider; a human data reviewer for the pilot; the logo permitted-use categories; hosted MFA; an independent approver for the audit exception; which project the pipeline serves; whether to push, and the squash of `5812ed2`/`b55857e` first.
+- **Owner actions open:** the GitHub `staging` and `production` environments and their variables ([deploy-environments.md](deploy-environments.md)); the production data refresh's setup ([ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md) option C, chosen 8 Oct 2026: the `production-data` environment, the `release/*` tag ruleset, the production project's secrets); D-04 coverage and gate thresholds; D-06 devices and gate owner; D-07 geocoding provider; a human data reviewer for the pilot; the logo permitted-use categories; hosted MFA; an independent approver for the audit exception; which project the pipeline serves; disabling the old `Deploy staging` workflow on GitHub (authorized 12 Oct, Owner to do it in the web UI); whether to push (the history cleanup ran locally on 12 Oct 2026: new HEAD `273bfd4`; older hashes in this log are pre-rewrite, see the [old-to-new table](history-cleanup-plan.md#old-to-new-hashes)).
 - **Blockers:** P2-09 (devices), P9-20 (a human reviewer), hosted work (no hosted Supabase project yet).
 
 ## Log
+
+### 2026-10-12: history cleanup run locally (new HEAD `273bfd4`); staging nightly still deploying; workflow not disabled
+- **GitHub run history** (public API, read only). `Deploy staging` (workflow 371400096) is still `active`. Since 9 Oct it
+  ran on schedule three more times, all at `883de71`:
+  - run 5, 10 Oct 00:18 UTC;
+  - run 6, 10 Oct 23:49 UTC;
+  - run 7, 11 Oct 23:58 UTC.
+  - In each, **the Deploy step succeeded** and the smoke step failed. That makes six unapproved staging deployments since
+    7 Oct (runs 2–7). GitHub records no deployments, because the old workflow names no environment.
+  - GitHub's `main` is still `883de71`; the other workflows are unchanged.
+- **Disabling the workflow (authorized by the owner): not done.** `gh` is not installed, and the only GitHub credential
+  is Git Credential Manager's. Reading it for the API call was refused by Claude Code's safety check, and not worked
+  around. The owner disables it in the web UI: Actions → Deploy staging → ⋯ → Disable workflow. The deployed site is not
+  affected; the next scheduled run is due 12 Oct about 20:45 UTC (GitHub has started it 3–4 h late, around midnight UTC).
+- **History cleanup (GIT-1), authorized by the owner and run** on the real repository
+  ([history-cleanup-plan.md](history-cleanup-plan.md#run-12-oct-2026)):
+  - recovery first: branch `backup/pre-history-cleanup-20261012` at `8219812`, and a bundle of all refs in
+    `.local-backups/`, verified;
+  - `git filter-branch` over `origin/main..main` (44 commits): the three OSM files and 20 trailer lines removed;
+  - new HEAD `273bfd4`, as rehearsed; the tree `dddaa4658727` is unchanged;
+  - every check held: 44 commits on `883de71`, fast-forward possible, no OSM file, no trailer, only `5812ed2`'s
+    counterpart differs and only in the three files, authors, dates and messages otherwise identical, pushed history
+    untouched, working tree unchanged;
+  - from `code/`: `npm run lint` clean, `npm run typecheck` clean, `npx vitest run --maxWorkers=2` 46 files, 739 passed.
+  - The full browser suite was **not** rerun (the owner's instruction): the tree is identical to the one validated at
+    `8093e91`, now `ba450c3`.
+  - `refs/original/` removed; the recovery branch and bundle stay local until the push is checked on GitHub.
+- **Push readiness:** `git push origin main` would push only `main` (no push refspec, no mirror, the backup branch has
+  no upstream), as a fast-forward from `883de71`. **Not pushed** (not authorized).
+- **Not done (not authorized):** push, deployment, token revocation, hosted database changes, paid services.
+- **Next:** the owner disables `Deploy staging` and sets up the protection in PROJECT_HANDOVER.md §14.3–14.4; then
+  authorizes the push.
 
 ### 2026-10-09 (night): `8093e91` validated; runner checks; rehearsal at `33ed204`; push effects read from GitHub
 - **Validated application commit: `8093e91`.**

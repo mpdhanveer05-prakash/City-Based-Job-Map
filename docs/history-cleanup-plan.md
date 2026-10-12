@@ -1,7 +1,11 @@
-# History cleanup before the first push: plan (not run)
+# History cleanup before the first push: plan (run 12 Oct 2026)
 
-*Prepared 8 Oct 2026; rehearsed at `58fccfc` (23 commits), `1094e08` (29) and `33ed204` (43, 9 Oct 2026); inventory updated 9 Oct 2026 (44 unpushed commits with the push-approval docs commit). Status: **not run**. Run only when the owner authorizes it; push only when the owner
+*Prepared 8 Oct 2026; rehearsed at `58fccfc` (23 commits), `1094e08` (29) and `33ed204` (43, 9 Oct 2026); inventory updated 9 Oct 2026 (44 unpushed commits with the push-approval docs commit). Status: **run on the real repository 12 Oct 2026, with the owner's authorization; every check held; not pushed** (see [Run](#run-12-oct-2026)). Push only when the owner
 asks (CLAUDE.md, GIT-1).*
+
+**Commit hashes in older documents** (progress log, plan, handover, this file's inventory) are the hashes from before the
+rewrite. The [mapping table](#old-to-new-hashes) translates them; the old commits stay reachable locally through the
+recovery branch and bundle.
 
 ## What it fixes, and what it does not
 
@@ -143,6 +147,52 @@ gone, use the bundle:
 git fetch .local-backups/pre-history-cleanup-<date>.bundle 'refs/heads/main:refs/heads/restore-main'
 git reset --hard restore-main
 ```
+
+## Run (12 Oct 2026)
+
+Authorized by the owner on 12 Oct 2026 (the rewrite only; the push, deployment and hosted changes stay unauthorized).
+- **Preconditions:** the tree was clean and no dev server was running. `git fetch origin` showed `origin/main` still
+  `883de71` (GitHub's API agreed). Old HEAD `8219812`, tree `dddaa4658727`, 44 commits, 20 trailer lines, the OSM files
+  only in `5812ed2` and `b55857e`.
+- **Recovery, made first:**
+  - the branch `backup/pre-history-cleanup-20261012` at `8219812`;
+  - `.local-backups/pre-history-cleanup-20261012.bundle` (all refs, 1.6 MB), `git bundle verify`: "complete history".
+  - Both are local: the branch has no upstream, and `.local-backups/` is git-ignored.
+- **Rewrite:** step 2's command, unchanged. `refs/heads/main` was rewritten; new HEAD **`273bfd4`**, as the rehearsal
+  predicted.
+- **Checks, all held** (scripted pairwise against the recovery branch):
+  - the tip tree is `dddaa4658727`, identical to the recovery branch's;
+  - 44 commits; the first one's parent is `883de71`; `origin/main` is an ancestor, so the push is a fast-forward;
+  - no OSM file in any rewritten commit; 0 trailers in the rewritten messages;
+  - pushed history unchanged: `origin/main`'s history still has its 38 trailers;
+  - only `5812ed2`'s counterpart (`760045f`) differs, and only in the three files;
+  - author and committer names, e-mails and dates, and subjects identical in all 44 pairs; each message equals the
+    original minus its trailer; the only author is the owner;
+  - the working tree is unchanged (`git status` clean; `git diff 8219812` empty). The three OSM files are still on disk
+    as git-ignored local files: only history changed;
+  - from `code/`: `npm run lint` and `npm run typecheck` clean; `npx vitest run --maxWorkers=2` 46 files, 739 passed (as
+    before). The browser suite was not rerun: the tree is identical to the one it validated.
+- **Step 4:** `refs/original/refs/heads/main` removed. The recovery branch and bundle are kept until the push has been
+  checked on GitHub.
+
+### Old to new hashes
+
+| Old | New | Old | New | Old | New | Old | New |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `93ca2a6` | `571378f` | `ae3172c` | `88962b3` | `fa6e608` | `08d8b0b` | `e8bb5ad` | `d34dc38` |
+| `5812ed2` | `760045f` | `b55857e` | `4abd5bd` | `4302801` | `479fd48` | `4d7d3f2` | `48d6d9c` |
+| `64845fb` | `fae4326` | `75b0265` | `7654541` | `337ca02` | `766e645` | `70aedec` | `6418f33` |
+| `e98abe5` | `74b213e` | `e0dd89c` | `0e50a9c` | `8e41cfc` | `2f8f931` | `0f79828` | `42cbdfd` |
+| `18f58b2` | `1566c84` | `04aa427` | `467fbec` | `ab6694d` | `0bfb4ab` | `2e4d8a6` | `9c182f0` |
+| `db239d4` | `766d5d0` | `a624c2f` | `7dc164d` | `58fccfc` | `4f92129` | `4ea4218` | `0714dbb` |
+| `80085b6` | `219f8f9` | `8ed2437` | `44ea826` | `35190ce` | `68c9ba5` | `85c054e` | `a6d49c8` |
+| `1094e08` | `17b2599` | `e0c6b95` | `f3024e2` | `9de729f` | `c4dd8df` | `2f99b95` | `3e4f48d` |
+| `1e78871` | `89ee018` | `9d94050` | `2d8105e` | `4511c15` | `cb7e9bb` | `4813482` | `f6577fd` |
+| `d9ee940` | `4304437` | `5a60ae3` | `c0dfe8f` | `9e34868` | `257a127` | `743fb2b` | `caefae1` |
+| `8093e91` | `ba450c3` | `0420704` | `ff42fdb` | `33ed204` | `c1548cd` | `8219812` | `273bfd4` |
+
+The validated application commit `8093e91` is now `ba450c3` (same tree). The `.local-test-runs/` folder names keep the
+old short hashes.
 
 ## Rehearsal (8 Oct 2026, repeated at `1094e08` and `33ed204`)
 

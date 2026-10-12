@@ -1676,6 +1676,12 @@ involved:
 **Plan:** [docs/history-cleanup-plan.md](docs/history-cleanup-plan.md). It holds the complete list of affected commits, the
 commands, the checks and recovery.
 
+**Done locally, 12 Oct 2026 (authorized by the Owner; not pushed):** recovery branch `backup/pre-history-cleanup-20261012`
+and a verified bundle in `.local-backups/` first; new HEAD `273bfd4` (was `8219812`), the same tree `dddaa4658727`; every
+check below held; lint, typecheck and unit tests (739) pass. Hashes cited in this handover are from before the rewrite:
+translate them with the plan's [old-to-new table](docs/history-cleanup-plan.md#old-to-new-hashes) (for example the
+validated `8093e91` is now `ba450c3`). The bullets below are the plan as it was approved.
+
 - **Current HEAD and range:** listed in §11 and in the plan's inventory. The rewrite covers `origin/main..main`, so commits
   made after the inventory are included automatically.
   - On 9 Oct 2026 only `5812ed2` holds the OSM-derived files.
@@ -1731,6 +1737,11 @@ A workflow started by hand (`workflow_dispatch`) always runs, because starting i
 - **Owner:** decide whether to disable `Deploy staging` on GitHub now (Actions → Deploy staging → ⋯ → Disable
   workflow) rather than let it run nightly until the push. A disabled workflow **stays disabled after the push**. Enable it
   again before the first by-hand staging deploy.
+- **12 Oct 2026 update (read from the public API):** the nightly also ran on 10 Oct 00:18, 10 Oct 23:49 and 11 Oct 23:58
+  UTC (runs 5–7), each at `883de71`, each with the **Deploy step succeeding** and the smoke step failing: six unapproved
+  staging deployments in all since 7 Oct. The Owner authorized disabling the workflow; Dev could not, because the only
+  GitHub credential on the laptop is Git Credential Manager's and reading it was refused by Claude Code's safety check.
+  **The Owner disables it in the web UI** (still `active` on 12 Oct; workflow ID 371400096).
 
 **Protection that must exist before the push** (each closes a gap that the push would otherwise leave open):
 1. **The variables `AUTOMATION_ENABLED` and `PRODUCTION_REFRESH_ENABLED` are absent or not `true`.** The public API cannot
