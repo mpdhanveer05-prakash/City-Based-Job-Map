@@ -13,6 +13,28 @@ Update this after every task: what changed, how it was verified (the commands ac
 
 ## Log
 
+### 2026-10-12 (later): push readiness: protections not yet on GitHub; reviewer, production-data and smoke policies written
+- **Read anonymously from GitHub's public API (nothing written):**
+  - `Deploy staging` is `disabled_manually` (the owner disabled it). The last run is still run 7.
+  - Environments: 0. Rulesets: none. Active rules on `main`: none. `main` is unprotected and still `883de71`.
+  - Variables, secrets and Actions settings need authentication (HTTP 401).
+- **The protections in PROJECT_HANDOVER.md §14.3 are therefore not in place: not ready to push.**
+- **Authenticated read-only check:** a script that only sends `GET` through `gh api` is ready (outside the repository, in
+  the session scratchpad: `verify-github-settings.sh`). It checks:
+  - the automation variables and repository-level values;
+  - each environment's reviewers, self-review, admin bypass, branch policy, variable names and values, and secret names;
+  - the rules on `main`, the Actions token and fork settings, and the workflow state.
+  - It needs `gh` with a read-only fine-grained token from the owner. Git Credential Manager is not used (owner's
+    instruction). Not run yet.
+- **Docs:**
+  - [deploy-environments.md](deploy-environments.md): the reviewer settings per environment (self-review, admin bypass),
+    the `production-data` policy, and the synthetic staging smoke expectations;
+  - handover §14.4:
+    - no empty production Supabase project is created: the synthetic staging check reads no Supabase value;
+    - for real-data staging, `OTHER_ENV_SUPABASE_PROJECT_REF` is an open decision (placeholder versus a tightened check;
+      see step 16).
+- **Not done (not authorized):** push, deployment, hosted changes, enabling automation.
+
 ### 2026-10-12: history cleanup run locally (new HEAD `273bfd4`); staging nightly still deploying; workflow not disabled
 - **GitHub run history** (public API, read only). `Deploy staging` (workflow 371400096) is still `active`. Since 9 Oct it
   ran on schedule three more times, all at `883de71`:

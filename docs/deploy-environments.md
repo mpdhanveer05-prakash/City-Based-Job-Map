@@ -40,17 +40,58 @@ afterwards. Leaving them there is how one project could end up serving both envi
 - Secrets: `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit; ideally a token used only for staging), `CLOUDFLARE_ACCOUNT_ID`.
 
 **Environment `production`**
-- Protection: *Required reviewers* (a second person if possible, and *Prevent self-review*); *Deployment branches*: `main` only. **Required for the data refresh:** a release counts only if a reviewer approved its run for this environment (`scripts/release-record.mts`), so without required reviewers no release can ever be refreshed.
+- Protection: *Required reviewers* (a second person if possible; *Prevent self-review* only once there is a second reviewer, see the table below); *Deployment branches*: `main` only. **Required for the data refresh:** a release counts only if a reviewer approved its run for this environment (`scripts/release-record.mts`), so without required reviewers no release can ever be refreshed.
 - Variables: `DEPLOY_ENV=production`; `SITE_URL=https://officemap.tech`; `SUPABASE_PROJECT_REF` (production), `SUPABASE_URL`,
   `SUPABASE_ANON_KEY`, `OTHER_ENV_SUPABASE_PROJECT_REF` (staging's ref), `GEOAPIFY_KEY` (restricted to officemap.tech),
   `TURNSTILE_SITE_KEY`. Never `ALLOW_SYNTHETIC_DATA`.
 - Secrets: `CLOUDFLARE_API_TOKEN` (a separate production token), `CLOUDFLARE_ACCOUNT_ID`.
 
 **Environment `production-data`** (the data refresh, `refresh-production-data.yml`; ADR-0025 option C, accepted 8 Oct 2026)
-- Protection: *Deployment branches*: `main` only. Required reviewers are optional: the release tag, the release checks and the
-  shrink guard are its gate.
+- Protection: *Deployment branches*: `main` only; administrators may not bypass. Required reviewers are optional: the release
+  tag, the release record and the shrink guard are its gate (policy below).
 - Variables: the same values as `production`.
 - Secrets: `CLOUDFLARE_ACCOUNT_ID`, and a `CLOUDFLARE_API_TOKEN` scoped to the `company-map` Worker only.
+
+**Reviewer settings, per environment (clarified 12 Oct 2026).** GitHub's two relevant options:
+*Prevent self-review* stops the person who started a run from approving it, and *Allow administrators to bypass
+configured protection rules* (on by default) lets a repository admin deploy without the rules.
+
+| Environment | Required reviewers | Prevent self-review | Admin bypass | Deployment branches |
+| --- | --- | --- | --- | --- |
+| `staging` | the owner | **off**: with one reviewer it would block every run the owner starts. A scheduled run counts as started by whoever last edited the workflow's schedule | **off** | Selected branches: `main` |
+| `production` | the owner now; add a second person when there is one | **off while the owner is the only reviewer**, on once a second reviewer exists. On with one reviewer, no release could be approved, and `release-record.mts` refuses a release without an approval, so the data refresh would never run either | **off**: a bypassed deploy has no approval record | Selected branches: `main` |
+| `production-data` | none (see below) | n/a | **off** | Selected branches: `main` |
+
+A self-approval is still a recorded approval. It shows who approved, but it is not an independent check. That is why the
+second reviewer, and then *Prevent self-review*, are listed before the first production release.
+
+**`production-data` policy (ADR-0025 option C).** It deploys production *data* without a person, by design, so required
+reviewers there would hold every scheduled refresh. Its gate is elsewhere, and every part must hold:
+- `PRODUCTION_REFRESH_ENABLED=true` for scheduled and dispatched runs (absent until the owner decides);
+- the newest `release/*` tag: annotated, made by `github-actions[bot]`, on `main`. The tag ruleset protects it;
+- a release record: the `deploy-production` run named by the tag deployed that commit from `main`, succeeded, was started by
+  a person, and **was approved in `production`**. So every code change still passes a production reviewer;
+- `audit --release`, `RELEASE_BUILD=1`, the launch gate, and the shrink guard against the approved baseline;
+- deployment branch `main` only, and no admin bypass.
+
+It holds only production values and a production-only Cloudflare token. Until the first release, it has no values, and
+a refresh started by hand stops at "No approved release exists yet". **Stricter option:** make the owner a required
+reviewer here until the first automatic refreshes have been checked, then remove it.
+
+**What the synthetic staging smoke suite expects** (`EXPECT_DEPLOY_TARGET=staging-synthetic`, chosen by the workflow when
+`ALLOW_SYNTHETIC_DATA=true`). It runs twice: on the exact build served on the runner before deploying, and against the
+live site afterwards (a failure rolls back only the version that run deployed).
+- `build-info.json`: target `staging-synthetic`, the basemap feature present, and the commit equal to the run's commit.
+  Admin, beacon and forms are off by design and not required.
+- Every city in the manifest is marked synthetic. No pilot preview. `current.json` names the manifest's folder and is
+  `no-cache`; every data file is served, has the size the manifest states, and is `immutable`.
+- `/`, each city, `/suggest`, and the first company's page and jobs page answer 200. Each has a CSP meta tag and
+  `noindex`, with no pilot banner. An unknown path is a 404, and `/sitemap.xml` answers.
+- Each city's explorer (List view) shows the manifest's company and office counts, with the sample-data notice visible.
+- For three sample companies per city: the name, the published website link (https, `noopener`), one row per job, and
+  each Apply link exactly as published (https, `noreferrer`).
+- Locally (9 Oct 2026): 6 passed, 4 skipped. The skips are the desktop-only checks on the phone project.
+- Not checked: `/dev` pages are allowed on staging, and nothing touches Supabase, Turnstile or the beacon.
 
 **Repository variables that switch automation on (9 Oct 2026).** Pushing does not start anything that deploys, writes hosted
 data or alerts. Scheduled and dispatched runs do nothing until the owner sets:

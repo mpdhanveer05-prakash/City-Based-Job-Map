@@ -1785,7 +1785,7 @@ the results. The details of each value are in [docs/deploy-environments.md](docs
    token and the Account ID.
 3. **Geoapify:** create a key restricted to the referrer `company-map-staging.company-map.workers.dev`.
 4. **GitHub → Settings → Environments → New environment `staging`:**
-   - Required reviewers: yourself;
+   - Required reviewers: yourself; *Prevent self-review* off (you are the only reviewer); *Allow administrators to bypass* off;
    - Deployment branches: Selected branches, `main`;
    - secrets: `CLOUDFLARE_API_TOKEN` (step 2), `CLOUDFLARE_ACCOUNT_ID`;
    - variables:
@@ -1795,7 +1795,8 @@ the results. The details of each value are in [docs/deploy-environments.md](docs
      - `GEOAPIFY_KEY` (step 3).
 5. **New environments `production` and `production-data`:**
    - deployment branch `main`;
-   - required reviewers on `production` (with *Prevent self-review* once there is a second reviewer);
+   - required reviewers on `production` (you; *Prevent self-review* only once there is a second reviewer), none on `production-data`;
+   - *Allow administrators to bypass* off on both (policy: docs/deploy-environments.md, "Reviewer settings");
    - no values yet.
 6. **Repository secrets:**
    - delete `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`;
@@ -1817,8 +1818,10 @@ the results. The details of each value are in [docs/deploy-environments.md](docs
 
 10. **Actions → Deploy staging → Run workflow (`main`)**, then approve the review request. It should report "staging shows
     the synthetic sample", pass the local smoke suite, deploy, and pass the live smoke suite. *Dev* records the run.
-11. **Supabase → New project**, for staging:
-    - Also create the empty production project now: staging's check requires `OTHER_ENV_SUPABASE_PROJECT_REF`.
+11. **Supabase → New project**, for staging only (corrected 12 Oct 2026):
+    - **Don't create an empty production project for this.** The synthetic staging deploy (step 10) reads no Supabase
+      value at all: `check-deploy-env` returns before the project checks when `ALLOW_SYNTHETIC_DATA=true` and no Supabase
+      value is set. Only the real-data staging deploy (step 16) needs `OTHER_ENV_SUPABASE_PROJECT_REF`; see the note there.
     - In staging: Authentication → disable sign-ups and enable TOTP MFA.
     - Give *Dev* the database password, for `npx supabase link`, `db push` and `functions deploy`.
 12. **Cloudflare → Turnstile → Add widget** for the staging host. Note the site key and the secret key.
@@ -1840,7 +1843,13 @@ the results. The details of each value are in [docs/deploy-environments.md](docs
     - delete `ALLOW_SYNTHETIC_DATA`;
     - add:
       - `SUPABASE_PROJECT_REF`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`;
-      - `OTHER_ENV_SUPABASE_PROJECT_REF` (production's ref);
+      - `OTHER_ENV_SUPABASE_PROJECT_REF`: production's ref once that project exists. **Until then (12 Oct 2026, open
+        decision):** Supabase assigns refs at creation, so none can be reserved. The check today only requires the value
+        to be non-empty and different from staging's ref; it never checks format or existence. A recorded placeholder is
+        therefore accepted, and safe while no production project exists (staging cannot point at a project that doesn't
+        exist). Two conditions: it is replaced with production's real ref the day that project is created (release
+        checklist), and preferably the check is tightened first to accept only an explicit sentinel for staging and a
+        real 20-character ref otherwise (proposal; not built);
       - `TURNSTILE_SITE_KEY`.
     - Run Deploy staging by hand and approve it.
 17. Approve each step of 14.5 in order. Only then:
