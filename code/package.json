@@ -38,7 +38,7 @@
     "kdbush": "4.1.0",
     "lucide-react": "^1.49.0",
     "maplibre-gl": "^6.11.2",
-    "next": "16.3.7",
+    "next": "16.3.8",
     "radix-ui": "^1.6.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
