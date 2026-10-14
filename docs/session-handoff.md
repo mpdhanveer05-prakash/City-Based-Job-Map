@@ -14,12 +14,13 @@ Update the **Now** block and add a line to **Handoff log** at the end of every b
 | Branch | `main` |
 | Last validated code | `980ff4c` (DEP-5). The tree since then changes documentation and `.gitleaksignore` only |
 | Synced to GitHub | Yes: pushed 14 Oct 2026 (see the log for the commit and CI run) |
-| CI on `main` | **Red since 14 Oct: the dependency audit only** (new `next` advisories; see "Known issues"). Lint, types, unit, build, e2e, pgTAP and gitleaks pass |
+| CI on `main` | **Red since 14 Oct: the dependency audit only** (`next` 16.3.7 advisories; see "Known issues"). It turns green when `task/SEC-NEXT-16.3.8` is merged. Lint, types, unit, build, e2e, pgTAP and gitleaks pass |
 | Work in progress (WIP branches) | None |
-| Branch claims (who is editing what) | **`task/SEC-NEXT-16.3.8`: claimed by the Windows laptop, 14 Oct 2026.** A `next`-only security update (16.3.7 → 16.3.8), authorized by the owner. **Not to be merged** (and Dependabot PR #11 not merged) until the owner says so |
-| Mac onboarding (MAC-1) | **Not started.** No commit from the Mac on GitHub as of 14 Oct 2026, 15:23 UTC. Nothing in [setup-new-machine.md](setup-new-machine.md) has been run on a Mac yet |
+| Branches awaiting the owner | **`task/SEC-NEXT-16.3.8`** at `1b53aa5`: `next` 16.3.7 → 16.3.8, the security patch for all six advisories. **Checked and pushed; not merged**, on the owner's instruction. CI green (run 38589403586), full local e2e 297/0/63. Merging it: `git switch main && git pull --ff-only && git merge --no-ff task/SEC-NEXT-16.3.8`, then push, **only on the owner's word**. Dependabot PR #11 is not merged either |
+| Branch claims (who is editing what) | None. The Windows laptop released `task/SEC-NEXT-16.3.8` (no more edits planned). Claim a branch here and push before starting on it |
+| Mac onboarding (MAC-1) | **Not started.** No commit from the Mac on GitHub as of 14 Oct 2026, 15:45 UTC. Nothing in [setup-new-machine.md](setup-new-machine.md) has been run on a Mac yet |
 | Pilot database owner | **Windows laptop** (Docker volume `supabase_db_company-map`). The Mac has no copy yet |
-| Next concrete action | **Windows:** finish and check `task/SEC-NEXT-16.3.8` (in progress). **Mac:** follow [setup-new-machine.md](setup-new-machine.md) steps 1–7, record the results here, and set the MAC-1 status. **Owner:** the GitHub protection gaps below; whether to merge the `next` branch |
+| Next concrete action | **Owner:** decide whether to merge `task/SEC-NEXT-16.3.8` (then close or rebase Dependabot PR #11, which would carry `next` 16.4.0 with 12 other bumps); close the GitHub protection gaps below. **Mac:** follow [setup-new-machine.md](setup-new-machine.md) steps 1–7, record the results here, and set the MAC-1 status |
 
 ## Stage
 
@@ -36,6 +37,10 @@ Blocked (unchanged since 12 Oct):
 
 ## Done in the latest batches
 
+- **14 Oct (later):** SEC-NEXT on `task/SEC-NEXT-16.3.8` (`1b53aa5`, not merged): `next` 16.3.7 → 16.3.8. Verified in
+  the GitHub Advisory Database and the official v16.3.8 release notes as the first patched version for all six
+  advisories, so it is a patch release rather than 16.4.0. `npm run audit`: the technical audit went from 1 problem to
+  pass; the reviewed-exception file is unchanged. Details in [progress.md](progress.md).
 - **14 Oct:** pushed the 47 local commits (6–12 Oct work) to GitHub after the checks below. Added the two-laptop workflow
   ([CLAUDE.md](../CLAUDE.md#two-laptops-github-is-the-shared-memory), [ADR-0026](decisions/0026-two-laptop-workflow.md)),
   this file, shared Claude memory in [claude-memory/](claude-memory/README.md), the macOS onboarding in
@@ -52,6 +57,9 @@ Hashes are the post-cleanup ones. Older hashes in progress.md are mapped in
 
 | When, where | Commit | Command | Result |
 | --- | --- | --- | --- |
+| 14 Oct, Windows | `1b53aa5` (branch `task/SEC-NEXT-16.3.8`) | `npm run audit`; lint; typecheck; `npx vitest run --maxWorkers=2`; `DATA_SOURCE=seed npm run build` | technical pass; clean; clean; 46 files, 758 passed; built with Next.js 16.3.8, postbuild checks pass (823 files) |
+| 14 Oct, Windows | `1b53aa5` | full e2e (keyed), `node scripts/e2e-full-run.mts --workers 2` | **297 passed, 0 failed, 63 skipped** (the same by-design skips), 0 flaky, 13.9 min; budgets pass (city selection 134.3 KB) |
+| 14 Oct, GitHub | `1b53aa5` | CI by hand, run [38589403586](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/38589403586) | **all 4 jobs green**: audit pass, unit 758, e2e 254 passed, pgTAP, parity 8, pytest 89, gitleaks |
 | 14 Oct, Windows | `980ff4c` | `npm run lint`; `npm run typecheck`; `npx vitest run --maxWorkers=2` | clean; clean; 46 files, **758 passed** |
 | 14 Oct, Windows | `main` history | gitleaks 8.30.1 (the CI version) over all of `main` | 1 finding, a false positive (below); 0 after `.gitleaksignore` |
 | 12 Oct, Windows | `980ff4c` | the same unit run | 758 passed |
@@ -115,14 +123,20 @@ audit step **failed** (above).
   - GHSA-3w37-wq28-93x7, -4jqv-mc3x-m676, -f87g-xv8r-7p7x and -mcj8-r9mp-w47p (moderate): draft mode, SSG/ISR cache and
     metadata routes;
   - GHSA-39w2-rjm5-chcv (low): the dev server's MCP endpoint.
-  - `next` 16.4.0 fixes all six. Dependabot PR #11 includes it, with 12 other bumps.
-  - The static export uses no image optimisation, ISR, draft mode or server, so most of them probably don't reach the
-    deployed site. That is an assessment, not a review. The fix (the upgrade, or a reviewed exception under ADR-0019) is
-    the owner's call. Until then CI on `main` stays red at that step only.
+  - The first patched version is **16.3.8**: GitHub Advisory Database, all six advisories published there on 7 Oct; the
+    v16.3.8 release notes, 30 Sep. It also fixes GHSA-h694-7cp9-m8p3 (moderate, `use cache`), which is in the Next.js
+    repository but not in the global database, so the audit doesn't report it. npm suggests 16.4.0 only because it is
+    the newest release.
+  - **Fixed on `task/SEC-NEXT-16.3.8`, not yet merged** (owner's instruction). Until the merge, CI on `main` stays red at
+    that step only. No exception was added: the advisories are fixed, not suppressed.
+  - The static export uses no image optimisation, ISR, draft mode or server, so most of them probably didn't reach the
+    deployed site. That is an assessment, not a review.
+- **Scheduled workflows on the gated code: not yet observed.** No scheduled run had started by 15:42 UTC on 14 Oct (the
+  last ones, on `883de71`, failed as before). Expect each new scheduled run of Monitor and Data pipeline to show its job
+  as *skipped*. Check with `gh run list --limit 10`.
 - `--detach` in the e2e runner is not verified: a Ctrl+C of unknown origin ended its first run. Start long runs the way
   [setup-new-machine.md](setup-new-machine.md#windows-only-tooling-and-the-mac-equivalents) shows.
 - `create_job_feed`'s duplicate check is case-sensitive (minor, not fixed).
-- `pipeline.yml` and `monitor.yml` failed on every schedule while they were ungated. They are gated from this push on.
 - The macOS behaviour of the process clean-up in `tests/admin/global-setup.ts` and `scripts/smoke-local.mts` is not
   verified (they use `taskkill` on Windows and a plain kill elsewhere).
 - gitleaks flags RFC 6238's published test secret in `code/tests/unit/totp.test.ts`. That line is allowlisted by
@@ -139,6 +153,10 @@ the Mac becomes the pilot-database owner.
 
 Newest first. One line per batch: date, laptop, branch, commits, what was synced, what was not.
 
+- **14 Oct 2026 (evening), Windows, `task/SEC-NEXT-16.3.8` and `main`:** pushed the branch (`1b53aa5`, new; the push
+  started no workflow). Started CI on it by hand: run 38589403586, green. Released the claim. Recorded the results on
+  `main` (this commit). **Not merged** (owner). **Not synced:** everything in "Only on the Windows laptop"; the local
+  run record `.local-test-runs/20261014-152733-1b53aa5/` (git-ignored).
 - **14 Oct 2026 (later), Windows, `main`:** claimed `task/SEC-NEXT-16.3.8` (owner-authorized `next`-only security update); Mac onboarding status and the protection gaps refreshed. CI on `c05724a` (run 38587585117): the same as below, red at the dependency audit only.
 - **14 Oct 2026, Windows, `main`:** CI run 38586305911 on `c5285b7`: every job passed except the dependency audit step
   (new `next` advisories, see "Known issues"). The only workflow the push started was CI. Dependabot then re-ran CI on its

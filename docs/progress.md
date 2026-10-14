@@ -22,6 +22,59 @@ state as of 12 Oct 2026, kept for reference; where it differs, the handoff wins.
 
 ## Log
 
+### 2026-10-14 (evening): SEC-NEXT: `next` 16.3.7 → 16.3.8 on `task/SEC-NEXT-16.3.8` (checked, not merged)
+- **Authorized by the owner:** a `next`-only security update on a task branch; push it and check CI. Not authorized:
+  merging it or Dependabot PR #11, suppressing the advisories, deployment, automation.
+- **Verified from official sources** (GitHub Advisory Database via `gh api advisories/<id>`; the v16.3.8 release on
+  `vercel/next.js`):
+
+  | Advisory | Severity | Vulnerable | First patched |
+  | --- | --- | --- | --- |
+  | GHSA-cjq9-62q9-8jv4 (CVE-2026-94483), SSRF in Image Optimization | high | >= 16.0.0, < 16.3.8 | 16.3.8 |
+  | GHSA-3w37-wq28-93x7 (CVE-2026-94544), `use cache` leaks Draft Mode content | moderate | >= 16.3.0, < 16.3.8 | 16.3.8 |
+  | GHSA-4jqv-mc3x-m676 (CVE-2026-94543), SSG/ISR cache poisoning, self-hosted | moderate | >= 16.0.0, < 16.3.8 | 16.3.8 |
+  | GHSA-f87g-xv8r-7p7x (CVE-2026-94485), metadata image routes, dynamicParams bypass | moderate | >= 16.0.0, < 16.3.8 | 16.3.8 |
+  | GHSA-mcj8-r9mp-w47p (CVE-2026-94484), SSG/ISR cross-user cache poisoning | moderate | >= 16.0.0, < 16.3.8 | 16.3.8 |
+  | GHSA-39w2-rjm5-chcv (CVE-2026-94486), dev server MCP endpoint disclosure | low | >= 16.0.0, < 16.3.8 | 16.3.8 |
+
+  - The global database published all six on 7 Oct 2026.
+  - The v16.3.8 release (30 Sep 2026, not a pre-release) lists all six, plus GHSA-h694-7cp9-m8p3 (moderate, `use cache`
+    root params). That one is in the Next.js repository but not in the global database, so npm audit doesn't report it.
+  - The repository's own advisories still show placeholder versions (`16.3.?`).
+  - npm audit's "fixAvailable 16.4.0" is only the newest release. **16.3.8 is the minimal fix.**
+- **Package changes** (`npm install next@16.3.8 --save-exact`):
+  - `package.json`: only `"next": "16.3.7"` → `"16.3.8"`;
+  - `package-lock.json`: exactly 10 entries, all 16.3.7 → 16.3.8: `next`, `@next/env`, and the eight
+    `@next/swc-{darwin-arm64,darwin-x64,linux-arm64-gnu,linux-arm64-musl,linux-x64-gnu,linux-x64-musl,win32-arm64-msvc,win32-x64-msvc}`.
+  - Nothing else changed.
+  - Peer dependencies are the same as 16.3.7's (React ^19), so React stays 19.2.8.
+  - **`eslint-config-next` and `@next/eslint-plugin-next` stay 16.3.7.** They don't peer-depend on `next`, they aren't
+    affected by the six advisories, and they are covered by the existing reviewed exception GHSA-vfj7-8cjw-p6xm.
+- **Audit:**
+  - **before** (`main`, 16.3.7): `npm run audit` exit 1, "FAIL: next (high) GHSA-3w37…, GHSA-4jqv…, GHSA-39w2…,
+    GHSA-f87g…, GHSA-mcj8…, GHSA-cjq9… has no current exception", "Technical audit: 1 problem(s)"; `npm audit` totals: 6
+    high.
+  - **after** (`1b53aa5`): exit 0, "Technical audit: pass"; `npm audit` totals: 5 high.
+  - The 5 remaining are `braces`, `micromatch`, `fast-glob`, `@next/eslint-plugin-next` and `eslint-config-next`, all
+    under the existing exception GHSA-vfj7, unchanged.
+  - Exception approval is unchanged: GHSA-vfj7 is still "NOT APPROVED (status pending)", so `--release` still fails, as
+    before. `security/audit-exceptions.json` was not touched.
+- **Checks on `1b53aa5`, from `code/`:**
+  - `npm run lint` clean; `npm run typecheck` clean;
+  - `npx vitest run --maxWorkers=2`: 46 files, 758 passed;
+  - `DATA_SOURCE=seed npm run build`: Next.js 16.3.8, exit 0; the postbuild steps pass (151 segment files moved, CSP
+    injected, 823/20,000 files). A `RELEASE_BUILD=1` build needs real data, which doesn't exist yet;
+  - **full e2e, keyed:** `node scripts/e2e-full-run.mts --workers 2`, started with PowerShell `Start-Process -WindowStyle
+    Hidden`. **360 tests: 297 passed, 0 failed, 63 skipped** (the same by-design skips as the `ba450c3` baseline), 0
+    flaky, 13.9 min. Lowest free memory 1351 MB, no suspension, no standby events. The budget specs pass (city
+    selection 134.3 KB of 150 KB). Record: `.local-test-runs/20261014-152733-1b53aa5/`.
+- **Push and CI:**
+  - `git push -u origin task/SEC-NEXT-16.3.8`; the push started no workflow (CI triggers only on `main` and PRs).
+  - CI started by hand (`gh workflow run ci.yml --ref task/SEC-NEXT-16.3.8`), run
+    [38589403586](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/38589403586): **success, all 4
+    jobs**. Audit pass, unit 758, Next.js 16.3.8 build, Playwright e2e 254 passed, pgTAP, parity 8, pytest 89, gitleaks.
+- **Not done (owner):** merging the branch; PR #11. Deployment and automation unchanged (off).
+
 ### 2026-10-14: two laptops (Windows and macOS); push of the 6–12 Oct work; portable project memory
 - **Owner's instruction:** develop on a Windows laptop and a Mac, with GitHub holding the latest code and context; push the
   completed work; standing authorization for ordinary code and documentation pushes
