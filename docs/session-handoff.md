@@ -14,10 +14,11 @@ Update the **Now** block and add a line to **Handoff log** at the end of every b
 | Branch | `main` |
 | Last validated code | `980ff4c` (DEP-5). The tree since then changes documentation and `.gitleaksignore` only |
 | Synced to GitHub | Yes: pushed 14 Oct 2026 (see the log for the commit and CI run) |
+| CI on `main` | **Red since 14 Oct: the dependency audit only** (new `next` advisories; see "Known issues"). Lint, types, unit, build, e2e, pgTAP and gitleaks pass |
 | Work in progress (WIP branches) | None |
 | Branch claims (who is editing what) | None. Claim a branch here and push before starting on it |
 | Pilot database owner | **Windows laptop** (Docker volume `supabase_db_company-map`). The Mac has no copy yet |
-| Next concrete action | **Mac:** follow [setup-new-machine.md](setup-new-machine.md) through step 6, then run the checks in step 7 and record the results here. **Owner:** the GitHub protections in "Environment status" below |
+| Next concrete action | **Owner:** decide how to clear the `next` audit failure: test and merge Dependabot PR #11 (it includes `next` 16.4.0), or approve a separate `next`-only bump. Neither is covered by the push authorization. **Mac:** follow [setup-new-machine.md](setup-new-machine.md) through step 6, then run the checks in step 7 and record the results here. **Owner:** the GitHub protections in "Environment status" below |
 
 ## Stage
 
@@ -58,7 +59,10 @@ Hashes are the post-cleanup ones. Older hashes in progress.md are mapped in
 | 8 Oct, Windows | 8 Oct batch | parity; pipeline pytest; backup drill | 8 passed; 89 passed; verify passed twice |
 | — | Mac | anything | **Not run yet.** No test has run on macOS |
 
-CI on GitHub: see the handoff log for the run of each push.
+CI on GitHub: see the handoff log for the run of each push. Run
+[38586305911](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/38586305911) on `c5285b7` (14 Oct):
+gitleaks, pgTAP (database job), Playwright e2e + axe, lint, typecheck, unit tests and build **passed**; the dependency
+audit step **failed** (above).
 
 ## Environment status
 
@@ -98,6 +102,16 @@ CI on GitHub: see the handoff log for the run of each push.
 
 ## Known issues
 
+- **The CI dependency audit fails on `next` 16.3.7** (found 14 Oct 2026; `npm run audit` fails the same way locally). Six
+  advisories published since the 12 Oct audit:
+  - GHSA-cjq9-62q9-8jv4 (high): SSRF in Image Optimization;
+  - GHSA-3w37-wq28-93x7, -4jqv-mc3x-m676, -f87g-xv8r-7p7x and -mcj8-r9mp-w47p (moderate): draft mode, SSG/ISR cache and
+    metadata routes;
+  - GHSA-39w2-rjm5-chcv (low): the dev server's MCP endpoint.
+  - `next` 16.4.0 fixes all six. Dependabot PR #11 includes it, with 12 other bumps.
+  - The static export uses no image optimisation, ISR, draft mode or server, so most of them probably don't reach the
+    deployed site. That is an assessment, not a review. The fix (the upgrade, or a reviewed exception under ADR-0019) is
+    the owner's call. Until then CI on `main` stays red at that step only.
 - `--detach` in the e2e runner is not verified: a Ctrl+C of unknown origin ended its first run. Start long runs the way
   [setup-new-machine.md](setup-new-machine.md#windows-only-tooling-and-the-mac-equivalents) shows.
 - `create_job_feed`'s duplicate check is case-sensitive (minor, not fixed).
@@ -118,5 +132,8 @@ the Mac becomes the pilot-database owner.
 
 Newest first. One line per batch: date, laptop, branch, commits, what was synced, what was not.
 
-- **14 Oct 2026, Windows, `main`:** pushed `883de71..<this commit>` (47 earlier commits plus this documentation commit) as a
-  fast-forward. CI: recorded in the next handoff line. **Not synced:** everything in "Only on the Windows laptop".
+- **14 Oct 2026, Windows, `main`:** CI run 38586305911 on `c5285b7`: every job passed except the dependency audit step
+  (new `next` advisories, see "Known issues"). The only workflow the push started was CI. Dependabot then re-ran CI on its
+  open PRs, as usual. This line is pushed in a follow-up documentation commit.
+- **14 Oct 2026, Windows, `main`:** pushed `883de71..c5285b7` (47 earlier commits plus the documentation commit `c5285b7`)
+  as a fast-forward, with no force. **Not synced:** everything in "Only on the Windows laptop".

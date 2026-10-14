@@ -72,6 +72,13 @@ state as of 12 Oct 2026, kept for reference; where it differs, the handoff wins.
   pending main-database migrations were not applied.
 - **Next:** set up the Mac (setup guide, steps 1–7) and record its results in the handoff. **Owner:** the GitHub
   protections above.
+- **Pushed** `883de71..c5285b7` as a fast-forward. The push started only CI, run
+  [38586305911](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/38586305911):
+  - **passed:** gitleaks, the database job, Playwright e2e + axe, and lint, typecheck, unit tests and build;
+  - **failed:** the dependency audit. Six `next` 16.3.7 advisories published after 12 Oct have no exception (local
+    `npm run audit` fails the same way).
+  - `next` 16.4.0 fixes them. It is in Dependabot PR #11, which is not merged: dependency merges are not authorized.
+  - Details: [session-handoff.md](session-handoff.md#known-issues).
 
 ### 2026-10-12 (evening): DEP-5: the other environment's project reference tightened; production-data reviewer for the rehearsal
 - **Change** (`scripts/check-deploy-env.mts`, owner's request): `OTHER_ENV_SUPABASE_PROJECT_REF` accepts:
