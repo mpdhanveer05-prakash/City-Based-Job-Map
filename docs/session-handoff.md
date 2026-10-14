@@ -16,9 +16,10 @@ Update the **Now** block and add a line to **Handoff log** at the end of every b
 | Synced to GitHub | Yes: pushed 14 Oct 2026 (see the log for the commit and CI run) |
 | CI on `main` | **Red since 14 Oct: the dependency audit only** (new `next` advisories; see "Known issues"). Lint, types, unit, build, e2e, pgTAP and gitleaks pass |
 | Work in progress (WIP branches) | None |
-| Branch claims (who is editing what) | None. Claim a branch here and push before starting on it |
+| Branch claims (who is editing what) | **`task/SEC-NEXT-16.3.8`: claimed by the Windows laptop, 14 Oct 2026.** A `next`-only security update (16.3.7 → 16.3.8), authorized by the owner. **Not to be merged** (and Dependabot PR #11 not merged) until the owner says so |
+| Mac onboarding (MAC-1) | **Not started.** No commit from the Mac on GitHub as of 14 Oct 2026, 15:23 UTC. Nothing in [setup-new-machine.md](setup-new-machine.md) has been run on a Mac yet |
 | Pilot database owner | **Windows laptop** (Docker volume `supabase_db_company-map`). The Mac has no copy yet |
-| Next concrete action | **Owner:** decide how to clear the `next` audit failure: test and merge Dependabot PR #11 (it includes `next` 16.4.0), or approve a separate `next`-only bump. Neither is covered by the push authorization. **Mac:** follow [setup-new-machine.md](setup-new-machine.md) through step 6, then run the checks in step 7 and record the results here. **Owner:** the GitHub protections in "Environment status" below |
+| Next concrete action | **Windows:** finish and check `task/SEC-NEXT-16.3.8` (in progress). **Mac:** follow [setup-new-machine.md](setup-new-machine.md) steps 1–7, record the results here, and set the MAC-1 status. **Owner:** the GitHub protection gaps below; whether to merge the `next` branch |
 
 ## Stage
 
@@ -70,13 +71,19 @@ audit step **failed** (above).
 - Automation is **off**: no repository variables, so `AUTOMATION_ENABLED` and `PRODUCTION_REFRESH_ENABLED` are absent and
   every scheduled or dispatched job skips. `Deploy staging` is `disabled_manually`. The workflow token is read-only.
 - A push to `main` starts only `ci.yml` (no secrets, no deploy). Pushes to other branches start nothing.
-- **Still open (Owner, [PROJECT_HANDOVER.md §14.3–14.4](../PROJECT_HANDOVER.md)):**
-  - no `staging`, `production` or `production-data` environments: a by-hand run of a deploy workflow would create its
-    environment **unprotected**;
-  - `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are still **repository** secrets, readable by every workflow;
-  - no ruleset on `main` (force pushes and deletion are not blocked);
-  - fork-PR approval is `first_time_contributors` (the plan asks for all outside collaborators).
-  - None of these is reachable by a push. All of them are reachable by starting a workflow by hand.
+- **GitHub protection gaps, still open** (Owner; [PROJECT_HANDOVER.md §14.3–14.4](../PROJECT_HANDOVER.md); re-read
+  unchanged on 14 Oct 2026, 15:23 UTC):
+
+  | Gap | Read | Why it matters | Fix (Owner, GitHub web UI) |
+  | --- | --- | --- | --- |
+  | No `staging`, `production`, `production-data` environments | 0 environments | a by-hand run of a deploy workflow would create its environment **unprotected**, with no reviewer step | create all three, branch `main` only, required reviewers, admin bypass off (handover §14.4 steps 4–5) |
+  | Cloudflare secrets at repository level | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | every workflow can read them, including both production workflows | put them in `staging` only, delete the repository copies, revoke the old token if broader than Workers Scripts: Edit (steps 2, 6) |
+  | No ruleset on `main` | 0 rulesets, `protected: false` | force pushes and branch deletion are not blocked | branch ruleset: restrict deletions, block force pushes; no PR requirement yet (step 7) |
+  | Fork-PR approval | `first_time_contributors` | the repository is public | require approval for all outside collaborators (step 8) |
+  | `deploy-production.yml` and `refresh-production-data.yml` are `active` | by hand (and gated schedule/dispatch) | combined with the gaps above, a by-hand run is the only remaining path to a deploy | the gaps above; optionally disable both until the environments exist |
+
+  Already right: no repository variables (automation off), workflow token read-only, `Deploy staging` disabled. None of
+  the gaps is reachable by a push; all of them by starting a workflow by hand.
 
 **Hosted:** no Supabase project. Staging Worker last deployed 11 Oct (synthetic sample). Production never deployed.
 
@@ -132,6 +139,7 @@ the Mac becomes the pilot-database owner.
 
 Newest first. One line per batch: date, laptop, branch, commits, what was synced, what was not.
 
+- **14 Oct 2026 (later), Windows, `main`:** claimed `task/SEC-NEXT-16.3.8` (owner-authorized `next`-only security update); Mac onboarding status and the protection gaps refreshed. CI on `c05724a` (run 38587585117): the same as below, red at the dependency audit only.
 - **14 Oct 2026, Windows, `main`:** CI run 38586305911 on `c5285b7`: every job passed except the dependency audit step
   (new `next` advisories, see "Known issues"). The only workflow the push started was CI. Dependabot then re-ran CI on its
   open PRs, as usual. This line is pushed in a follow-up documentation commit.
