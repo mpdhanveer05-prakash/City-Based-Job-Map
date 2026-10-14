@@ -7,6 +7,8 @@
 > **How it was checked:** I read the code, the 25 migrations, the workflows, the tests, `CLAUDE.md`, `plan.md`, every ADR and the whole progress log, and compared them with each other. Live facts (database counts, git, GitHub runs, hosted URLs) were checked the same day with read-only commands. Where a document disagrees with the implementation, **the implementation is described** and the disagreement is listed in [§13](#13-unresolved-inconsistencies-documentation-vs-implementation).
 >
 > **How to read it.** Paths are relative to the repository root. Application code lives in `code/`, so `code/lib/filters/filter.ts` is a file. Task IDs (`P9-20`), decision IDs (`D-04`) and ADR numbers (`ADR-0021`) are the project's own identifiers.
+>
+> **Update, 14 Oct 2026.** This is a snapshot. **The current state is in [docs/session-handoff.md](docs/session-handoff.md).** Since this was written: the project is developed on two laptops, Windows and macOS ([ADR-0026](docs/decisions/0026-two-laptop-workflow.md)); the 6–12 Oct commits were pushed on 14 Oct; ordinary code and documentation pushes now have standing authorization (§11's "only when the owner asks" is superseded). Deployment, hosted changes, history rewriting and dependency merges still need the owner.
 
 ---
 
@@ -1406,7 +1408,7 @@ P6-04, P5-05, P4-03, Phase 10, the PMTiles migration, Chennai (as the second rel
 | Repository visibility | **Public** |
 
 **Authorization status:**
-- **Push:** only when the owner asks. Commits are made locally per task.
+- **Push:** only when the owner asks. Commits are made locally per task. *(Superseded 14 Oct 2026: standing authorization for checked code and documentation pushes, never forced; see CLAUDE.md and ADR-0026.)*
 - **Deployment:**
   - **staging only** with the owner's approval and when the task calls for it;
   - **production:** never without explicit authorization (it also needs the typed phrase and environment reviewers);

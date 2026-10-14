@@ -2,8 +2,15 @@
 
 Update this after every task: what changed, how it was verified (the commands actually run and their results), what's unverified, blockers, and the next action.
 
-## Current state (8 Oct 2026; full detail in [PROJECT_HANDOVER.md](../PROJECT_HANDOVER.md))
-- **One machine:** this Windows laptop. About 2 GB of memory is often free: run one heavy job at a time.
+## Current state
+
+**Moved to [session-handoff.md](session-handoff.md) on 14 Oct 2026**: the current stage, branch claims, the pilot database
+owner, environment status, what is not synced, and the next action. This file keeps the dated log. The block below is the
+state as of 12 Oct 2026, kept for reference; where it differs, the handoff wins.
+
+<details><summary>State as of 12 Oct 2026</summary>
+
+- **One machine (superseded 14 Oct 2026: two laptops, ADR-0026):** this Windows laptop. About 2 GB of memory is often free: run one heavy job at a time.
 - **Built and tested locally:** the public site (city selection, explorer with WebGL map, Grid and List, search and filters, company and jobs pages, beacon, feedback forms), the admin (MFA, editing, CSV import, evidence review, publication gates, feeds, logos), the pipeline, and the build safeguards. Production has never been deployed; staging runs the synthetic sample.
 - **Databases:** the **main local database** (project `company-map`, port 54322) holds the 46 Bengaluru pilot drafts and must **never be reset or used by a test**. It is at migration `20261007160000` (applied 8 Oct 2026, [main-db-migration-plan.md](main-db-migration-plan.md)). Every database and admin test runs on the **disposable test stack** (`node scripts/test-stack.mts start|reset|test-db|stop`, project `company-map-test`, port 55322); the tests refuse any other database. Backups: `.local-backups/` (git-ignored).
 - **Previews:** preserved copies of the synthetic and pilot builds are in `.local-previews/{synthetic,pilot}` (git-ignored). Serve them from `code/` with `npx wrangler dev --config ../.local-previews/synthetic/wrangler.jsonc --port 8788` or `.../pilot/... --port 8789`.
@@ -11,7 +18,60 @@ Update this after every task: what changed, how it was verified (the commands ac
 - **Owner actions open:** the GitHub `staging` and `production` environments and their variables ([deploy-environments.md](deploy-environments.md)); the production data refresh's setup ([ADR-0025](decisions/0025-dataset-versions-and-rebuild-policy.md) option C, chosen 8 Oct 2026: the `production-data` environment, the `release/*` tag ruleset, the production project's secrets); D-04 coverage and gate thresholds; D-06 devices and gate owner; D-07 geocoding provider; a human data reviewer for the pilot; the logo permitted-use categories; hosted MFA; an independent approver for the audit exception; which project the pipeline serves; disabling the old `Deploy staging` workflow on GitHub (authorized 12 Oct, Owner to do it in the web UI); whether to push (the history cleanup ran locally on 12 Oct 2026: new HEAD `273bfd4`; older hashes in this log are pre-rewrite, see the [old-to-new table](history-cleanup-plan.md#old-to-new-hashes)).
 - **Blockers:** P2-09 (devices), P9-20 (a human reviewer), hosted work (no hosted Supabase project yet).
 
+</details>
+
 ## Log
+
+### 2026-10-14: two laptops (Windows and macOS); push of the 6–12 Oct work; portable project memory
+- **Owner's instruction:** develop on a Windows laptop and a Mac, with GitHub holding the latest code and context; push the
+  completed work; standing authorization for ordinary code and documentation pushes
+  ([ADR-0026](decisions/0026-two-laptop-workflow.md)). Not authorized: deployment, hosted changes, history rewriting,
+  dependency merges, paid services.
+- **Before the push** (Windows, `980ff4c`):
+  - `git fetch`: `origin/main` still `883de71`; `main` 47 ahead, 0 behind, so a fast-forward.
+  - **Cleaned history:**
+    - no OSM-derived pilot file in any commit of `main`;
+    - no `Co-Authored-By` or "Generated with" line in the 47 unpushed commits;
+    - one author;
+    - `273bfd4`'s tree is `dddaa4658727`, as the GIT-1 plan recorded.
+  - **Push configuration:** no push refspec and no mirror; `backup/pre-history-cleanup-20261012` has no upstream. Every
+    other local branch is already in `main`.
+  - **Secrets:** gitleaks 8.30.1 (the CI version, checksum checked) over all of `main` found 1 item: `code/tests/unit/totp.test.ts`
+    line 6 in `766e645` (was `337ca02`), RFC 6238's published test secret. Not a credential. CI's `secret-scan` job would
+    have failed on it, so it is allowlisted by fingerprint in `.gitleaksignore`. The rescan found no leaks. No env file,
+    dump, bundle or OSM file is tracked.
+  - **What a push starts** (`gh api`, GET only):
+    - only `ci.yml` has a `push` trigger (read-only token, no secrets);
+    - every scheduled or dispatched job is gated on `AUTOMATION_ENABLED` or `PRODUCTION_REFRESH_ENABLED`, and the
+      repository has **no variables**;
+    - `Deploy staging` is `disabled_manually`;
+    - the default workflow token is read-only.
+  - **Still open on GitHub (Owner):**
+    - no environments;
+    - no ruleset on `main`;
+    - Cloudflare secrets at repository level;
+    - fork-PR approval `first_time_contributors`.
+    - None is reachable by a push; all are reachable by a by-hand workflow run (handover §14.3).
+  - **Checks (from `code/`):** `npm run lint` clean; `npm run typecheck` clean; `npx vitest run --maxWorkers=2` 46 files,
+    758 passed.
+- **Docs:**
+  - [session-handoff.md](session-handoff.md), the single current-state page;
+  - `CLAUDE.md`: the session-start sync, the seven two-laptop rules and branch per task;
+  - [claude-memory/](claude-memory/README.md):
+    - now the original memory, so nothing is copied into the home folder;
+    - "one machine" and "push only when asked" replaced;
+    - the no-attribution rule added;
+    - macOS commands added;
+  - [setup-new-machine.md](setup-new-machine.md): macOS onboarding, with:
+    - exact versions, installation and verification;
+    - Apple Silicon and Intel;
+    - local secrets, MFA, the test stack and running the app;
+    - a proposed encrypted transfer for the pilot database;
+    - the Windows-only tooling and its macOS equivalents.
+- **Not done:** nothing ran on a Mac. The pilot database stays on Windows (owner of record). Docker was not started. The
+  pending main-database migrations were not applied.
+- **Next:** set up the Mac (setup guide, steps 1–7) and record its results in the handoff. **Owner:** the GitHub
+  protections above.
 
 ### 2026-10-12 (evening): DEP-5: the other environment's project reference tightened; production-data reviewer for the rehearsal
 - **Change** (`scripts/check-deploy-env.mts`, owner's request): `OTHER_ENV_SUPABASE_PROJECT_REF` accepts:

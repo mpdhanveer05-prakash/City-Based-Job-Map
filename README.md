@@ -16,12 +16,14 @@ A map-first company discovery portal for Bengaluru and Chennai. Visitors browse 
 Next.js (App Router) · TypeScript · Tailwind + shadcn/ui · MapLibre + Supercluster (Web Worker, Comlink) · Supabase (Postgres/PostGIS, Auth, Storage, Cron, Edge Functions) · Next.js static export on Cloudflare Workers static assets (free tiers only, [ADR-0006](docs/decisions/0006-free-tier-static-hosting.md), [ADR-0007](docs/decisions/0007-workers-static-assets.md)) · Python on GitHub Actions · Vitest, Playwright, axe-core.
 
 ## Setup
+macOS and Windows: follow [docs/setup-new-machine.md](docs/setup-new-machine.md) (tools and exact versions, local secrets, the disposable test stack, the pilot data). In short:
 ```bash
 cd code
 cp .env.example .env.local   # fill in values; never commit them
 npm ci
 npx playwright install chromium
-npx supabase db start && npx supabase db reset
-npm run dev
+npm run dev                  # http://localhost:3000, on the committed synthetic sample
 ```
-The npm steps were verified in P1-01, and the Supabase steps in P1-03 (`npx supabase db start`, `db reset`, and `test db`). Prerequisites: Node.js 24+, the Supabase CLI, Docker (for local Supabase), and Python 3.12+ for `scripts/`.
+Database tests run on the disposable test stack (`node scripts/test-stack.mts start`), never on a main local database. Prerequisites: Node.js 24, Docker (for local Supabase), and Python 3.12+ (CI uses 3.13) for `scripts/`. The Supabase CLI, Wrangler and Playwright come from `npm ci`.
+
+Working on two laptops: GitHub holds the code and the current state ([docs/session-handoff.md](docs/session-handoff.md)); see the rules in [CLAUDE.md](CLAUDE.md).

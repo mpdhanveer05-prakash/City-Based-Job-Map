@@ -1,0 +1,6 @@
+# gitleaks false positives, one fingerprint per line (commit:file:rule:line). Add a line only after checking the value is
+# not a credential, and say why here.
+#
+# code/tests/unit/totp.test.ts line 6 is RFC 6238 appendix B's published test secret ("12345678901234567890" in base32),
+# not a credential. Checked 14 Oct 2026.
+766e645065cd2eceb161b0c37eae0368cab8423b:code/tests/unit/totp.test.ts:generic-api-key:6

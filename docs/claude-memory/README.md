@@ -1,22 +1,17 @@
-# Claude Code memory for this project
+# Shared Claude Code memory for this project
 
-These are the memory files Claude Code keeps for Company Map. Claude Code stores memory **outside** the repository, in your home directory, so it does not sync by itself. This folder is the copy that travels through GitHub. It holds no secrets.
+This folder is the project's working memory for Claude Code: rules and lessons learned in past sessions, one fact per file, with `MEMORY.md` as the index. **It is the original**, tracked in Git, so both laptops read the same version. `CLAUDE.md` tells every session to read `MEMORY.md` at the start. It holds no secrets.
 
-## What is here
+The current state of the work is not here: it is in [../session-handoff.md](../session-handoff.md).
 
-`MEMORY.md` is the index. The memories: `user-two-laptops.md` (one machine), `feedback-push-only-when-asked.md`, `feedback-stale-test-server.md`, `feedback-e2e-suite-conventions.md`, `project-setup-and-secrets.md`, `feedback-playwright-wipes-test-results.md`, `feedback-bash-tool-backslashes.md`, `feedback-admin-e2e-and-local-stack.md`, `feedback-protect-local-db.md` (never reset the main local database; tests use the disposable test stack), and `feedback-no-junction-node-modules.md` (never junction `code/node_modules` into a copy or worktree).
+## How it relates to Claude Code's own memory folder
 
-## Install on a laptop
+Claude Code also keeps a memory folder per machine, in the home directory (`~/.claude/projects/<project path with separators as dashes>/memory/`). That folder does not sync. Since 14 Oct 2026 ([ADR-0026](../decisions/0026-two-laptop-workflow.md)):
 
-1. Open the repository in Claude Code once (run `claude` in the folder), so it creates its project folder.
-2. Find the folder. It is `~/.claude/projects/<the project path with separators turned into dashes>/memory/`. On Windows that is under `C:\Users\<you>\.claude\projects\`, and the name looks like `C--Users-<you>-Videos-Job-Map-App-City-Based-Job-Map`. The folder in `projects` that was modified most recently is the one.
-3. Copy these files into its `memory` folder, replacing files of the same name:
+- **Project knowledge goes here**, not only in the home folder. When a session learns something that applies to the project (a rule from the owner, a trap that cost time), add or update a file here and commit it with the batch.
+- **The home folder keeps only machine-specific notes** (for example, a quirk of that laptop's shell). Nothing needs to be copied into it. If it holds an older copy of a file here, this folder wins; delete or update the old copy.
+- **Never** put credentials, tokens, TOTP secrets, database contents, or personal data in either place.
 
-   - PowerShell: `Copy-Item docs\claude-memory\*.md "$env:USERPROFILE\.claude\projects\<folder>\memory\" -Force`
-   - bash: `cp docs/claude-memory/*.md ~/.claude/projects/<folder>/memory/`
+## When both laptops changed the same file
 
-   Copy `MEMORY.md` too: it is the index Claude Code loads each session. Then delete `README.md` from the `memory` folder (it is only for this repo).
-
-## Keep the copy in step
-
-The owner works on one Windows laptop (5 Oct 2026). When Claude Code adds, changes, or removes a memory, copy the changed files into `docs/claude-memory/` (the same command the other way round), commit, and push. If both copies changed, merge by hand: each file is one fact.
+Git merges them like any text file. Each file is one fact: keep the newer decision, and if the two disagree, ask the owner.

@@ -9,4 +9,8 @@ metadata:
 
 **Why:** `reuseExistingServer: !process.env.CI` in `code/playwright.config.ts`. `pkill` does not kill wrangler on Windows, and matching on the command line alone also kills `bash.exe` shells.
 
-**How to apply:** after any manual `npx wrangler dev`, stop only `node.exe` and `workerd.exe` whose command line matches `wrangler|workerd` (PowerShell `Get-CimInstance Win32_Process`), then check that `Get-NetTCPConnection -LocalPort 3100 -State Listen` is empty. If a result looks wrong, grep `code/out/_next/static` for a string you just added. "Timed out waiting 240000ms from config.webServer" means the build or server did not start; look for a process still holding a port.
+**How to apply:** after any manual `npx wrangler dev`:
+- **Windows:** stop only `node.exe` and `workerd.exe` whose command line matches `wrangler|workerd` (PowerShell `Get-CimInstance Win32_Process`), then check that `Get-NetTCPConnection -LocalPort 3100 -State Listen` is empty.
+- **macOS:** `pkill -x workerd; pkill -f 'wrangler dev'`, then check that `lsof -nP -iTCP:3100 -sTCP:LISTEN` prints nothing.
+
+If a result looks wrong, grep `code/out/_next/static` for a string you just added. "Timed out waiting 240000ms from config.webServer" means the build or server did not start; look for a process still holding a port.

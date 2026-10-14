@@ -1,6 +1,7 @@
-- [One machine](user-two-laptops.md) — owner works only on this Windows laptop for the whole project (5 Oct 2026); no Mac move
-- [Push only when asked](feedback-push-only-when-asked.md) — local commit per task, push to main on request, then check CI
-- [Stale test server](feedback-stale-test-server.md) — Playwright reuses port 3100 and skips the rebuild; kill wrangler by process name
+- [Two laptops](user-two-laptops.md) — Windows 11 and macOS from 14 Oct 2026; check which one you are on; GitHub carries code and context
+- [Push policy](feedback-push-policy.md) — standing authorization to push checked batches; fetch and merge first; never force; push ≠ deploy
+- [No Claude attribution](feedback-no-claude-attribution.md) — commits and PRs carry only the owner's name, no Co-Authored-By trailers
+- [Stale test server](feedback-stale-test-server.md) — Playwright reuses port 3100 and skips the rebuild; kill wrangler by process name (Windows and macOS)
 - [E2E conventions](feedback-e2e-suite-conventions.md) — workers, timeouts, key and no-key runs, deterministic gates, pixel reading
 - [Setup and secrets](project-setup-and-secrets.md) — repo URL, where the Geoapify key lives, new-laptop guide
 - [Playwright wipes test-results](feedback-playwright-wipes-test-results.md) — write gate numbers to gate-results/; do not restart a run killed for low memory
