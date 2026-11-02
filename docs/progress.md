@@ -22,6 +22,42 @@ state as of 12 Oct 2026, kept for reference; where it differs, the handoff wins.
 
 ## Log
 
+### 2026-11-02: SEC-NEXT merged; SEC-DEPS (new advisories, Next 16.4 fix); GitHub protections
+- **Authorized by the owner (2 Nov 2026):** "proceed with all the pending tasks and make the application live as soon
+  as possible". Taken to cover: merging `task/SEC-NEXT-16.3.8`, the dependency updates the audit needs, and the
+  protective GitHub settings of handover §14.4. Not taken to cover: any deploy, Dependabot merges, the Cloudflare
+  secrets (the values are not readable), or anything that needs a human reviewer.
+- **SEC-NEXT merged** into `main` (`371596a`, `--no-ff`).
+- **SEC-DEPS.** After the merge `npm run audit` failed on advisories published since 14 Oct: `next` critical
+  (GHSA-2464-fhr4-w9xw, GHSA-p3m5-59mp-jv5r, GHSA-673q-mjm6-r5xr; vulnerable 16.0.0–16.4.0, fixed in 16.4.3), `undici`
+  high (8 advisories, < 7.30.1, via wrangler › miniflare), `vite` high (6, 8.3.0–8.3.2, via vitest), `zod` high
+  (GHSA-mrhx-c7xc-m3w5, < 4.6.6); moderate `vitest` and `wrangler`. The `braces` exception (GHSA-vfj7-8cjw-p6xm) was
+  stale (no longer reported). Updated: `next` and `eslint-config-next` 16.4.3, `zod` 4.6.7, `vitest` ^5.0.5 (vite 8.3.5),
+  `wrangler` ^4.153.0 (undici 7.30.1; chose the first patched release rather than the day-old 4.156.1); removed the
+  stale exception, so `audit-exceptions.json` is empty and the **release audit gate passes** for the first time.
+- **Next 16.4 regression found by e2e and fixed.** The first full run on the update (`2d7f2bc`): 292 passed, **5 failed**,
+  all in `explorer-filters.spec.ts` ("Clicking the checkbox did not change its state"). Reproduced against the built
+  site: the URL changed at once but the checkbox and the list caught up only ~50 ms later. Next 16.4 rewrote the router
+  queue (`sequential-router-queue.js`, the preempted-action path in `app-router-instance.js`), so the state behind
+  `useSearchParams` commits a frame or more after a native `pushState`, and a controlled checkbox snaps back meanwhile.
+  `useExplorerState` now also reads `window.location` through `useSyncExternalStore`, notified by its own writes and
+  `popstate`; `useSearchParams` still covers Next's navigations (`8aaefc4`). Re-run of the reproduction: box and list
+  update in the click's frame.
+- **Verified (Windows, 2 Nov 2026):** `npm run audit` technical pass and `npm run audit -- --release` pass; lint clean;
+  typecheck clean; `npx vitest run --maxWorkers=2` 46 files, 758 passed; `DATA_SOURCE=seed npm run build` passes
+  (823 files); full e2e `node scripts/e2e-full-run.mts --workers 2` on `8aaefc4`: **297 passed, 0 failed, 63 skipped**,
+  0 flaky, 19.4 min (run `.local-test-runs/20261102-070218-8aaefc4/`). Merged to `main` as `1fbd43c`.
+- **GitHub (hosted changes, owner-authorized):** created environments `staging`, `production`, `production-data`
+  (required reviewer: the owner; deployment branch `main` only; admin bypass off; self-review allowed while the owner is
+  the only reviewer). Branch ruleset 26348099 on the default branch: block deletion and force pushes, no PR requirement.
+  Fork PR approval: `all_external_contributors`. `staging` variables: `DEPLOY_ENV=staging`,
+  `SITE_URL=https://company-map-staging.company-map.workers.dev`, `ALLOW_SYNTHETIC_DATA=true`.
+- **Not done (needs the owner):** a new Cloudflare token (Workers Scripts: Edit) and the account ID as `staging`
+  environment secrets, then deleting the repository-level copies and revoking the old token; a staging Geoapify key
+  (`GEOAPIFY_KEY`); enabling and running Deploy staging. Dependabot PRs #2, #3, #4, #13, #14 not merged.
+- **Unverified:** pgTAP, parity, pipeline pytest and admin e2e were not re-run (no database or pipeline code changed).
+  CI on the pushed `main`: see the handoff.
+
 ### 2026-10-14 (evening): SEC-NEXT: `next` 16.3.7 → 16.3.8 on `task/SEC-NEXT-16.3.8` (checked, not merged)
 - **Authorized by the owner:** a `next`-only security update on a task branch; push it and check CI. Not authorized:
   merging it or Dependabot PR #11, suppressing the advisories, deployment, automation.
