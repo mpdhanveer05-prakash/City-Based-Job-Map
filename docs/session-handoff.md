@@ -14,7 +14,7 @@ Update the **Now** block and add a line to **Handoff log** at the end of every b
 | Branch | `main` |
 | Last validated code | `8aaefc4` (SEC-DEPS), merged to `main` as `1fbd43c`: audit (technical and release) pass, lint, typecheck, 758 unit, seed build, full e2e 297/0/63 |
 | Synced to GitHub | Pushed 2 Nov 2026 (see the log for the commit and CI run) |
-| CI on `main` | See the newest handoff-log line. The dependency audit that was red since 14 Oct passes locally after SEC-DEPS |
+| CI on `main` | **Green** on `1d8cf51` (2 Nov 2026, run [41406002866](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/41406002866)): lint, types, unit, build, audit; Playwright e2e + axe; migrations + pgTAP; gitleaks |
 | Work in progress (WIP branches) | None |
 | Branches awaiting the owner | None. `task/SEC-NEXT-16.3.8` was merged on 2 Nov 2026 (owner's word). Dependabot PRs #2, #3, #4, #13, #14 are open and not merged (owner) |
 | Branch claims (who is editing what) | None. Claim a branch here and push before starting on it |
@@ -122,9 +122,6 @@ audit step **failed** (above).
 - **Dependency audit:** fixed on 2 Nov 2026 (SEC-NEXT merged, then SEC-DEPS: `next` 16.4.3 and the rest; see progress.md).
   No exception remains, so `npm run audit -- --release` passes. New advisories appear often: re-run `npm run audit`
   before any deploy.
-- **Scheduled workflows on the gated code: not yet observed.** No scheduled run had started by 15:42 UTC on 14 Oct (the
-  last ones, on `883de71`, failed as before). Expect each new scheduled run of Monitor and Data pipeline to show its job
-  as *skipped*. Check with `gh run list --limit 10`.
 - `--detach` in the e2e runner is not verified: a Ctrl+C of unknown origin ended its first run. Start long runs the way
   [setup-new-machine.md](setup-new-machine.md#windows-only-tooling-and-the-mac-equivalents) shows.
 - `create_job_feed`'s duplicate check is case-sensitive (minor, not fixed).
@@ -160,6 +157,7 @@ Items from [release-checklist.md](release-checklist.md). **Owner** items need an
 
 Newest first. One line per batch: date, laptop, branch, commits, what was synced, what was not.
 
+- **2 Nov 2026 (later), Windows, `main`:** CI run 41406002866 on `1d8cf51`: **all 4 jobs green**. Scheduled Data pipeline and Refresh production data runs now show *skipped* (the gates work). This line is pushed in a follow-up documentation commit.
 - **2 Nov 2026, Windows, `main`:** merged SEC-NEXT (`371596a`) and SEC-DEPS (`2d7f2bc`, `8aaefc4`, merge `1fbd43c`); GitHub settings above. Pushed with this commit; CI run in the next line. **Not synced:** everything in "Only on the Windows laptop"; run records `.local-test-runs/20261102-*` (git-ignored).
 - **14 Oct 2026 (evening), Windows, `task/SEC-NEXT-16.3.8` and `main`:** pushed the branch (`1b53aa5`, new; the push
   started no workflow). Started CI on it by hand: run 38589403586, green. Released the claim. Recorded the results on
