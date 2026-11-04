@@ -14,7 +14,7 @@ Update the **Now** block and add a line to **Handoff log** at the end of every b
 | Branch | `main` |
 | Last validated code | `8aaefc4` (SEC-DEPS), merged to `main` as `1fbd43c`: audit (technical and release) pass, lint, typecheck, 758 unit, seed build, full e2e 297/0/63, **on the old laptop**. Nothing has been run on the new laptop yet (SETUP-1) |
 | Synced to GitHub | Pushed 4 Nov 2026 (documentation only; see the log) |
-| CI on `main` | **Green** on `1d8cf51` (2 Nov 2026, run [41406002866](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/41406002866)): lint, types, unit, build, audit; Playwright e2e + axe; migrations + pgTAP; gitleaks. The 4 Nov push: see the log |
+| CI on `main` | **Green** on `5c94e7a` (4 Nov 2026, run [41786538327](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/41786538327)): lint, types, unit, build, audit; Playwright e2e + axe; migrations + pgTAP; gitleaks |
 | Work in progress (WIP branches) | None |
 | Branches awaiting the owner | None. Dependabot PRs #2, #3, #4, #13, #14 are open and not merged (owner) |
 | Branch claims (who is editing what) | None. Claim a branch here and push before starting on it |
@@ -177,6 +177,7 @@ Items from [release-checklist.md](release-checklist.md). **Owner** items need an
 
 Newest first. One line per batch: date, laptop, branch, commits, what was synced, what was not.
 
+- **4 Nov 2026 (later), new Windows laptop, `main`:** CI run 41786538327 on `5c94e7a`: **all 4 jobs green** (read through GitHub's public API; `gh` isn't installed yet). This line is pushed in a follow-up documentation commit. **Not synced:** everything in "Only on the old Windows laptop" (RESCUE-1 pending).
 - **4 Nov 2026, new Windows laptop, `main`:** RECOVERY-1, documentation only (project-recovery/, ADR-0027, AGENTS.md, memory, plan, progress, setup guide, this file). Checks: relative links resolve and no secret-looking strings (lint, typecheck and unit not applicable: no code changed, no dependencies installed). Pushed with this commit; CI in the next line. **Not synced:** everything in "Only on the old Windows laptop" (RESCUE-1 pending).
 - **2 Nov 2026 (later), Windows, `main`:** CI run 41406002866 on `1d8cf51`: **all 4 jobs green**. Scheduled Data pipeline and Refresh production data runs now show *skipped* (the gates work). This line is pushed in a follow-up documentation commit.
 - **2 Nov 2026, Windows, `main`:** merged SEC-NEXT (`371596a`) and SEC-DEPS (`2d7f2bc`, `8aaefc4`, merge `1fbd43c`); GitHub settings above. Pushed with this commit; CI run in the next line. **Not synced:** everything in "Only on the Windows laptop"; run records `.local-test-runs/20261102-*` (git-ignored).
