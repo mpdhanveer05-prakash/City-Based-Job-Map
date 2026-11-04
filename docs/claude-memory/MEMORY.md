@@ -1,4 +1,4 @@
-- [Two laptops](user-two-laptops.md) — Windows 11 and macOS from 14 Oct 2026; check which one you are on; GitHub carries code and context
+- [One laptop](user-two-laptops.md) — from 4 Nov 2026 one new Windows laptop (ADR-0027); rescue the old one first; GitHub still carries code and context
 - [Push policy](feedback-push-policy.md) — standing authorization to push checked batches; fetch and merge first; never force; push ≠ deploy
 - [No Claude attribution](feedback-no-claude-attribution.md) — commits and PRs carry only the owner's name, no Co-Authored-By trailers
 - [Stale test server](feedback-stale-test-server.md) — Playwright reuses port 3100 and skips the rebuild; kill wrangler by process name (Windows and macOS)

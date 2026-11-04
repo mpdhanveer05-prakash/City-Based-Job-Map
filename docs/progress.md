@@ -22,6 +22,54 @@ state as of 12 Oct 2026, kept for reference; where it differs, the handoff wins.
 
 ## Log
 
+### 2026-11-04: new Windows laptop; read-only recovery analysis; one laptop only (ADR-0027); recovery documents (RECOVERY-1)
+
+**Context and owner's answers**
+- The owner moved to a new Windows laptop: a fresh clone of `f95e9ae` (4 Nov, 10:24 IST) at
+  `C:\Users\dhanveerp\Documents\City Job Map\City-Based-Job-Map`. They asked for a complete, read-only project-context
+  recovery before any development, then approved the proposed contents.
+- **Owner's answers (4 Nov 2026):**
+  - this laptop is the only development machine (→ [ADR-0027](decisions/0027-one-development-laptop.md); MAC-1 and
+    DB-MOVE dropped);
+  - the old Windows laptop is available only for a short time;
+  - not sure whether anything after 2 Nov is unpushed there;
+  - re-clone to a path without spaces.
+
+**Written (documentation only)**
+- [project-recovery/](project-recovery/PROJECT_MASTER_CONTEXT.md): 9 files, a dated snapshot that links to the
+  authoritative docs instead of copying them. They include the old-laptop rescue runbook, the new-laptop setup and baseline
+  checks, a dangerous-commands list, a reconciled status, the 15 end-to-end flows, the ADR conformance table and risk
+  register R1–R20.
+- ADR-0027; a root `AGENTS.md` for Codex; claude-memory notes (one laptop, `gh` per laptop); `CLAUDE.md` pointers;
+  setup-new-machine.md versions (now the lockfile's after SEC-DEPS); plan.md (MAC-1 and DB-MOVE dropped; RECOVERY-1
+  Completed; RESCUE-1, SETUP-1, DB-RESTORE, BUILD-CITY, DEPLOY-HARDEN, WRANGLER-SAFE, SCAN-1, RLS-2, PIPE-2, UI-FIX-1,
+  DOC-1, CI-PILOT added); the handoff.
+
+**Verified this session** (read-only commands, Windows, new laptop)
+- `main` = `origin/main` = `f95e9ae`, clean.
+- No `node_modules`, `.env.local`, `.local-*`, OSM pilot files or `backup/*` branch here.
+- GitHub history: **0** reachable commits contain the OSM pilot files (GIT-1 holds); 38 earlier pushed commits keep
+  Claude trailers.
+- 5 Dependabot branches are open. minor-and-patch is rebased on `main` and brings maplibre-gl 6.16.0, React 19.3.1 and
+  Playwright 1.64.1.
+- Toolchain: Node **26.13.0** (CI uses 24), npm 11.20.0, Git 2.56.0. **No Python, Docker, gh or pg_dump.** 31.7 GB RAM.
+- Git identity set globally to the history's author (`git log --format='%an <%ae>'`).
+
+**Found by reading the code**
+- **BUILD-CITY (R13):** `code/scripts/build-datasets.mts:128-130` throws when any city has no published companies, so a
+  Bengaluru-only release cannot be built, which contradicts ADR-0016. Not listed anywhere before.
+- A bare `npx wrangler deploy` targets the production Worker (`code/wrangler.jsonc:6`).
+- `deploy-production.yml` has no pre-deploy smoke and no automatic rollback.
+- The postbuild secret scan misses JWT service-role keys.
+- Comments still say `npx supabase db reset` (`code/tests/parity/filter-parity.test.ts:14,94`).
+- Smaller database, pipeline and explorer items: see
+  [project-recovery/PENDING_WORK_AND_ROADMAP.md](project-recovery/PENDING_WORK_AND_ROADMAP.md).
+
+**Not run:** no install, build, test, database or deployment command ran on this laptop. Every test count quoted in the
+recovery docs is the old laptop's record (unit and e2e 2 Nov; database suites 9 Oct). CI after this push: see the handoff.
+
+**Next:** RESCUE-1 (urgent, before the old laptop goes), SETUP-1, then DB-RESTORE.
+
 ### 2026-11-02: SEC-NEXT merged; SEC-DEPS (new advisories, Next 16.4 fix); GitHub protections
 - **Authorized by the owner (2 Nov 2026):** "proceed with all the pending tasks and make the application live as soon
   as possible". Taken to cover: merging `task/SEC-NEXT-16.3.8`, the dependency updates the audit needs, and the

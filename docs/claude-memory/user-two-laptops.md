@@ -1,13 +1,15 @@
 ---
 name: user-two-laptops
-description: "The owner develops on two laptops, Windows 11 and macOS (from 14 Oct 2026); GitHub carries code and project context between them"
+description: "From 4 Nov 2026 the owner develops on ONE new Windows laptop (ADR-0027); the two-laptop plan (Windows + Mac, ADR-0026) is dropped, but GitHub stays the shared memory"
 metadata:
   type: user
-  modified: 2026-10-14
+  modified: 2026-11-04
 ---
 
-From **14 Oct 2026** the owner develops on **two laptops: the Windows 11 laptop (PowerShell and Git Bash) and a Mac (zsh)**. Either one must be able to resume where the other stopped. This replaces the 5 Oct 2026 decision to stay on one Windows machine.
+**From 4 Nov 2026 the owner develops on one new Windows 11 laptop only** ([ADR-0027](../decisions/0027-one-development-laptop.md)). The Mac of ADR-0026 was never set up, and MAC-1 is dropped. The old Windows laptop is available only briefly. It holds the only copy of the pilot database and the local-only files, so it is rescued first (`docs/project-recovery/NEW_MACHINE_SETUP.md` Part A).
 
-**Why:** the owner's choice (14 Oct 2026). The Windows laptop is often short of memory (about 2 GB free), which limits the map gate and long e2e runs.
+History: one Windows laptop (30 Sep), a Mac hand-off prepared (4 Oct), Windows only (5 Oct), "two laptops" (14 Oct, ADR-0026), one new Windows laptop (4 Nov).
 
-**How to apply:** at the start of a session, find out which machine you are on (`uname` or `$env:OS`) and give commands for that shell; don't assume Windows. Follow the two-laptop rules in `CLAUDE.md` (fetch first, read `docs/session-handoff.md`, push after each checked batch, WIP branches for unfinished work). The pilot database lives on one laptop at a time; the handoff says which. Setup and the Windows/macOS differences: `docs/setup-new-machine.md`. See [[feedback-push-policy]] and [[project-setup-and-secrets]].
+**Why:** the owner's answer in the 4 Nov 2026 recovery session. The new laptop has 31.7 GB of memory. The old one often had about 2 GB free, so its "one heavy job at a time" constraint was machine-specific. Still run one full e2e at a time, and never compare timings across machines.
+
+**How to apply:** the shell is PowerShell, plus Git Bash (check with `$env:OS`). Keep following CLAUDE.md's GitHub-as-memory rules: fetch first, read `docs/session-handoff.md`, push after each checked batch, WIP branches for unfinished work. The handoff names the laptop that owns the pilot database; until DB-RESTORE is done, that is the old laptop. See [[feedback-push-policy]] and [[project-setup-and-secrets]].

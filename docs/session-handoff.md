@@ -10,17 +10,18 @@ Update the **Now** block and add a line to **Handoff log** at the end of every b
 
 | Item | Value |
 | --- | --- |
-| Updated | 2 Nov 2026, Windows laptop |
+| Updated | 4 Nov 2026, **new Windows laptop** (fresh clone; [ADR-0027](decisions/0027-one-development-laptop.md): the only development machine from now on) |
 | Branch | `main` |
-| Last validated code | `8aaefc4` (SEC-DEPS), merged to `main` as `1fbd43c`: audit (technical and release) pass, lint, typecheck, 758 unit, seed build, full e2e 297/0/63 |
-| Synced to GitHub | Pushed 2 Nov 2026 (see the log for the commit and CI run) |
-| CI on `main` | **Green** on `1d8cf51` (2 Nov 2026, run [41406002866](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/41406002866)): lint, types, unit, build, audit; Playwright e2e + axe; migrations + pgTAP; gitleaks |
+| Last validated code | `8aaefc4` (SEC-DEPS), merged to `main` as `1fbd43c`: audit (technical and release) pass, lint, typecheck, 758 unit, seed build, full e2e 297/0/63, **on the old laptop**. Nothing has been run on the new laptop yet (SETUP-1) |
+| Synced to GitHub | Pushed 4 Nov 2026 (documentation only; see the log) |
+| CI on `main` | **Green** on `1d8cf51` (2 Nov 2026, run [41406002866](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/41406002866)): lint, types, unit, build, audit; Playwright e2e + axe; migrations + pgTAP; gitleaks. The 4 Nov push: see the log |
 | Work in progress (WIP branches) | None |
-| Branches awaiting the owner | None. `task/SEC-NEXT-16.3.8` was merged on 2 Nov 2026 (owner's word). Dependabot PRs #2, #3, #4, #13, #14 are open and not merged (owner) |
+| Branches awaiting the owner | None. Dependabot PRs #2, #3, #4, #13, #14 are open and not merged (owner) |
 | Branch claims (who is editing what) | None. Claim a branch here and push before starting on it |
-| Mac onboarding (MAC-1) | **Not started.** No commit from the Mac on GitHub as of 2 Nov 2026. Nothing in [setup-new-machine.md](setup-new-machine.md) has been run on a Mac yet |
-| Pilot database owner | **Windows laptop** (Docker volume `supabase_db_company-map`). The Mac has no copy yet |
-| Next concrete action | **Owner (staging preview, the fastest visible step):** create a Cloudflare API token (Account › Workers Scripts › Edit, this account only) and a Geoapify key restricted to `company-map-staging.company-map.workers.dev`; add them to the GitHub `staging` environment (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` secrets; `GEOAPIFY_KEY` variable); delete the repository-level Cloudflare secrets and revoke the old token; enable Deploy staging. **Owner (production):** see "Path to production" below. **Mac:** setup-new-machine.md steps 1–7 |
+| Machines | **One new Windows laptop** from 4 Nov 2026 (ADR-0027). MAC-1 dropped. The **old Windows laptop is available only briefly** and holds the only pilot data: rescue it first (RESCUE-1) |
+| Pilot database owner | **Old Windows laptop** (Docker volume `supabase_db_company-map`) until DB-RESTORE passes on the new laptop. The new laptop has no copy yet |
+| Next concrete action | **1. RESCUE-1 (urgent, owner on the old laptop):** [project-recovery/NEW_MACHINE_SETUP.md](project-recovery/NEW_MACHINE_SETUP.md) Part A (unpushed-work check, raw dump, the 3 pending migrations with the owner's go-ahead, drill backup, OSM files, Geoapify key to the password manager, encrypted archive). **2. SETUP-1:** re-clone to `C:\dev\City-Based-Job-Map`, install Node 24.14.1, Python 3.13, WSL2 + Docker, gh; baseline checks (Part B). **3. DB-RESTORE:** restore and verify (Part C), then release the old laptop. **Owner (staging preview), unchanged:** a Cloudflare token (Workers Scripts › Edit) and the account ID as `staging` environment secrets, delete the repository-level copies and revoke the old token, a Geoapify key restricted to the staging host (`GEOAPIFY_KEY`), enable Deploy staging. **Production:** "Path to production" below |
+| Recovery index | [project-recovery/PROJECT_MASTER_CONTEXT.md](project-recovery/PROJECT_MASTER_CONTEXT.md) (4 Nov snapshot: status, flows, risks R1–R20, dangerous commands) |
 
 ## Stage
 
@@ -37,6 +38,11 @@ Blocked (unchanged since 12 Oct):
 
 ## Done in the latest batches
 
+- **4 Nov (new laptop):** read-only recovery analysis of the whole repository; [project-recovery/](project-recovery/PROJECT_MASTER_CONTEXT.md)
+  written (9 files); ADR-0027 (one laptop); root `AGENTS.md` for Codex; memory, `CLAUDE.md` pointers, setup-guide
+  versions and plan.md updated; new tasks RESCUE-1, SETUP-1, DB-RESTORE and the code findings (BUILD-CITY: the build
+  refuses a Bengaluru-only release; DEPLOY-HARDEN; WRANGLER-SAFE; SCAN-1; RLS-2; PIPE-2; UI-FIX-1; DOC-1; CI-PILOT).
+  Nothing was installed, built or tested. Details in [progress.md](progress.md).
 - **2 Nov:** merged SEC-NEXT (`371596a`). SEC-DEPS: new advisories since 14 Oct (`next` critical, `undici`, `vite`, `zod`
   high) fixed with `next` 16.4.3, `zod` 4.6.7, `vitest` 5.0.5, `wrangler` 4.153.0; the stale `braces` exception
   removed, so the release audit gate passes. A Next 16.4 change made filter checkboxes lag their URL writes (5 e2e
@@ -73,7 +79,8 @@ Hashes are the post-cleanup ones. Older hashes in progress.md are mapped in
 | 9 Oct, Windows | `ba450c3` (was `8093e91`) | full e2e, `node scripts/e2e-full-run.mts --workers 2` | **297 passed, 0 failed, 63 skipped** (all skips by design), 18.0 min |
 | 9 Oct, Windows | the 9 Oct batch (`c4dd8df` … `89ee018`) | `npm run test:db`; `npm run test:admin` (test stack) | 19 files, 781 passed; 60 passed |
 | 8 Oct, Windows | 8 Oct batch | parity; pipeline pytest; backup drill | 8 passed; 89 passed; verify passed twice |
-| — | Mac | anything | **Not run yet.** No test has run on macOS |
+| 4 Nov, new Windows laptop | `f95e9ae` | anything | **Not run yet.** No dependencies installed (SETUP-1). Expected values: [project-recovery/NEW_MACHINE_SETUP.md](project-recovery/NEW_MACHINE_SETUP.md) B4 |
+| — | Mac | anything | Never run; the Mac is dropped (ADR-0027) |
 
 CI on GitHub: see the handoff log for the run of each push. Run
 [38586305911](https://github.com/mpdhanveer05-prakash/City-Based-Job-Map/actions/runs/38586305911) on `c5285b7` (14 Oct):
@@ -97,16 +104,23 @@ audit step **failed** (above).
 
 **Hosted:** no Supabase project. Staging Worker last deployed 11 Oct (synthetic sample). Production never deployed.
 
-**Windows laptop:**
+**Old Windows laptop (available only briefly; rescue with RESCUE-1):**
 - the main local database (project `company-map`, :54322) holds the 46 pilot drafts at migration `20261007160000`;
   3 migrations are pending and not authorized (handover §14.1);
 - Docker is stopped, with the data kept in its volume;
 - `.local-backups/` holds the dumps, the drill backup and the pre-cleanup bundle;
 - `.local-previews/` and `.local-test-runs/` hold the previews and the run records.
 
-**Mac:** not set up yet.
+**New Windows laptop (4 Nov 2026):**
+- fresh clone at `C:\Users\dhanveerp\Documents\City Job Map\City-Based-Job-Map` (a path with spaces; re-clone to
+  `C:\dev\City-Based-Job-Map` planned);
+- Node 26.13.0 (the project uses 24), npm 11.20.0, Git 2.56.0; **no Python, Docker or gh yet**;
+- Git identity set globally to the history's author;
+- 31.7 GB RAM, i5-1235U, Iris Xe.
 
-## Only on the Windows laptop (never in Git)
+**Mac:** dropped (ADR-0027).
+
+## Only on the old Windows laptop (never in Git; rescue with RESCUE-1)
 
 - The pilot database, and its dumps in `.local-backups/`. To move it, see
   [setup-new-machine.md §8](setup-new-machine.md#8-the-pilot-data-a-separate-secure-transfer).
@@ -119,6 +133,11 @@ audit step **failed** (above).
 
 ## Known issues
 
+- **BUILD-CITY (found 4 Nov):** `code/scripts/build-datasets.mts:128-130` refuses any city with no published companies,
+  so a Bengaluru-only production release cannot be built today (ADR-0016 wants Bengaluru first). It needs an ADR and the
+  owner's agreement before the code change. Other findings (R1–R20):
+  [project-recovery/PENDING_WORK_AND_ROADMAP.md](project-recovery/PENDING_WORK_AND_ROADMAP.md).
+- **A bare `npx wrangler deploy` targets the production Worker** (`code/wrangler.jsonc:6`). Never run it by hand.
 - **Dependency audit:** fixed on 2 Nov 2026 (SEC-NEXT merged, then SEC-DEPS: `next` 16.4.3 and the rest; see progress.md).
   No exception remains, so `npm run audit -- --release` passes. New advisories appear often: re-run `npm run audit`
   before any deploy.
@@ -134,7 +153,8 @@ audit step **failed** (above).
 
 See [plan.md's register](../plan.md#open-decision-register) and handover §10.4. In short: the Cloudflare secrets above,
 D-04 coverage, D-06 devices, D-07 geocoding, a human pilot reviewer, logo permitted-use categories, hosted MFA, the
-pipeline's project, the 3 pending main-database migrations, and whether the Mac becomes the pilot-database owner.
+pipeline's project, the 3 pending main-database migrations (now part of RESCUE-1 step A3), option A or B for the pilot
+database on the new laptop (DB-RESTORE), whether to keep the pre-cleanup history bundle, and the BUILD-CITY ADR.
 
 ### Path to production (officemap.tech), in order
 
@@ -157,6 +177,7 @@ Items from [release-checklist.md](release-checklist.md). **Owner** items need an
 
 Newest first. One line per batch: date, laptop, branch, commits, what was synced, what was not.
 
+- **4 Nov 2026, new Windows laptop, `main`:** RECOVERY-1, documentation only (project-recovery/, ADR-0027, AGENTS.md, memory, plan, progress, setup guide, this file). Checks: relative links resolve and no secret-looking strings (lint, typecheck and unit not applicable: no code changed, no dependencies installed). Pushed with this commit; CI in the next line. **Not synced:** everything in "Only on the old Windows laptop" (RESCUE-1 pending).
 - **2 Nov 2026 (later), Windows, `main`:** CI run 41406002866 on `1d8cf51`: **all 4 jobs green**. Scheduled Data pipeline and Refresh production data runs now show *skipped* (the gates work). This line is pushed in a follow-up documentation commit.
 - **2 Nov 2026, Windows, `main`:** merged SEC-NEXT (`371596a`) and SEC-DEPS (`2d7f2bc`, `8aaefc4`, merge `1fbd43c`); GitHub settings above. Pushed with this commit; CI run in the next line. **Not synced:** everything in "Only on the Windows laptop"; run records `.local-test-runs/20261102-*` (git-ignored).
 - **14 Oct 2026 (evening), Windows, `task/SEC-NEXT-16.3.8` and `main`:** pushed the branch (`1b53aa5`, new; the push

@@ -8,6 +8,11 @@ order. The macOS commands come first; Windows notes follow where they differ.
 **Status of this guide (14 Oct 2026):** the versions and commands were read from the repository and checked on the
 Windows laptop. **Nothing in it has been run on a Mac yet.** Step 7 records the first Mac results in the handoff.
 
+**Update, 4 Nov 2026:** the project now uses **one new Windows laptop** ([ADR-0027](decisions/0027-one-development-laptop.md)).
+The macOS steps stay here for reference. For this move, follow
+[project-recovery/NEW_MACHINE_SETUP.md](project-recovery/NEW_MACHINE_SETUP.md): the old-laptop rescue, Windows install
+order, baseline checks, and restore. The tool versions below were updated to the lockfile after SEC-DEPS (2 Nov 2026).
+
 ## 1. Tools and versions
 
 | Tool | Required | On the Windows laptop (14 Oct 2026) | Notes |
@@ -21,9 +26,9 @@ Windows laptop. **Nothing in it has been run on a Mac yet.** Step 7 records the 
 | Python | **3.12 or later**; CI uses **3.13** | 3.14.3 | the pipeline and pilot scripts; use 3.13 |
 | Docker Desktop, with Compose v2 | current | Docker 29.4.0, Compose v5.1.1 | the local Supabase stacks. The project doesn't call Compose itself; it comes with Docker Desktop |
 | Supabase CLI | **2.118.0**, from `package-lock.json` | 2.118.0 | run as `npx supabase`; don't install a separate copy (versions would drift between laptops) |
-| Wrangler | **4.144.0**, from the lockfile (workerd 1.20260926.1) | 4.144.0 | run as `npx wrangler` |
+| Wrangler | **4.153.0**, from the lockfile (workerd 1.20261023.1) | 4.144.0 (before SEC-DEPS) | run as `npx wrangler` |
 | Playwright | **1.63.0**, from the lockfile | 1.63.0 | `npx playwright install chromium` downloads its browser |
-| Next.js, React, TypeScript, Vitest, ESLint | from the lockfile: 16.3.7, 19.2.8, 5.9.3, 5.0.2, 9.39.5 | same | installed by `npm ci` |
+| Next.js, React, TypeScript, Vitest, ESLint | from the lockfile: 16.4.3, 19.2.8, 5.9.3, 5.0.5, 9.39.5 (SEC-DEPS, 2 Nov 2026) | Next 16.3.7, Vitest 5.0.2 on 14 Oct | installed by `npm ci` |
 | Google Chrome | current | installed | only for the map gate (`npm run gate`, `channel: "chrome"`) |
 | gitleaks | optional; CI pins **8.30.1** | not installed (run from a checked download on 14 Oct) | the same secret scan CI runs, before you push |
 | GnuPG (`gpg`) | any | ships with Git for Windows | only to encrypt or decrypt a database transfer (§8) |
@@ -74,7 +79,7 @@ claude --version
 ```
 
 The project tools come after `npm ci` (step 4): `npx supabase --version` (2.118.0), `npx wrangler --version`
-(4.144.0), `npx playwright --version` (1.63.0). The Supabase CLI prints "a new version is available": ignore it.
+(4.153.0), `npx playwright --version` (1.63.0). The Supabase CLI prints "a new version is available": ignore it.
 Upgrades arrive through Dependabot and the owner merges them.
 
 **Windows:** the same tools from their installers or `winget` (`winget install Git.Git GitHub.cli OpenJS.NodeJS.LTS

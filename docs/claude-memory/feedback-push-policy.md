@@ -13,7 +13,7 @@ metadata:
 **How to apply:**
 - Before committing: lint, typecheck and unit tests for code (plus whatever the task names); no secret in tracked files (CI runs gitleaks 8.30.1 over the whole history; `.gitleaksignore` holds the only allowlisted fingerprint, a published RFC test vector).
 - Before pushing: `git fetch origin`; merge the other laptop's commits with `git pull --no-rebase` if any; rerun the checks; `git push origin <branch>`. **Never `--force`, `--mirror` or `--all`; never rebase or amend pushed commits; never push `backup/*`.**
-- After pushing to `main`: `gh run list --branch main --limit 3` and `gh run watch <id>` (gh is installed and signed in on the Windows laptop since 14 Oct 2026). Record the result in the next handoff line. Never claim CI passed before seeing it. Pushes to other branches start no workflow.
+- After pushing to `main`: `gh run list --branch main --limit 3` and `gh run watch <id>` (gh needs installing and signing in on each new laptop; see `docs/project-recovery/NEW_MACHINE_SETUP.md` B2). Record the result in the next handoff line. Never claim CI passed before seeing it. Pushes to other branches start no workflow.
 - Commits carry only the owner's name: no `Co-Authored-By` or "Generated with" lines (see [[feedback-no-claude-attribution]]).
 - The authorization covers pushing only. Deployment, hosted changes (GitHub settings, environments, secrets, Supabase, Cloudflare), history rewriting, Dependabot or other dependency merges, and paid services each still need the owner's explicit approval.
 - If a push fails or anything stays local, say exactly what in the session's last message and in the handoff.
